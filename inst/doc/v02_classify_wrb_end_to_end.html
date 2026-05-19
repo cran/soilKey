@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>End-to-end WRB 2022 classification with Ch 6 names</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">End-to-end WRB 2022 classification with Ch
+6 names</h1>
+
+
+
+<p>This vignette walks the full WRB 2022 (4th edition) classification
+flow on the canonical Ferralsol fixture, end to end – from a raw
+<code>PedonRecord</code> to the complete Chapter 6 name with both
+<strong>principal</strong> and <strong>supplementary</strong> qualifiers
+in the canonical parenthesised form.</p>
+<p>The Ferralsol fixture represents a typical Brazilian
+<em>Latossolo</em> (gneiss-derived, Mata Atlântica). After v0.9.3,
+<code>classify_wrb2022()</code> resolves it to:</p>
+<pre><code>Geric Ferric Rhodic Chromic Ferralsol (Clayic, Humic, Dystric, Ochric, Rubic)</code></pre>
+<p>We will inspect each step that produces that name.</p>
+<div id="build-the-pedon" class="section level1">
+<h1>1. Build the pedon</h1>
+<p>The canonical fixture exposes a published-quality profile. Use it as
+the working pedon.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>pr <span class="ot">&lt;-</span> <span class="fu">make_ferralsol_canonical</span>()</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>pr</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; ── PedonRecord ──</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; Site: id=FR-canonical-01 | (-22.5000, -43.7000) | BR | 2024-03-10 | on gneiss</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; Horizons (5):</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; 1) A 0-15 cm clay=50.0 silt=15.0 sand=35.0 CEC=8.0 pH=4.8 OC=2.0</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; 2) AB 15-35 cm clay=52.0 silt=14.0 sand=34.0 CEC=6.5 pH=4.7 OC=1.2</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt; 3) BA 35-65 cm clay=55.0 silt=10.0 sand=35.0 CEC=5.5 pH=4.7 OC=0.6</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; 4) Bw1 65-130 cm clay=60.0 silt=8.0 sand=32.0 CEC=5.0 pH=4.8 OC=0.3</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; 5) Bw2 130-200 cm clay=60.0 silt=8.0 sand=32.0 CEC=4.8 pH=4.9 OC=0.2</span></span></code></pre></div>
+<p>A glance at the horizons and chemistry:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  pr<span class="sc">$</span>horizons[, .(top_cm, bottom_cm, designation,</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>                  munsell_hue_moist, munsell_value_moist, munsell_chroma_moist,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>                  clay_pct, oc_pct, cec_cmol, bs_pct,</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>                  ph_h2o, ph_kcl)]</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>)</span></code></pre></div>
+<table>
+<colgroup>
+<col width="5%" />
+<col width="7%" />
+<col width="8%" />
+<col width="13%" />
+<col width="14%" />
+<col width="15%" />
+<col width="6%" />
+<col width="5%" />
+<col width="6%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="right">top_cm</th>
+<th align="right">bottom_cm</th>
+<th align="left">designation</th>
+<th align="left">munsell_hue_moist</th>
+<th align="right">munsell_value_moist</th>
+<th align="right">munsell_chroma_moist</th>
+<th align="right">clay_pct</th>
+<th align="right">oc_pct</th>
+<th align="right">cec_cmol</th>
+<th align="right">bs_pct</th>
+<th align="right">ph_h2o</th>
+<th align="right">ph_kcl</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">0</td>
+<td align="right">15</td>
+<td align="left">A</td>
+<td align="left">2.5YR</td>
+<td align="right">3</td>
+<td align="right">4</td>
+<td align="right">50</td>
+<td align="right">2.0</td>
+<td align="right">8.0</td>
+<td align="right">24</td>
+<td align="right">4.8</td>
+<td align="right">4.0</td>
+</tr>
+<tr class="even">
+<td align="right">15</td>
+<td align="right">35</td>
+<td align="left">AB</td>
+<td align="left">2.5YR</td>
+<td align="right">3</td>
+<td align="right">4</td>
+<td align="right">52</td>
+<td align="right">1.2</td>
+<td align="right">6.5</td>
+<td align="right">17</td>
+<td align="right">4.7</td>
+<td align="right">4.0</td>
+</tr>
+<tr class="odd">
+<td align="right">35</td>
+<td align="right">65</td>
+<td align="left">BA</td>
+<td align="left">2.5YR</td>
+<td align="right">3</td>
+<td align="right">6</td>
+<td align="right">55</td>
+<td align="right">0.6</td>
+<td align="right">5.5</td>
+<td align="right">14</td>
+<td align="right">4.7</td>
+<td align="right">4.0</td>
+</tr>
+<tr class="even">
+<td align="right">65</td>
+<td align="right">130</td>
+<td align="left">Bw1</td>
+<td align="left">2.5YR</td>
+<td align="right">4</td>
+<td align="right">6</td>
+<td align="right">60</td>
+<td align="right">0.3</td>
+<td align="right">5.0</td>
+<td align="right">13</td>
+<td align="right">4.8</td>
+<td align="right">4.1</td>
+</tr>
+<tr class="odd">
+<td align="right">130</td>
+<td align="right">200</td>
+<td align="left">Bw2</td>
+<td align="left">2.5YR</td>
+<td align="right">4</td>
+<td align="right">6</td>
+<td align="right">60</td>
+<td align="right">0.2</td>
+<td align="right">4.8</td>
+<td align="right">13</td>
+<td align="right">4.9</td>
+<td align="right">4.2</td>
+</tr>
+</tbody>
+</table>
+<p>Notable features for WRB key:</p>
+<ul>
+<li>Clay 50-60 % throughout, hue 2.5YR, low chroma -&gt; ferralic-like
+with reddish tint;</li>
+<li>OC 2.0 % at the surface, decreasing with depth;</li>
+<li>Low CEC (5-8 cmol+/kg fine earth) and low BS (13-24 %);</li>
+<li>pH H2O 4.7-4.9, pH KCl 4.0-4.2 -&gt; delta pH negative (no
+Posic).</li>
+</ul>
+</div>
+<div id="run-the-wrb-key" class="section level1">
+<h1>2. Run the WRB key</h1>
+<p><code>classify_wrb2022()</code> walks the canonical Ch 4 RSG order
+(HS -&gt; AT -&gt; … -&gt; RG) and returns the first RSG whose tier-2
+gate is satisfied.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">classify_wrb2022</span>(pr)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>res</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; ── ClassificationResult (WRB 2022) ──</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; Name: Geric Ferric Rhodic Chromic Ferralsol (Clayic, Humic, Dystric, Ochric,</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; Rubic)</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; RSG/Order: Ferralsols</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; Qualifiers: Geric, Ferric, Rhodic, Chromic, Clayic, Humic, Dystric, Ochric,</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; Rubic, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE,</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; al_ox_pct, fe_ox_pct, phosphate_retention_pct, volcanic_glass_pct, FALSE,</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; volcanic_glass_pct, FALSE, FALSE, plinthite_pct, FALSE, plinthite_pct, FALSE,</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; plinthite_pct, FALSE, top_cm, bottom_cm, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE,</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt; redoximorphic_features_pct, FALSE, redoximorphic_features_pct, FALSE, FALSE,</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt; p_mehlich3_mg_kg, FALSE, p_mehlich3_mg_kg, FALSE, FALSE, FALSE, FALSE, FALSE,</span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt; FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE,</span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="co">#&gt; TRUE, FALSE</span></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt; Evidence grade: A</span></span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt; ── Ambiguities</span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt; - TC: Indeterminate -- missing 3 attribute(s): artefacts_pct,</span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt; geomembrane_present, technic_hardmaterial_pct</span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt; - CR: Indeterminate -- missing 1 attribute(s): permafrost_temp_C</span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt; - VR: Indeterminate -- missing 1 attribute(s): slickensides</span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="co">#&gt; - SC: Indeterminate -- missing 1 attribute(s): ec_dS_m</span></span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a><span class="co">#&gt; - PZ: Indeterminate -- missing 2 attribute(s): al_ox_pct, fe_ox_pct</span></span>
+<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a><span class="co">#&gt; - PT: Indeterminate -- missing 1 attribute(s): plinthite_pct</span></span>
+<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="co">#&gt; - ST: Indeterminate -- missing 1 attribute(s): redoximorphic_features_pct</span></span>
+<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a><span class="co">#&gt; ── Missing data that would refine result</span></span>
+<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a><span class="co">#&gt; artefacts_pct, geomembrane_present, technic_hardmaterial_pct,</span></span>
+<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a><span class="co">#&gt; permafrost_temp_C, slickensides, ec_dS_m, redoximorphic_features_pct,</span></span>
+<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a><span class="co">#&gt; al_ox_pct, fe_ox_pct, phosphate_retention_pct, volcanic_glass_pct,</span></span>
+<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a><span class="co">#&gt; plinthite_pct</span></span>
+<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a><span class="co">#&gt; ── Warnings</span></span>
+<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a><span class="co">#&gt; ! 12 distinct attribute(s) missing across the key trace -- see $missing_data</span></span>
+<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a><span class="co">#&gt; ── Key trace</span></span>
+<span id="cb4-40"><a href="#cb4-40" tabindex="-1"></a><span class="co">#&gt; (16 RSGs tested before assignment)</span></span>
+<span id="cb4-41"><a href="#cb4-41" tabindex="-1"></a><span class="co">#&gt; 1. HS Histosols -- failed</span></span>
+<span id="cb4-42"><a href="#cb4-42" tabindex="-1"></a><span class="co">#&gt; 2. AT Anthrosols -- failed</span></span>
+<span id="cb4-43"><a href="#cb4-43" tabindex="-1"></a><span class="co">#&gt; 3. TC Technosols -- NA (3 attrs missing)</span></span>
+<span id="cb4-44"><a href="#cb4-44" tabindex="-1"></a><span class="co">#&gt; 4. CR Cryosols -- NA (1 attrs missing)</span></span>
+<span id="cb4-45"><a href="#cb4-45" tabindex="-1"></a><span class="co">#&gt; 5. LP Leptosols -- failed</span></span>
+<span id="cb4-46"><a href="#cb4-46" tabindex="-1"></a><span class="co">#&gt; 6. SN Solonetz -- failed</span></span>
+<span id="cb4-47"><a href="#cb4-47" tabindex="-1"></a><span class="co">#&gt; 7. VR Vertisols -- NA (1 attrs missing)</span></span>
+<span id="cb4-48"><a href="#cb4-48" tabindex="-1"></a><span class="co">#&gt; 8. SC Solonchaks -- NA (1 attrs missing)</span></span>
+<span id="cb4-49"><a href="#cb4-49" tabindex="-1"></a><span class="co">#&gt; 9. GL Gleysols -- failed (1 attrs missing)</span></span>
+<span id="cb4-50"><a href="#cb4-50" tabindex="-1"></a><span class="co">#&gt; 10. AN Andosols -- failed (4 attrs missing)</span></span>
+<span id="cb4-51"><a href="#cb4-51" tabindex="-1"></a><span class="co">#&gt; 11. PZ Podzols -- NA (2 attrs missing)</span></span>
+<span id="cb4-52"><a href="#cb4-52" tabindex="-1"></a><span class="co">#&gt; 12. PT Plinthosols -- NA (1 attrs missing)</span></span>
+<span id="cb4-53"><a href="#cb4-53" tabindex="-1"></a><span class="co">#&gt; 13. PL Planosols -- failed</span></span>
+<span id="cb4-54"><a href="#cb4-54" tabindex="-1"></a><span class="co">#&gt; 14. ST Stagnosols -- NA (1 attrs missing)</span></span>
+<span id="cb4-55"><a href="#cb4-55" tabindex="-1"></a><span class="co">#&gt; 15. NT Nitisols -- failed</span></span>
+<span id="cb4-56"><a href="#cb4-56" tabindex="-1"></a><span class="co">#&gt; 16. FR Ferralsols -- PASSED</span></span></code></pre></div>
+<p>The returned <code>ClassificationResult</code> carries:</p>
+<ul>
+<li><code>$rsg_or_order</code> – the assigned Reference Soil Group
+(here, <strong>Ferralsols</strong>);</li>
+<li><code>$name</code> – the full Ch 6 name with principal and
+supplementary qualifiers;</li>
+<li><code>$qualifiers</code> – the resolved principal and supplementary
+lists, plus the per-qualifier trace;</li>
+<li><code>$trace</code> – the RSG-by-RSG key trace, including which RSGs
+failed before the assignment;</li>
+<li><code>$evidence_grade</code> – A through D, summarising the
+provenance of the classification.</li>
+</ul>
+</div>
+<div id="inspect-the-principal-qualifier-resolution" class="section level1">
+<h1>3. Inspect the principal qualifier resolution</h1>
+<p>After the RSG is assigned, the resolver walks the canonical Ch 4
+principal-qualifier list for that RSG (e.g. for Ferralsols:
+<code>Vetic, Posic, Acric, Lixic, Geric, Hyperdystric, ...</code>) and
+tests each against the pedon.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>qres <span class="ot">&lt;-</span> <span class="fu">resolve_wrb_qualifiers</span>(pr, <span class="st">&quot;FR&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>qres<span class="sc">$</span>principal</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Geric&quot;   &quot;Ferric&quot;  &quot;Rhodic&quot;  &quot;Chromic&quot;</span></span></code></pre></div>
+<p>The four principals that pass the Ferralsol fixture, in canonical Ch
+4 order:</p>
+<pre><code>#&gt;   Qualifier
+#&gt; 1     Geric
+#&gt; 2    Ferric
+#&gt; 3    Rhodic
+#&gt; 4   Chromic
+#&gt;                                                                                                                                               Why
+#&gt; 1 ECEC = sum of bases + Al_KCl &lt;= 1.5 cmol+/kg fine earth in some layer of the upper 100 cm. Layer 4 (Bw1, top = 65 cm) has ECEC = 1.18 cmol+/kg.
+#&gt; 2                                                                         Iron-rich subsoil (Fe_dcb &gt;= 5%); fe_dcb_pct hits 8-9% in this fixture.
+#&gt; 3                                   Hue 2.5YR moist, value &lt; 4 in 25-150 cm. Bw1 has value = 4 (failing in some layers but BA satisfies value 3).
+#&gt; 4                                                              Hue redder than 7.5YR + chroma &gt; 4 in 25-150 cm subsoil. Bw1 chroma = 6 satisfies.</code></pre>
+<p>The <code>trace</code> slot keeps every Ch 4 principal that was
+tested, including those that failed. Useful for diagnostic
+debugging:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>trace_df <span class="ot">&lt;-</span> <span class="fu">do.call</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  rbind,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="fu">lapply</span>(<span class="fu">names</span>(qres<span class="sc">$</span>trace), <span class="cf">function</span>(q) {</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>    t <span class="ot">&lt;-</span> qres<span class="sc">$</span>trace[[q]]</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>    <span class="fu">data.frame</span>(<span class="at">qualifier =</span> q,</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>               <span class="at">passed    =</span> <span class="cf">if</span> (<span class="fu">is.null</span>(t<span class="sc">$</span>passed)) <span class="cn">NA</span> <span class="cf">else</span> t<span class="sc">$</span>passed,</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>               <span class="at">note      =</span> t<span class="sc">$</span>note <span class="sc">%||%</span> <span class="st">&quot;&quot;</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  })</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>)</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="fu">head</span>(trace_df, <span class="dv">12</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt;       qualifier passed note</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; 1         Vetic  FALSE     </span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; 2         Posic  FALSE     </span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; 3         Acric  FALSE     </span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; 4         Lixic  FALSE     </span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; 5         Geric   TRUE     </span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; 6  Hyperdystric  FALSE     </span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; 7   Hypereutric  FALSE     </span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt; 8        Histic  FALSE     </span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; 9         Folic  FALSE     </span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; 10        Andic  FALSE     </span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; 11       Vitric  FALSE     </span></span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt; 12      Sombric  FALSE</span></span></code></pre></div>
+</div>
+<div id="inspect-the-supplementary-qualifier-resolution" class="section level1">
+<h1>4. Inspect the supplementary qualifier resolution</h1>
+<p>Supplementary qualifiers are the parenthesised tags in the WRB Ch 6
+name. They refine the soil description with texture / chemistry / colour
+information that is not strong enough to be a principal but still
+informative.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>qres<span class="sc">$</span>supplementary</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Clayic&quot;  &quot;Humic&quot;   &quot;Dystric&quot; &quot;Ochric&quot;  &quot;Rubic&quot;</span></span></code></pre></div>
+<p>What each tag captures for this Ferralsol:</p>
+<pre><code>#&gt;   Qualifier
+#&gt; 1    Clayic
+#&gt; 2     Humic
+#&gt; 3   Dystric
+#&gt; 4    Ochric
+#&gt; 5     Rubic
+#&gt;                                                                                                Why
+#&gt; 1 Clay &gt;= 60 % over a layer thicker than 30 cm in the upper 100 cm; Bw1 has clay = 60% over 65 cm.
+#&gt; 2                                 Weighted OC &gt;= 1 % in the upper 50 cm; weighted OC ~ 1.1 % here.
+#&gt; 3                       BS &lt; 50 % throughout 20-100 cm; BS = 13-24 % across all four upper layers.
+#&gt; 4                      OC &gt;= 0.2 % in upper 10 cm + no mollic + no umbric; surface has OC = 2.0 %.
+#&gt; 5         Hue &lt;= 5YR + chroma &gt;= 4 in upper 100 cm (less strict than Rhodic). 2.5YR / 6 satisfies.</code></pre>
+</div>
+<div id="compose-the-ch-6-name" class="section level1">
+<h1>5. Compose the Ch 6 name</h1>
+<p><code>format_wrb_name()</code> glues principal and supplementary into
+the canonical form:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">format_wrb_name</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="at">rsg_name      =</span> <span class="st">&quot;Ferralsols&quot;</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">principal     =</span> qres<span class="sc">$</span>principal,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">supplementary =</span> qres<span class="sc">$</span>supplementary</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>)</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Geric Ferric Rhodic Chromic Ferralsol (Clayic, Humic, Dystric, Ochric, Rubic)&quot;</span></span></code></pre></div>
+<p>This is exactly the string returned by
+<code>classify_wrb2022()$name</code>.</p>
+</div>
+<div id="family-suppression" class="section level1">
+<h1>6. Family suppression</h1>
+<p>When several qualifiers from the same WRB family (e.g. Calcic /
+Hypocalcic / Protocalcic) pass the same RSG, only the most-specific
+sibling appears in the name. The suppression is applied
+<strong>after</strong> all candidates are evaluated and works on both
+the principal and supplementary lists.</p>
+<p>The internal table:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">str</span>(soilKey<span class="sc">:::</span>.wrb_qualifier_families)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#&gt; List of 10</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt;  $ salinity: chr [1:3] &quot;Hypersalic&quot; &quot;Salic&quot; &quot;Hyposalic&quot;</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt;  $ sodicity: chr [1:3] &quot;Hypersodic&quot; &quot;Sodic&quot; &quot;Hyposodic&quot;</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt;  $ calcic  : chr [1:4] &quot;Hypercalcic&quot; &quot;Calcic&quot; &quot;Hypocalcic&quot; &quot;Protocalcic&quot;</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt;  $ gypsic  : chr [1:4] &quot;Hypergypsic&quot; &quot;Gypsic&quot; &quot;Hypogypsic&quot; &quot;Protogypsic&quot;</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt;  $ vertic  : chr [1:2] &quot;Vertic&quot; &quot;Protovertic&quot;</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt;  $ albic   : chr [1:2] &quot;Hyperalbic&quot; &quot;Albic&quot;</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt;  $ skeletic: chr [1:2] &quot;Hyperskeletic&quot; &quot;Skeletic&quot;</span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt;  $ eutric  : chr [1:2] &quot;Hypereutric&quot; &quot;Eutric&quot;</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt;  $ dystric : chr [1:2] &quot;Hyperdystric&quot; &quot;Dystric&quot;</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co">#&gt;  $ alic    : chr [1:2] &quot;Hyperalic&quot; &quot;Alic&quot;</span></span></code></pre></div>
+<p>A worked example: a synthetic Calcisol that satisfies Calcic,
+Hypocalcic, and Protocalcic simultaneously will collapse to just
+<strong>Calcic</strong>.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>soilKey<span class="sc">:::</span><span class="fu">.suppress_qualifier_siblings</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="fu">c</span>(<span class="st">&quot;Mollic&quot;</span>, <span class="st">&quot;Calcic&quot;</span>, <span class="st">&quot;Hypocalcic&quot;</span>, <span class="st">&quot;Protocalcic&quot;</span>, <span class="st">&quot;Cambic&quot;</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>)</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Mollic&quot; &quot;Calcic&quot; &quot;Cambic&quot;</span></span></code></pre></div>
+</div>
+<div id="evidence-grade" class="section level1">
+<h1>7. Evidence grade</h1>
+<p><code>classify_wrb2022()</code> reports an
+<code>evidence_grade</code> summarising the provenance of every
+attribute used in the classification. <strong>A</strong> means every
+used value was lab-measured; <strong>D</strong> means the result rests
+on VLM-extracted or user-assumed values.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>res<span class="sc">$</span>evidence_grade</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;A&quot;</span></span></code></pre></div>
+<p>The Ferralsol fixture has all measured values, so the grade is
+<strong>A</strong>. The <code>v01_getting_started</code> vignette shows
+how <code>pedon$add_measurement()</code> with
+<code>source = &quot;extracted_vlm&quot;</code> or
+<code>source = &quot;predicted_spectra&quot;</code> lowers the grade – so you
+always know how robust the classification is.</p>
+</div>
+<div id="render-a-self-contained-pedologist-facing-report" class="section level1">
+<h1>6. Render a self-contained pedologist-facing report</h1>
+<p>The <code>report()</code> generic takes a
+<code>ClassificationResult</code> (or a list of them, or a
+<code>PedonRecord</code> – in which case all three keys are run
+automatically) and writes a single-file HTML report with inline CSS, no
+external network requests, suitable for archiving with a laudo. The PDF
+path goes through <code>rmarkdown::render()</code> and requires a
+working LaTeX engine.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Pass the three classifications as a list:</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="fu">classify_wrb2022</span>(pr),</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  <span class="fu">classify_sibcs</span>(pr, <span class="at">include_familia =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>  <span class="fu">classify_usda</span>(pr)</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>)</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>out_html <span class="ot">&lt;-</span> <span class="fu">file.path</span>(<span class="fu">tempdir</span>(), <span class="st">&quot;perfil_ferralsol.html&quot;</span>)</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="fu">report</span>(results, <span class="at">file =</span> out_html, <span class="at">pedon =</span> pr)</span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="co"># Or pass the pedon directly and let report() run the three keys:</span></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="fu">report</span>(pr, <span class="at">file =</span> out_html)</span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a></span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a><span class="co"># Same content as PDF (requires LaTeX):</span></span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a><span class="co"># report(pr, file = file.path(tempdir(), &quot;perfil_ferralsol.pdf&quot;))</span></span></code></pre></div>
+<p>The HTML output includes: the cross-system summary, the full key
+trace per system, qualifiers (principal + supplementary), evidence
+grade, ambiguities, missing data, the horizons table, and the per-source
+provenance summary. <code>ClassificationResult$report(file)</code> is
+the R6-method-style equivalent and delegates to the same code.</p>
+</div>
+<div id="summary" class="section level1">
+<h1>Summary</h1>
+<pre><code>#&gt; WRB 2022 name : Geric Ferric Rhodic Chromic Ferralsol (Clayic, Humic, Dystric, Ochric, Rubic)
+#&gt; Assigned RSG  : Ferralsols
+#&gt; Principal     : Geric, Ferric, Rhodic, Chromic
+#&gt; Supplementary : Clayic, Humic, Dystric, Ochric, Rubic
+#&gt; Evidence grade: A</code></pre>
+<p>The <code>v03_cross_system_correlation</code> vignette runs the same
+profile through the Brazilian SiBCS and the USDA Soil Taxonomy keys and
+shows the alignment between the three classifications.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

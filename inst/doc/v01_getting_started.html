@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Getting started with soilKey</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Getting started with soilKey</h1>
+
+
+
+<p><code>soilKey</code> provides automated soil profile classification
+under WRB 2022 (4th edition), SiBCS 5ª ed. (2018), and USDA Soil
+Taxonomy (13th edition, 2022). The taxonomic key itself is implemented
+as deterministic R code driven by versioned YAML rules; vision-language
+extraction, spatial priors, and OSSL-based attribute prediction sit
+alongside it as modular layers, never inside it.</p>
+<div id="the-30-second-on-ramp" class="section level1">
+<h1>0. The 30-second on-ramp</h1>
+<p>If you just want to see soilKey work end-to-end on a real profile –
+without writing any R code – there are two paths.</p>
+<div id="a.-zero-code-gui" class="section level2">
+<h2>A. Zero-code GUI</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(soilKey)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">run_demo</span>()  <span class="co"># opens a one-screen Shiny app in your browser</span></span></code></pre></div>
+<p>Pick one of 31 canonical profiles from the dropdown (or upload your
+own horizons CSV), click <strong>Classify</strong>, and read the WRB /
+SiBCS / USDA names plus the deterministic key trace and the evidence
+grade.</p>
+</div>
+<div id="b.-one-r-call-one-fixture" class="section level2">
+<h2>B. One R call, one fixture</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(soilKey)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; Attaching package: &#39;soilKey&#39;</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; The following object is masked from &#39;package:base&#39;:</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt;     %||%</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>pedon <span class="ot">&lt;-</span> <span class="fu">make_ferralsol_canonical</span>()      <span class="co"># canonical Latossolo Vermelho</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="fu">classify_wrb2022</span>(pedon, <span class="at">on_missing =</span> <span class="st">&quot;silent&quot;</span>)<span class="sc">$</span>name</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Geric Ferric Rhodic Chromic Ferralsol (Clayic, Humic, Dystric, Ochric, Rubic)&quot;</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="fu">classify_sibcs</span>(pedon)<span class="sc">$</span>name</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Latossolos Vermelhos Distroficos tipicos&quot;</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="fu">classify_usda</span>(pedon, <span class="at">on_missing =</span> <span class="st">&quot;silent&quot;</span>)<span class="sc">$</span>name</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Rhodic Hapludox&quot;</span></span></code></pre></div>
+<p>That is the whole package: <code>PedonRecord</code> in,
+classification out. The remaining sections walk through how to build
+your own pedon and how the side modules (VLM, spatial, spectral) fit
+together.</p>
+</div>
+</div>
+<div id="building-a-pedonrecord-from-scratch" class="section level1">
+<h1>1. Building a PedonRecord from scratch</h1>
+<p><code>PedonRecord</code> is the central data carrier. It bundles site
+metadata, the horizons table (with a fixed canonical schema – see
+<code>horizon_column_spec()</code> for the full list of columns), and
+optional spectra, images, documents, and a per-attribute provenance
+log.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>my_pedon <span class="ot">&lt;-</span> PedonRecord<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="at">site =</span> <span class="fu">list</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>    <span class="at">id              =</span> <span class="st">&quot;example-001&quot;</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>    <span class="at">lat             =</span> <span class="sc">-</span><span class="fl">22.5</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>    <span class="at">lon             =</span> <span class="sc">-</span><span class="fl">43.7</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>    <span class="at">country         =</span> <span class="st">&quot;BR&quot;</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>    <span class="at">parent_material =</span> <span class="st">&quot;gneiss&quot;</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  ),</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">horizons =</span> <span class="fu">data.frame</span>(</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>    <span class="at">top_cm      =</span> <span class="fu">c</span>(<span class="dv">0</span>,  <span class="dv">15</span>, <span class="dv">65</span>, <span class="dv">130</span>),</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>    <span class="at">bottom_cm   =</span> <span class="fu">c</span>(<span class="dv">15</span>, <span class="dv">65</span>, <span class="dv">130</span>, <span class="dv">200</span>),</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>    <span class="at">designation =</span> <span class="fu">c</span>(<span class="st">&quot;A&quot;</span>, <span class="st">&quot;Bw1&quot;</span>, <span class="st">&quot;Bw2&quot;</span>, <span class="st">&quot;C&quot;</span>),</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>    <span class="at">clay_pct    =</span> <span class="fu">c</span>(<span class="dv">50</span>, <span class="dv">60</span>,  <span class="dv">65</span>,  <span class="dv">60</span>),</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>    <span class="at">silt_pct    =</span> <span class="fu">c</span>(<span class="dv">15</span>, <span class="dv">10</span>,  <span class="dv">8</span>,   <span class="dv">8</span>),</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>    <span class="at">sand_pct    =</span> <span class="fu">c</span>(<span class="dv">35</span>, <span class="dv">30</span>,  <span class="dv">27</span>,  <span class="dv">32</span>),</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>    <span class="at">cec_cmol    =</span> <span class="fu">c</span>(<span class="dv">8</span>,  <span class="dv">5</span>,   <span class="fl">4.5</span>, <span class="dv">4</span>),</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>    <span class="at">bs_pct      =</span> <span class="fu">c</span>(<span class="dv">20</span>, <span class="dv">12</span>,  <span class="dv">10</span>,  <span class="dv">11</span>),</span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>    <span class="at">ph_h2o      =</span> <span class="fu">c</span>(<span class="fl">4.8</span>, <span class="fl">4.9</span>, <span class="fl">5.0</span>, <span class="fl">5.1</span>),</span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>    <span class="at">oc_pct      =</span> <span class="fu">c</span>(<span class="fl">2.0</span>, <span class="fl">0.4</span>, <span class="fl">0.2</span>, <span class="fl">0.1</span>)</span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>  )</span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>)</span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>my_pedon<span class="sc">$</span><span class="fu">validate</span>()</span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt; ✔ PedonRecord validates: 4 horizons OK</span></span></code></pre></div>
+<p>The validator catches inverted depths, texture sums far from 100,
+implausible pH, sum of bases above CEC, Munsell out-of-range, and a
+handful of other soil-physical sanity checks.</p>
+</div>
+<div id="canonical-fixtures" class="section level1">
+<h1>2. Canonical fixtures</h1>
+<p><code>soilKey</code> ships sixteen canonical fixtures designed so
+that exactly one of the eleven v0.2 diagnostics passes on each. Each
+profile also classifies cleanly through the wired WRB key.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>fixtures <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="at">Ferralsol  =</span> <span class="fu">make_ferralsol_canonical</span>(),</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">Luvisol    =</span> <span class="fu">make_luvisol_canonical</span>(),</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">Acrisol    =</span> <span class="fu">make_acrisol_canonical</span>(),</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">Lixisol    =</span> <span class="fu">make_lixisol_canonical</span>(),</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">Alisol     =</span> <span class="fu">make_alisol_canonical</span>(),</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">Chernozem  =</span> <span class="fu">make_chernozem_canonical</span>(),</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="at">Kastanozem =</span> <span class="fu">make_kastanozem_canonical</span>(),</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="at">Phaeozem   =</span> <span class="fu">make_phaeozem_canonical</span>(),</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  <span class="at">Calcisol   =</span> <span class="fu">make_calcisol_canonical</span>(),</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>  <span class="at">Gypsisol   =</span> <span class="fu">make_gypsisol_canonical</span>(),</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>  <span class="at">Solonchak  =</span> <span class="fu">make_solonchak_canonical</span>(),</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>  <span class="at">Cambisol   =</span> <span class="fu">make_cambisol_canonical</span>(),</span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>  <span class="at">Plinthosol =</span> <span class="fu">make_plinthosol_canonical</span>(),</span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>  <span class="at">Podzol     =</span> <span class="fu">make_podzol_canonical</span>(),</span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>  <span class="at">Gleysol    =</span> <span class="fu">make_gleysol_canonical</span>(),</span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>  <span class="at">Vertisol   =</span> <span class="fu">make_vertisol_canonical</span>()</span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>)</span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>ferralsol <span class="ot">&lt;-</span> fixtures<span class="sc">$</span>Ferralsol</span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>ferralsol</span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt; ── PedonRecord ──</span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="co">#&gt; Site: id=FR-canonical-01 | (-22.5000, -43.7000) | BR | 2024-03-10 | on gneiss</span></span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a><span class="co">#&gt; Horizons (5):</span></span>
+<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a><span class="co">#&gt; 1) A 0-15 cm clay=50.0 silt=15.0 sand=35.0 CEC=8.0 pH=4.8 OC=2.0</span></span>
+<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="co">#&gt; 2) AB 15-35 cm clay=52.0 silt=14.0 sand=34.0 CEC=6.5 pH=4.7 OC=1.2</span></span>
+<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a><span class="co">#&gt; 3) BA 35-65 cm clay=55.0 silt=10.0 sand=35.0 CEC=5.5 pH=4.7 OC=0.6</span></span>
+<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a><span class="co">#&gt; 4) Bw1 65-130 cm clay=60.0 silt=8.0 sand=32.0 CEC=5.0 pH=4.8 OC=0.3</span></span>
+<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a><span class="co">#&gt; 5) Bw2 130-200 cm clay=60.0 silt=8.0 sand=32.0 CEC=4.8 pH=4.9 OC=0.2</span></span></code></pre></div>
+</div>
+<div id="calling-the-diagnostics-directly" class="section level1">
+<h1>3. Calling the diagnostics directly</h1>
+<p>Every diagnostic returns a <code>DiagnosticResult</code> carrying the
+per-sub-test evidence, missing-attribute report, layer indices that
+satisfied, and the WRB literature reference.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">ferralic</span>(ferralsol)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; ── DiagnosticResult: ferralic</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; Status: PASSED</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; Layers satisfying: 3, 4, 5</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; Sub-tests:</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; [PASS] texture</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; [PASS] cec_per_clay</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; [PASS] thickness</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; Reference: IUSS Working Group WRB (2022), Chapter 3.1.10, Ferralic horizon (p.</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; 44)</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; Notes: v0.3.1: ECEC/clay &lt;= 12 test removed; not part of WRB 2022 ferralic.</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; v0.9.67 engine=soilkey threshold = 16 cmol_c/kg clay.</span></span></code></pre></div>
+</div>
+<div id="diagnostic-matrix-across-the-canonical-fixtures" class="section level1">
+<h1>4. Diagnostic matrix across the canonical fixtures</h1>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>diagnostics <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;argic&quot;</span>, <span class="st">&quot;ferralic&quot;</span>, <span class="st">&quot;mollic&quot;</span>, <span class="st">&quot;calcic&quot;</span>, <span class="st">&quot;gypsic&quot;</span>, <span class="st">&quot;salic&quot;</span>,</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>                  <span class="st">&quot;cambic&quot;</span>, <span class="st">&quot;plinthic&quot;</span>, <span class="st">&quot;spodic&quot;</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>                  <span class="st">&quot;gleyic_properties&quot;</span>, <span class="st">&quot;vertic_properties&quot;</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>mat <span class="ot">&lt;-</span> <span class="fu">vapply</span>(fixtures, <span class="cf">function</span>(p) {</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="fu">vapply</span>(diagnostics, <span class="cf">function</span>(d) {</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>    fn <span class="ot">&lt;-</span> <span class="fu">get</span>(d, <span class="at">envir =</span> <span class="fu">asNamespace</span>(<span class="st">&quot;soilKey&quot;</span>))</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>    <span class="fu">isTRUE</span>(<span class="fu">fn</span>(p)<span class="sc">$</span>passed)</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>  }, <span class="fu">logical</span>(<span class="dv">1</span>))</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>}, <span class="fu">logical</span>(<span class="fu">length</span>(diagnostics)))</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">t</span>(mat))</span></code></pre></div>
+<table>
+<colgroup>
+<col width="9%" />
+<col width="5%" />
+<col width="8%" />
+<col width="6%" />
+<col width="6%" />
+<col width="6%" />
+<col width="5%" />
+<col width="6%" />
+<col width="8%" />
+<col width="6%" />
+<col width="16%" />
+<col width="16%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="left">argic</th>
+<th align="left">ferralic</th>
+<th align="left">mollic</th>
+<th align="left">calcic</th>
+<th align="left">gypsic</th>
+<th align="left">salic</th>
+<th align="left">cambic</th>
+<th align="left">plinthic</th>
+<th align="left">spodic</th>
+<th align="left">gleyic_properties</th>
+<th align="left">vertic_properties</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Ferralsol</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+</tr>
+<tr class="even">
+<td align="left">Luvisol</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+</tr>
+<tr class="odd">
+<td align="left">Acrisol</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+</tr>
+<tr class="even">
+<td align="left">Lixisol</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+</tr>
+<tr class="odd">
+<td align="left">Alisol</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+</tr>
+<tr class="even">
+<td align="left">Chernozem</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+</tr>
+<tr class="odd">
+<td align="left">Kastanozem</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+</tr>
+<tr class="even">
+<td align="left">Phaeozem</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+</tr>
+<tr class="odd">
+<td align="left">Calcisol</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+</tr>
+<tr class="even">
+<td align="left">Gypsisol</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+</tr>
+<tr class="odd">
+<td align="left">Solonchak</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+</tr>
+<tr class="even">
+<td align="left">Cambisol</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+</tr>
+<tr class="odd">
+<td align="left">Plinthosol</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+</tr>
+<tr class="even">
+<td align="left">Podzol</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+</tr>
+<tr class="odd">
+<td align="left">Gleysol</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+</tr>
+<tr class="even">
+<td align="left">Vertisol</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
+</tr>
+</tbody>
+</table>
+<p>Every fixture activates exactly one diagnostic (or, for the
+argic-derived RSGs Acrisol / Lixisol / Alisol / Luvisol, just the shared
+<code>argic</code>).</p>
+</div>
+<div id="rsg-derived-diagnostics-argic-and-mollic-families" class="section level1">
+<h1>5. RSG-derived diagnostics: argic and mollic families</h1>
+<p>The argic horizon is shared by four RSGs – Acrisols, Lixisols,
+Alisols, Luvisols – which differ by clay activity (CEC per kg clay) and
+chemistry (BS or Al saturation). soilKey provides one diagnostic per RSG
+that runs <code>argic()</code> internally, then applies the activity and
+chemistry tests on the argic layer:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">acrisol</span>(<span class="fu">make_acrisol_canonical</span>())<span class="sc">$</span>passed</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">lixisol</span>(<span class="fu">make_lixisol_canonical</span>())<span class="sc">$</span>passed</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="fu">alisol</span> (<span class="fu">make_alisol_canonical</span>())<span class="sc">$</span>passed</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="fu">luvisol</span>(<span class="fu">make_luvisol_canonical</span>())<span class="sc">$</span>passed</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<p>Same pattern for the mollic-derived family (Chernozems / Kastanozems
+/ Phaeozems):</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">chernozem</span> (<span class="fu">make_chernozem_canonical</span>())<span class="sc">$</span>passed</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">kastanozem</span>(<span class="fu">make_kastanozem_canonical</span>())<span class="sc">$</span>passed</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="fu">phaeozem</span>  (<span class="fu">make_phaeozem_canonical</span>())<span class="sc">$</span>passed</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+</div>
+<div id="end-to-end-wrb-classification" class="section level1">
+<h1>6. End-to-end WRB classification</h1>
+<p><code>classify_wrb2022()</code> consumes a <code>PedonRecord</code>
+and runs it through the YAML key
+(<code>inst/rules/wrb2022/key.yaml</code>). v0.2 wires 16 of 32 RSGs
+end-to-end; the other 16 are stubbed with
+<code>not_implemented_v01:</code> markers and return NA in the
+trace.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">classify_wrb2022</span>(ferralsol)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; ── ClassificationResult (WRB 2022) ──</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; Name: Geric Ferric Rhodic Chromic Ferralsol (Clayic, Humic, Dystric, Ochric,</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; Rubic)</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; RSG/Order: Ferralsols</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; Qualifiers: Geric, Ferric, Rhodic, Chromic, Clayic, Humic, Dystric, Ochric,</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; Rubic, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE,</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; al_ox_pct, fe_ox_pct, phosphate_retention_pct, volcanic_glass_pct, FALSE,</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; volcanic_glass_pct, FALSE, FALSE, plinthite_pct, FALSE, plinthite_pct, FALSE,</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; plinthite_pct, FALSE, top_cm, bottom_cm, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE,</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; redoximorphic_features_pct, FALSE, redoximorphic_features_pct, FALSE, FALSE,</span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt; p_mehlich3_mg_kg, FALSE, p_mehlich3_mg_kg, FALSE, FALSE, FALSE, FALSE, FALSE,</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt; FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE,</span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="co">#&gt; TRUE, FALSE</span></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt; Evidence grade: A</span></span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="co">#&gt; ── Ambiguities</span></span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt; - TC: Indeterminate -- missing 3 attribute(s): artefacts_pct,</span></span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt; geomembrane_present, technic_hardmaterial_pct</span></span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt; - CR: Indeterminate -- missing 1 attribute(s): permafrost_temp_C</span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; - VR: Indeterminate -- missing 1 attribute(s): slickensides</span></span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt; - SC: Indeterminate -- missing 1 attribute(s): ec_dS_m</span></span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt; - PZ: Indeterminate -- missing 2 attribute(s): al_ox_pct, fe_ox_pct</span></span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt; - PT: Indeterminate -- missing 1 attribute(s): plinthite_pct</span></span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a><span class="co">#&gt; - ST: Indeterminate -- missing 1 attribute(s): redoximorphic_features_pct</span></span>
+<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a><span class="co">#&gt; ── Missing data that would refine result</span></span>
+<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a><span class="co">#&gt; artefacts_pct, geomembrane_present, technic_hardmaterial_pct,</span></span>
+<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a><span class="co">#&gt; permafrost_temp_C, slickensides, ec_dS_m, redoximorphic_features_pct,</span></span>
+<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a><span class="co">#&gt; al_ox_pct, fe_ox_pct, phosphate_retention_pct, volcanic_glass_pct,</span></span>
+<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a><span class="co">#&gt; plinthite_pct</span></span>
+<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-35"><a href="#cb9-35" tabindex="-1"></a><span class="co">#&gt; ── Warnings</span></span>
+<span id="cb9-36"><a href="#cb9-36" tabindex="-1"></a><span class="co">#&gt; ! 12 distinct attribute(s) missing across the key trace -- see $missing_data</span></span>
+<span id="cb9-37"><a href="#cb9-37" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-38"><a href="#cb9-38" tabindex="-1"></a><span class="co">#&gt; ── Key trace</span></span>
+<span id="cb9-39"><a href="#cb9-39" tabindex="-1"></a><span class="co">#&gt; (16 RSGs tested before assignment)</span></span>
+<span id="cb9-40"><a href="#cb9-40" tabindex="-1"></a><span class="co">#&gt; 1. HS Histosols -- failed</span></span>
+<span id="cb9-41"><a href="#cb9-41" tabindex="-1"></a><span class="co">#&gt; 2. AT Anthrosols -- failed</span></span>
+<span id="cb9-42"><a href="#cb9-42" tabindex="-1"></a><span class="co">#&gt; 3. TC Technosols -- NA (3 attrs missing)</span></span>
+<span id="cb9-43"><a href="#cb9-43" tabindex="-1"></a><span class="co">#&gt; 4. CR Cryosols -- NA (1 attrs missing)</span></span>
+<span id="cb9-44"><a href="#cb9-44" tabindex="-1"></a><span class="co">#&gt; 5. LP Leptosols -- failed</span></span>
+<span id="cb9-45"><a href="#cb9-45" tabindex="-1"></a><span class="co">#&gt; 6. SN Solonetz -- failed</span></span>
+<span id="cb9-46"><a href="#cb9-46" tabindex="-1"></a><span class="co">#&gt; 7. VR Vertisols -- NA (1 attrs missing)</span></span>
+<span id="cb9-47"><a href="#cb9-47" tabindex="-1"></a><span class="co">#&gt; 8. SC Solonchaks -- NA (1 attrs missing)</span></span>
+<span id="cb9-48"><a href="#cb9-48" tabindex="-1"></a><span class="co">#&gt; 9. GL Gleysols -- failed (1 attrs missing)</span></span>
+<span id="cb9-49"><a href="#cb9-49" tabindex="-1"></a><span class="co">#&gt; 10. AN Andosols -- failed (4 attrs missing)</span></span>
+<span id="cb9-50"><a href="#cb9-50" tabindex="-1"></a><span class="co">#&gt; 11. PZ Podzols -- NA (2 attrs missing)</span></span>
+<span id="cb9-51"><a href="#cb9-51" tabindex="-1"></a><span class="co">#&gt; 12. PT Plinthosols -- NA (1 attrs missing)</span></span>
+<span id="cb9-52"><a href="#cb9-52" tabindex="-1"></a><span class="co">#&gt; 13. PL Planosols -- failed</span></span>
+<span id="cb9-53"><a href="#cb9-53" tabindex="-1"></a><span class="co">#&gt; 14. ST Stagnosols -- NA (1 attrs missing)</span></span>
+<span id="cb9-54"><a href="#cb9-54" tabindex="-1"></a><span class="co">#&gt; 15. NT Nitisols -- failed</span></span>
+<span id="cb9-55"><a href="#cb9-55" tabindex="-1"></a><span class="co">#&gt; 16. FR Ferralsols -- PASSED</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>classifications <span class="ot">&lt;-</span> <span class="fu">vapply</span>(fixtures, <span class="cf">function</span>(p) {</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="fu">classify_wrb2022</span>(p, <span class="at">on_missing =</span> <span class="st">&quot;silent&quot;</span>)<span class="sc">$</span>rsg_or_order</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>}, <span class="fu">character</span>(<span class="dv">1</span>))</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">fixture =</span> <span class="fu">names</span>(classifications), <span class="at">assigned_rsg =</span> classifications)</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt;               fixture assigned_rsg</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; Ferralsol   Ferralsol   Ferralsols</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; Luvisol       Luvisol     Luvisols</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; Acrisol       Acrisol     Acrisols</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; Lixisol       Lixisol     Lixisols</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; Alisol         Alisol      Alisols</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; Chernozem   Chernozem   Chernozems</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; Kastanozem Kastanozem  Kastanozems</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; Phaeozem     Phaeozem    Phaeozems</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; Calcisol     Calcisol    Calcisols</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt; Gypsisol     Gypsisol    Gypsisols</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt; Solonchak   Solonchak   Solonchaks</span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt; Cambisol     Cambisol    Cambisols</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt; Plinthosol Plinthosol  Plinthosols</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt; Podzol         Podzol      Podzols</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; Gleysol       Gleysol     Gleysols</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt; Vertisol     Vertisol    Vertisols</span></span></code></pre></div>
+<p>Each canonical fixture maps to its intended RSG. The trace shows
+which RSGs were tested, in canonical key order, before the assigned
+one.</p>
+</div>
+<div id="provenance-and-evidence-grade" class="section level1">
+<h1>7. Provenance and evidence grade</h1>
+<p><code>PedonRecord$add_measurement()</code> records a value’s
+provenance in a structured log. The final
+<code>ClassificationResult$evidence_grade</code> summarises that log on
+an A–D scale: A means every recorded value was laboratory-measured, D
+means the result rests on attributes extracted by VLM or assumed by the
+user.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>ferralsol_v <span class="ot">&lt;-</span> <span class="fu">make_ferralsol_canonical</span>()</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co"># Mark the Bw1 clay value as predicted from spectroscopy</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>ferralsol_v<span class="sc">$</span><span class="fu">add_measurement</span>(</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  <span class="at">horizon_idx =</span> <span class="dv">4</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  <span class="at">attribute   =</span> <span class="st">&quot;clay_pct&quot;</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>  <span class="at">value       =</span> <span class="dv">60</span>,</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>  <span class="at">source      =</span> <span class="st">&quot;predicted_spectra&quot;</span>,</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>  <span class="at">confidence  =</span> <span class="fl">0.85</span>,</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>  <span class="at">overwrite   =</span> <span class="cn">TRUE</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a>)</span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="fu">classify_wrb2022</span>(ferralsol_v)<span class="sc">$</span>evidence_grade</span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="co">#&gt; [1] &quot;B&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>ferralsol_w <span class="ot">&lt;-</span> <span class="fu">make_ferralsol_canonical</span>()</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>ferralsol_w<span class="sc">$</span><span class="fu">add_measurement</span>(<span class="dv">1</span>, <span class="st">&quot;clay_pct&quot;</span>, <span class="dv">50</span>, <span class="st">&quot;extracted_vlm&quot;</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>                              <span class="at">confidence =</span> <span class="fl">0.7</span>, <span class="at">overwrite =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="fu">classify_wrb2022</span>(ferralsol_w)<span class="sc">$</span>evidence_grade</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;D&quot;</span></span></code></pre></div>
+</div>
+<div id="interoperability-with-aqp" class="section level1">
+<h1>8. Interoperability with <code>aqp</code></h1>
+<p><code>PedonRecord$to_aqp()</code> returns an
+<code>aqp::SoilProfileCollection</code>, allowing soilKey to plug into
+aqp’s plotting and aggregation tooling without owning that
+infrastructure:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>spc <span class="ot">&lt;-</span> ferralsol<span class="sc">$</span><span class="fu">to_aqp</span>()</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="fu">class</span>(spc)</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;SoilProfileCollection&quot;</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;package&quot;)</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;aqp&quot;</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>aqp<span class="sc">::</span><span class="fu">profile_id</span>(spc)</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;FR-canonical-01&quot;</span></span></code></pre></div>
+</div>
+<div id="module-4-ossl-spectroscopy-bridge-gap-filling" class="section level1">
+<h1>9. Module 4 – OSSL spectroscopy bridge (gap-filling)</h1>
+<p>When some horizon attributes are missing, but the profile carries
+Vis-NIR or MIR spectra, soilKey can fill the gaps via the Open Soil
+Spectral Library. The pipeline preprocesses the spectra (SNV / SG1 /
+trim), dispatches to a memory-based or PLSR backend, and writes each
+prediction into the <code>PedonRecord</code> with provenance
+<code>predicted_spectra</code> – which the authority hierarchy treats as
+below laboratory-measured but above VLM-extracted values. The PI95
+prediction interval is mapped to a <code>[0, 1]</code> confidence score
+via <code>pi_to_confidence()</code>.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Synthetic example -- a profile with measured spectra but missing CEC.</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>pr_spec <span class="ot">&lt;-</span> <span class="fu">make_synthetic_pedon_with_spectra</span>(<span class="at">n_horizons =</span> <span class="dv">4</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>pr_spec<span class="sc">$</span>horizons<span class="sc">$</span>cec_cmol <span class="ot">&lt;-</span> <span class="cn">NA_real_</span>   <span class="co"># erase CEC</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co"># Predict via memory-based learning against the OSSL global library.</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>pr_filled <span class="ot">&lt;-</span> <span class="fu">fill_from_spectra</span>(</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>  <span class="at">pedon   =</span> pr_spec,</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>  <span class="at">backend =</span> <span class="st">&quot;mbl&quot;</span>,         <span class="co"># or &quot;plsr_local&quot; / &quot;pretrained&quot;</span></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>  <span class="at">attrs   =</span> <span class="fu">c</span>(<span class="st">&quot;cec_cmol&quot;</span>)  <span class="co"># which attributes to gap-fill</span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>)</span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a></span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a><span class="co"># Each predicted cell is logged with provenance source = &quot;predicted_spectra&quot;.</span></span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>pr_filled<span class="sc">$</span>provenance</span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a><span class="fu">classify_wrb2022</span>(pr_filled)<span class="sc">$</span>evidence_grade   <span class="co"># B (predicted_spectra present)</span></span></code></pre></div>
+</div>
+<div id="module-3-soilgrids-embrapa-spatial-prior-sanity-check" class="section level1">
+<h1>10. Module 3 – SoilGrids / Embrapa spatial prior (sanity check)</h1>
+<p>Once the deterministic key has reached a verdict, soilKey can
+<strong>cross-check</strong> that verdict against a spatial prior
+derived from ISRIC SoilGrids (global) or the Embrapa raster (Brazil).
+The prior <em>never</em> overrides the key – it only attaches a
+<code>prior_check</code> entry to the result and emits a warning if the
+deterministic outcome lies in a low-probability region of the prior.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>prior <span class="ot">&lt;-</span> <span class="fu">spatial_prior</span>(<span class="at">lon =</span> <span class="sc">-</span><span class="fl">43.7</span>, <span class="at">lat =</span> <span class="sc">-</span><span class="fl">22.5</span>, <span class="at">source =</span> <span class="st">&quot;auto&quot;</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>prior   <span class="co"># data.table of (rsg_code, probability)</span></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">classify_wrb2022</span>(</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>  <span class="at">pedon           =</span> ferralsol,</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>  <span class="at">prior           =</span> prior,</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>  <span class="at">prior_threshold =</span> <span class="fl">0.01</span>   <span class="co"># warn if assigned RSG has prior &lt; 1%</span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>)</span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>res<span class="sc">$</span>prior_check</span></code></pre></div>
+</div>
+<div id="module-2-multimodal-extraction-via-ellmer" class="section level1">
+<h1>11. Module 2 – Multimodal extraction via <code>ellmer</code></h1>
+<p>A field PDF or photo can be turned into a <code>PedonRecord</code>
+via the <code>extract_*</code> functions, each driven by an
+<code>ellmer</code> chat object (Anthropic, OpenAI, Google, or Ollama).
+The output is a schema-validated JSON (draft-07, in
+<code>inst/schemas/</code>) with
+<code>{value, confidence, source_quote}</code> per attribute, then
+merged into the <code>PedonRecord</code> with provenance
+<code>extracted_vlm</code>.</p>
+<p>The package ships a <code>MockVLMProvider</code> (R6) so the
+validation + retry loop can be exercised in tests without an API
+key:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>mock <span class="ot">&lt;-</span> MockVLMProvider<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>  <span class="at">responses =</span> <span class="fu">list</span>(</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>    <span class="fu">list</span>(<span class="at">horizons =</span> <span class="fu">list</span>(</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>      <span class="fu">list</span>(<span class="at">top_cm =</span> <span class="dv">0</span>,  <span class="at">bottom_cm =</span> <span class="dv">15</span>, <span class="at">designation =</span> <span class="st">&quot;A&quot;</span>,</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>            <span class="at">clay_pct =</span> <span class="fu">list</span>(<span class="at">value =</span> <span class="dv">30</span>, <span class="at">confidence =</span> <span class="fl">0.9</span>,</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>                            <span class="at">source_quote =</span> <span class="st">&quot;30% clay (table 1)&quot;</span>)),</span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>      <span class="fu">list</span>(<span class="at">top_cm =</span> <span class="dv">15</span>, <span class="at">bottom_cm =</span> <span class="dv">65</span>, <span class="at">designation =</span> <span class="st">&quot;Bw&quot;</span>,</span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>            <span class="at">clay_pct =</span> <span class="fu">list</span>(<span class="at">value =</span> <span class="dv">55</span>, <span class="at">confidence =</span> <span class="fl">0.85</span>,</span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a>                            <span class="at">source_quote =</span> <span class="st">&quot;Bw horizon, 55% clay&quot;</span>))</span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a>    ))</span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a>  )</span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a>)</span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a>pr_extracted <span class="ot">&lt;-</span> <span class="fu">extract_horizons_from_pdf</span>(</span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a>  <span class="at">pdf_path =</span> <span class="st">&quot;fieldsheet.pdf&quot;</span>,</span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a>  <span class="at">provider =</span> mock          <span class="co"># in production: vlm_provider(&quot;anthropic&quot;)</span></span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a>)</span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a><span class="fu">classify_wrb2022</span>(pr_extracted)<span class="sc">$</span>evidence_grade   <span class="co"># C or D depending on cell coverage</span></span></code></pre></div>
+<p>For real use:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>chat <span class="ot">&lt;-</span> <span class="fu">vlm_provider</span>(<span class="st">&quot;anthropic&quot;</span>, <span class="at">model =</span> <span class="st">&quot;claude-sonnet-4-5&quot;</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>pr   <span class="ot">&lt;-</span> <span class="fu">extract_horizons_from_pdf</span>(<span class="st">&quot;RADAMBRASIL_perfil_007.pdf&quot;</span>,</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>                                    <span class="at">provider =</span> chat)</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>res  <span class="ot">&lt;-</span> <span class="fu">classify_wrb2022</span>(pr)</span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>res</span></code></pre></div>
+</div>
+<div id="sibcs-5ª-edição-embrapa-2018" class="section level1">
+<h1>12. SiBCS 5ª edição (Embrapa, 2018)</h1>
+<p>soilKey ships the parallel SiBCS key alongside WRB 2022. The 13
+ordens are wired in canonical Cap 4 order; calling
+<code>classify_sibcs()</code> on any <code>PedonRecord</code> runs the
+same engine that backs <code>classify_wrb2022()</code>.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co"># A canonical Latossolo (Brazilian Ferralsol equivalent)</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>pr_lat <span class="ot">&lt;-</span> <span class="fu">make_latossolo_canonical</span>()</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a><span class="fu">classify_sibcs</span>(pr_lat, <span class="at">on_missing =</span> <span class="st">&quot;silent&quot;</span>)<span class="sc">$</span>rsg_or_order</span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Latossolos&quot;</span></span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a></span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a><span class="co"># A canonical Argissolo (B textural, low BS)</span></span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>pr_arg <span class="ot">&lt;-</span> <span class="fu">make_argissolo_canonical</span>()</span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a><span class="fu">classify_sibcs</span>(pr_arg, <span class="at">on_missing =</span> <span class="st">&quot;silent&quot;</span>)<span class="sc">$</span>rsg_or_order</span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Argissolos&quot;</span></span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a><span class="co"># A canonical Nitossolo (clay &gt;=35% throughout, B/A &lt;=1.5, cerosidade)</span></span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a>pr_nit <span class="ot">&lt;-</span> <span class="fu">make_nitossolo_canonical</span>()</span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a><span class="fu">classify_sibcs</span>(pr_nit, <span class="at">on_missing =</span> <span class="st">&quot;silent&quot;</span>)<span class="sc">$</span>rsg_or_order</span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Nitossolos&quot;</span></span>
+<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a></span>
+<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a><span class="co"># Cross-system: the SAME profile classified by both keys</span></span>
+<span id="cb18-17"><a href="#cb18-17" tabindex="-1"></a><span class="fu">classify_wrb2022</span>(pr_lat, <span class="at">on_missing =</span> <span class="st">&quot;silent&quot;</span>)<span class="sc">$</span>rsg_or_order</span>
+<span id="cb18-18"><a href="#cb18-18" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Ferralsols&quot;</span></span>
+<span id="cb18-19"><a href="#cb18-19" tabindex="-1"></a><span class="fu">classify_sibcs</span>(pr_lat, <span class="at">on_missing =</span> <span class="st">&quot;silent&quot;</span>)<span class="sc">$</span>rsg_or_order</span>
+<span id="cb18-20"><a href="#cb18-20" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Latossolos&quot;</span></span></code></pre></div>
+<p>The diagnostic helpers also have Portuguese names that match the
+SiBCS literature. For example:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="co"># Atividade da fração argila (Ta vs Tb) per Cap 1, p 30</span></span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a><span class="fu">atividade_argila_alta</span>(<span class="fu">make_luvissolo_canonical</span>())<span class="sc">$</span>passed   <span class="co"># TRUE  -&gt; Ta</span></span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a><span class="fu">atividade_argila_alta</span>(<span class="fu">make_nitossolo_canonical</span>())<span class="sc">$</span>passed   <span class="co"># FALSE -&gt; Tb</span></span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a></span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a><span class="co"># Caráter alítico (Cap 1, p 32): Al &gt;= 4 cmol_c/kg + sat Al &gt;= 50% + V &lt; 50%</span></span>
+<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a><span class="fu">carater_alitico</span>(<span class="fu">make_argissolo_canonical</span>())<span class="sc">$</span>passed</span>
+<span id="cb19-9"><a href="#cb19-9" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span></code></pre></div>
+</div>
+<div id="v0.7-scope-and-the-v0.3.3-roadmap" class="section level1">
+<h1>13. v0.7 scope and the v0.3.3+ roadmap</h1>
+<table>
+<colgroup>
+<col width="7%" />
+<col width="92%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Version</th>
+<th>Scope</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>v0.1</td>
+<td>Core classes; argic, ferralic, mollic; Ferralsols path</td>
+</tr>
+<tr class="even">
+<td>v0.2</td>
+<td>+calcic, gypsic, salic, cambic, plinthic, spodic, gleyic, vertic;
++AC/LX/AL/LV/CH/KS/PH RSG diagnostics; 16/32 wired</td>
+</tr>
+<tr class="odd">
+<td>v0.3</td>
+<td>+histic, leptic, arenic, umbric, duric, technic, andic, fluvic,
+natric, nitic, planic, stagnic, retic, cryic, anthric; full WRB key
+(32/32 RSGs wired); 31 canonical fixtures</td>
+</tr>
+<tr class="even">
+<td>v0.3.1</td>
+<td>Tier-1 corrections vs WRB 2022 Ch 3.1: argic 6/1.4/20 + band 50,
+ferralic drops ECEC, duric 10/10, vertic &gt;=25 cm, salic alkaline +
+product gate</td>
+</tr>
+<tr class="odd">
+<td>v0.3.2</td>
+<td>RSG order in <code>key.yaml</code> aligned to canonical WRB 2022 Ch
+4 (PL/ST before NT/FR; FL before AR)</td>
+</tr>
+<tr class="even">
+<td><strong>v0.4</strong></td>
+<td><strong>Module 4 – OSSL spectroscopy bridge (MBL, PLSR-local,
+pretrained)</strong></td>
+</tr>
+<tr class="odd">
+<td><strong>v0.5</strong></td>
+<td><strong>Module 3 – SoilGrids spatial prior + Embrapa raster
+(sanity-check, never overrides)</strong></td>
+</tr>
+<tr class="even">
+<td><strong>v0.6</strong></td>
+<td><strong>Module 2 – Multimodal extraction (PDF / photo / fieldsheet)
+via <code>ellmer</code>, schema-validated</strong></td>
+</tr>
+<tr class="odd">
+<td><strong>v0.3.3</strong></td>
+<td><strong>Complete WRB Ch 3.1 / 3.2 / 3.3 coverage</strong> – +18
+horizons, +12 properties, +16 materials. Schema +24 columns.</td>
+</tr>
+<tr class="even">
+<td><strong>v0.3.4</strong></td>
+<td><strong>Tier-2 RSG gate strengthening</strong> – vertisol, andosol,
+gleysol, planosol, ferralsol, chernozem_strict, kastanozem_strict wired
+into key.yaml; spodic refined to disambiguate from andic.</td>
+</tr>
+<tr class="odd">
+<td><strong>v0.3.5</strong></td>
+<td><strong>Closes WRB Ch 3.1 – 32/32 horizons</strong> (+tsitelic,
+panpaic, limonic, protovertic).</td>
+</tr>
+<tr class="even">
+<td><strong>v0.7</strong></td>
+<td><strong>Module 6 – SiBCS 5ª ed. (Embrapa, 2018) implemented in
+full</strong>: 17 atributos diagnósticos + 24 horizontes diagnósticos +
+13 ordens RSG-level following the canonical Cap 4 key
+(O→R→V→E→S→G→L→M→C→F→T→N→P). 13 fixtures canônicas, all classify
+correctly; 30 new tests; +830 expectations total in the suite.</td>
+</tr>
+<tr class="odd">
+<td>v0.8</td>
+<td>Module 5 – USDA Soil Taxonomy parallel key (12 orders)</td>
+</tr>
+<tr class="even">
+<td>v0.9</td>
+<td>All ~202 WRB qualifiers + 10 specifiers; vignettes 05-09; WoSIS
+benchmark</td>
+</tr>
+<tr class="odd">
+<td>v1.0</td>
+<td>CRAN submission and methodological paper</td>
+</tr>
+</tbody>
+</table>
+<p>See <code>ARCHITECTURE.md</code> (in the package root) for the full
+design rationale.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

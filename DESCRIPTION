@@ -1,0 +1,52 @@
+Package: soilKey
+Type: Package
+Title: Automated Soil Profile Classification per 'WRB' 2022, 'SiBCS' 5
+        and 'USDA' Soil Taxonomy 13
+Version: 0.9.97
+Date: 2026-05-13
+Authors@R: 
+    person("Hugo", "Rodrigues",
+           email = "rodrigues.machado.hugo@gmail.com",
+           role  = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-8070-8126"))
+Description: Implements deterministic classification keys for the World
+    Reference Base for Soil Resources ('WRB') 2022, 4th edition (IUSS
+    Working Group WRB, 2022, ISBN:979-8-9862451-1-9), the Brazilian
+    System of Soil Classification ('SiBCS') 5th edition (Santos et al.,
+    2018, ISBN:978-85-7035-800-4) and the United States Department of
+    Agriculture ('USDA') Soil Taxonomy 13th edition (Soil Survey Staff,
+    2022, <https://www.nrcs.usda.gov/resources/guides-and-instructions/keys-to-soil-taxonomy>).
+    Provides a unified profile representation with explicit per-attribute
+    provenance, multimodal extraction from field reports and photos via
+    vision-language models (VLM), spatial priors from 'SoilGrids' (Poggio
+    et al., 2021, <doi:10.5194/soil-7-217-2021>) and national soil maps,
+    and gap-filling of soil attributes from visible-near-infrared
+    (Vis-NIR) or mid-infrared (MIR) spectra via the Open Soil Spectral
+    Library ('OSSL'; Safanelli et al., 2025, <doi:10.7717/peerj.18908>).
+    The taxonomic key itself is never delegated to a large language
+    model (LLM); LLMs are restricted to schema-validated extraction.
+    Each classification result reports a key trace, a provenance-aware
+    evidence grade, and ambiguities that further measurement would
+    resolve.
+License: MIT + file LICENSE
+URL: https://github.com/HugoMachadoRodrigues/soilKey,
+        https://hugomachadorodrigues.github.io/soilKey/
+BugReports: https://github.com/HugoMachadoRodrigues/soilKey/issues
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.3
+Depends: R (>= 4.1)
+Imports: R6, data.table, yaml, cli, rlang, withr
+Suggests: aqp, SoilTaxonomy, mpspline2, terra, foreign, sf, chromote,
+        munsellinterpol, pls, prospectr, resemble, ellmer, httr,
+        jsonlite, jsonvalidate, pdftools, magick, shiny, DT, DBI,
+        RSQLite, testthat (>= 3.0.0), knitr, rmarkdown
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+NeedsCompilation: no
+Packaged: 2026-05-13 22:09:52 UTC; rodrigues.h
+Author: Hugo Rodrigues [aut, cre] (ORCID:
+    <https://orcid.org/0000-0002-8070-8126>)
+Maintainer: Hugo Rodrigues <rodrigues.machado.hugo@gmail.com>
+Repository: CRAN
+Date/Publication: 2026-05-19 09:20:21 UTC

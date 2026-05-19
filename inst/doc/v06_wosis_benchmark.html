@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Benchmarking soilKey against WoSIS</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Benchmarking soilKey against WoSIS</h1>
+
+
+
+<p>This vignette describes the benchmark protocol that measures
+<code>soilKey</code>’s WRB 2022 classification agreement against an
+external reference set, with <strong>WoSIS</strong> (the World Soil
+Information Service, ISRIC) as the canonical target. It also runs a
+fully reproducible mini-benchmark on the package’s own canonical
+fixtures so the protocol can be exercised offline.</p>
+<p>The full WoSIS run (see §5) is the basis of the agreement statistics
+reported in the methodological paper accompanying <code>soilKey</code>
+v1.0.</p>
+<div id="protocol-overview" class="section level1">
+<h1>1. Protocol overview</h1>
+<p>Each benchmark profile is a triple <span class="math inline">\((P, T,
+C)\)</span>:</p>
+<ul>
+<li><span class="math inline">\(P\)</span> – a <code>PedonRecord</code>
+assembled from the source dataset’s horizons + chemistry;</li>
+<li><span class="math inline">\(T\)</span> – the <strong>target</strong>
+RSG name from the source’s own classification (e.g. WoSIS’
+<code>cwrb_reference_soil_group</code>);</li>
+<li><span class="math inline">\(C\)</span> – the
+<strong>candidate</strong> classification produced by
+<code>classify_wrb2022(P)</code>.</li>
+</ul>
+<p>The benchmark reports four numbers per source:</p>
+<ul>
+<li><strong>Top-1 agreement</strong> – fraction of profiles where <span class="math inline">\(C\$rsg = T\)</span>.</li>
+<li><strong>Top-3 agreement</strong> – fraction where <span class="math inline">\(T\)</span> is among the three highest-likelihood
+RSGs in the trace (key trace + spatial prior, when available).</li>
+<li><strong>Coverage</strong> – fraction of profiles where <span class="math inline">\(C\)</span> is a definite RSG (not “Regosols”
+catch-all).</li>
+<li><strong>Indeterminate-rate</strong> – fraction of profiles where
+<span class="math inline">\(C\$rsg\)</span> is NA owing to missing
+diagnostic attributes.</li>
+</ul>
+<p>Confusion matrices are reported alongside the headline numbers: which
+RSGs <code>soilKey</code> confuses with which (e.g. Acrisol vs Lixisol
+differ only by base saturation, so disagreement on this border is
+informative).</p>
+</div>
+<div id="mini-benchmark-on-the-canonical-fixtures" class="section level1">
+<h1>2. Mini-benchmark on the canonical fixtures</h1>
+<p>The package’s 31 canonical fixtures provide a self-contained
+benchmark: each fixture is <em>constructed</em> to map to a specific
+RSG, so the expected target is known. The mini-benchmark verifies that
+<code>classify_wrb2022()</code> agrees with the construction intent on
+every fixture – i.e. top-1 agreement is 100% on this set.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>expected <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>  <span class="at">HS =</span> <span class="st">&quot;Histosols&quot;</span>, <span class="at">AT =</span> <span class="st">&quot;Anthrosols&quot;</span>, <span class="at">TC =</span> <span class="st">&quot;Technosols&quot;</span>, <span class="at">CR =</span> <span class="st">&quot;Cryosols&quot;</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  <span class="at">LP =</span> <span class="st">&quot;Leptosols&quot;</span>, <span class="at">SN =</span> <span class="st">&quot;Solonetz&quot;</span>,   <span class="at">VR =</span> <span class="st">&quot;Vertisols&quot;</span>, <span class="at">SC =</span> <span class="st">&quot;Solonchaks&quot;</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  <span class="at">GL =</span> <span class="st">&quot;Gleysols&quot;</span>,  <span class="at">AN =</span> <span class="st">&quot;Andosols&quot;</span>,   <span class="at">PZ =</span> <span class="st">&quot;Podzols&quot;</span>,   <span class="at">PT =</span> <span class="st">&quot;Plinthosols&quot;</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>  <span class="at">PL =</span> <span class="st">&quot;Planosols&quot;</span>, <span class="at">ST =</span> <span class="st">&quot;Stagnosols&quot;</span>, <span class="at">NT =</span> <span class="st">&quot;Nitisols&quot;</span>,  <span class="at">FR =</span> <span class="st">&quot;Ferralsols&quot;</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>  <span class="at">CH =</span> <span class="st">&quot;Chernozems&quot;</span>, <span class="at">KS =</span> <span class="st">&quot;Kastanozems&quot;</span>, <span class="at">PH =</span> <span class="st">&quot;Phaeozems&quot;</span>, <span class="at">UM =</span> <span class="st">&quot;Umbrisols&quot;</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>  <span class="at">DU =</span> <span class="st">&quot;Durisols&quot;</span>,  <span class="at">GY =</span> <span class="st">&quot;Gypsisols&quot;</span>, <span class="at">CL =</span> <span class="st">&quot;Calcisols&quot;</span>, <span class="at">RT =</span> <span class="st">&quot;Retisols&quot;</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>  <span class="at">AC =</span> <span class="st">&quot;Acrisols&quot;</span>,  <span class="at">LX =</span> <span class="st">&quot;Lixisols&quot;</span>,   <span class="at">AL =</span> <span class="st">&quot;Alisols&quot;</span>,   <span class="at">LV =</span> <span class="st">&quot;Luvisols&quot;</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>  <span class="at">CM =</span> <span class="st">&quot;Cambisols&quot;</span>, <span class="at">AR =</span> <span class="st">&quot;Arenosols&quot;</span>,  <span class="at">FL =</span> <span class="st">&quot;Fluvisols&quot;</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>)</span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>fixfns <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>  <span class="at">HS =</span> make_histosol_canonical,  <span class="at">AT =</span> make_anthrosol_canonical,</span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a>  <span class="at">TC =</span> make_technosol_canonical, <span class="at">CR =</span> make_cryosol_canonical,</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a>  <span class="at">LP =</span> make_leptosol_canonical,  <span class="at">SN =</span> make_solonetz_canonical,</span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a>  <span class="at">VR =</span> make_vertisol_canonical,  <span class="at">SC =</span> make_solonchak_canonical,</span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a>  <span class="at">GL =</span> make_gleysol_canonical,   <span class="at">AN =</span> make_andosol_canonical,</span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a>  <span class="at">PZ =</span> make_podzol_canonical,    <span class="at">PT =</span> make_plinthosol_canonical,</span>
+<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a>  <span class="at">PL =</span> make_planosol_canonical,  <span class="at">ST =</span> make_stagnosol_canonical,</span>
+<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a>  <span class="at">NT =</span> make_nitisol_canonical,   <span class="at">FR =</span> make_ferralsol_canonical,</span>
+<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a>  <span class="at">CH =</span> make_chernozem_canonical, <span class="at">KS =</span> make_kastanozem_canonical,</span>
+<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a>  <span class="at">PH =</span> make_phaeozem_canonical,  <span class="at">UM =</span> make_umbrisol_canonical,</span>
+<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a>  <span class="at">DU =</span> make_durisol_canonical,   <span class="at">GY =</span> make_gypsisol_canonical,</span>
+<span id="cb1-24"><a href="#cb1-24" tabindex="-1"></a>  <span class="at">CL =</span> make_calcisol_canonical,  <span class="at">RT =</span> make_retisol_canonical,</span>
+<span id="cb1-25"><a href="#cb1-25" tabindex="-1"></a>  <span class="at">AC =</span> make_acrisol_canonical,   <span class="at">LX =</span> make_lixisol_canonical,</span>
+<span id="cb1-26"><a href="#cb1-26" tabindex="-1"></a>  <span class="at">AL =</span> make_alisol_canonical,    <span class="at">LV =</span> make_luvisol_canonical,</span>
+<span id="cb1-27"><a href="#cb1-27" tabindex="-1"></a>  <span class="at">CM =</span> make_cambisol_canonical,  <span class="at">AR =</span> make_arenosol_canonical,</span>
+<span id="cb1-28"><a href="#cb1-28" tabindex="-1"></a>  <span class="at">FL =</span> make_fluvisol_canonical</span>
+<span id="cb1-29"><a href="#cb1-29" tabindex="-1"></a>)</span>
+<span id="cb1-30"><a href="#cb1-30" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" tabindex="-1"></a>bench <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(<span class="fu">names</span>(expected), <span class="cf">function</span>(code) {</span>
+<span id="cb1-32"><a href="#cb1-32" tabindex="-1"></a>  fx <span class="ot">&lt;-</span> fixfns[[code]]()</span>
+<span id="cb1-33"><a href="#cb1-33" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <span class="fu">classify_wrb2022</span>(fx, <span class="at">on_missing =</span> <span class="st">&quot;silent&quot;</span>)</span>
+<span id="cb1-34"><a href="#cb1-34" tabindex="-1"></a>  <span class="fu">data.frame</span>(</span>
+<span id="cb1-35"><a href="#cb1-35" tabindex="-1"></a>    <span class="at">fixture  =</span> code,</span>
+<span id="cb1-36"><a href="#cb1-36" tabindex="-1"></a>    <span class="at">target   =</span> expected[[code]],</span>
+<span id="cb1-37"><a href="#cb1-37" tabindex="-1"></a>    <span class="at">assigned =</span> res<span class="sc">$</span>rsg_or_order,</span>
+<span id="cb1-38"><a href="#cb1-38" tabindex="-1"></a>    <span class="at">name     =</span> res<span class="sc">$</span>name,</span>
+<span id="cb1-39"><a href="#cb1-39" tabindex="-1"></a>    <span class="at">grade    =</span> res<span class="sc">$</span>evidence_grade,</span>
+<span id="cb1-40"><a href="#cb1-40" tabindex="-1"></a>    <span class="at">match    =</span> res<span class="sc">$</span>rsg_or_order <span class="sc">==</span> expected[[code]]</span>
+<span id="cb1-41"><a href="#cb1-41" tabindex="-1"></a>  )</span>
+<span id="cb1-42"><a href="#cb1-42" tabindex="-1"></a>}))</span>
+<span id="cb1-43"><a href="#cb1-43" tabindex="-1"></a></span>
+<span id="cb1-44"><a href="#cb1-44" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(bench[, <span class="fu">c</span>(<span class="st">&quot;fixture&quot;</span>, <span class="st">&quot;target&quot;</span>, <span class="st">&quot;assigned&quot;</span>, <span class="st">&quot;match&quot;</span>, <span class="st">&quot;grade&quot;</span>)])</span></code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">fixture</th>
+<th align="left">target</th>
+<th align="left">assigned</th>
+<th align="left">match</th>
+<th align="left">grade</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">HS</td>
+<td align="left">Histosols</td>
+<td align="left">Histosols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="even">
+<td align="left">AT</td>
+<td align="left">Anthrosols</td>
+<td align="left">Anthrosols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="odd">
+<td align="left">TC</td>
+<td align="left">Technosols</td>
+<td align="left">Technosols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="even">
+<td align="left">CR</td>
+<td align="left">Cryosols</td>
+<td align="left">Cryosols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="odd">
+<td align="left">LP</td>
+<td align="left">Leptosols</td>
+<td align="left">Leptosols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="even">
+<td align="left">SN</td>
+<td align="left">Solonetz</td>
+<td align="left">Solonetz</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="odd">
+<td align="left">VR</td>
+<td align="left">Vertisols</td>
+<td align="left">Vertisols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="even">
+<td align="left">SC</td>
+<td align="left">Solonchaks</td>
+<td align="left">Solonchaks</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="odd">
+<td align="left">GL</td>
+<td align="left">Gleysols</td>
+<td align="left">Gleysols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="even">
+<td align="left">AN</td>
+<td align="left">Andosols</td>
+<td align="left">Andosols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="odd">
+<td align="left">PZ</td>
+<td align="left">Podzols</td>
+<td align="left">Podzols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="even">
+<td align="left">PT</td>
+<td align="left">Plinthosols</td>
+<td align="left">Plinthosols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="odd">
+<td align="left">PL</td>
+<td align="left">Planosols</td>
+<td align="left">Planosols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="even">
+<td align="left">ST</td>
+<td align="left">Stagnosols</td>
+<td align="left">Stagnosols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="odd">
+<td align="left">NT</td>
+<td align="left">Nitisols</td>
+<td align="left">Nitisols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="even">
+<td align="left">FR</td>
+<td align="left">Ferralsols</td>
+<td align="left">Ferralsols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="odd">
+<td align="left">CH</td>
+<td align="left">Chernozems</td>
+<td align="left">Chernozems</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="even">
+<td align="left">KS</td>
+<td align="left">Kastanozems</td>
+<td align="left">Kastanozems</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="odd">
+<td align="left">PH</td>
+<td align="left">Phaeozems</td>
+<td align="left">Phaeozems</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="even">
+<td align="left">UM</td>
+<td align="left">Umbrisols</td>
+<td align="left">Umbrisols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="odd">
+<td align="left">DU</td>
+<td align="left">Durisols</td>
+<td align="left">Durisols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="even">
+<td align="left">GY</td>
+<td align="left">Gypsisols</td>
+<td align="left">Gypsisols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="odd">
+<td align="left">CL</td>
+<td align="left">Calcisols</td>
+<td align="left">Calcisols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="even">
+<td align="left">RT</td>
+<td align="left">Retisols</td>
+<td align="left">Retisols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="odd">
+<td align="left">AC</td>
+<td align="left">Acrisols</td>
+<td align="left">Acrisols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="even">
+<td align="left">LX</td>
+<td align="left">Lixisols</td>
+<td align="left">Lixisols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="odd">
+<td align="left">AL</td>
+<td align="left">Alisols</td>
+<td align="left">Alisols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="even">
+<td align="left">LV</td>
+<td align="left">Luvisols</td>
+<td align="left">Luvisols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="odd">
+<td align="left">CM</td>
+<td align="left">Cambisols</td>
+<td align="left">Cambisols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="even">
+<td align="left">AR</td>
+<td align="left">Arenosols</td>
+<td align="left">Arenosols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+<tr class="odd">
+<td align="left">FL</td>
+<td align="left">Fluvisols</td>
+<td align="left">Fluvisols</td>
+<td align="left">TRUE</td>
+<td align="left">A</td>
+</tr>
+</tbody>
+</table>
+<p>Headline numbers:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">data.frame</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="at">metric =</span> <span class="fu">c</span>(<span class="st">&quot;n_profiles&quot;</span>, <span class="st">&quot;top1_agreement&quot;</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>             <span class="st">&quot;indeterminate_rate&quot;</span>, <span class="st">&quot;evidence_grade_A&quot;</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>             <span class="st">&quot;evidence_grade_B&quot;</span>),</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">value  =</span> <span class="fu">c</span>(<span class="fu">nrow</span>(bench),</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>             <span class="fu">mean</span>(bench<span class="sc">$</span>match),</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>             <span class="fu">mean</span>(<span class="fu">is.na</span>(bench<span class="sc">$</span>assigned)),</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>             <span class="fu">mean</span>(bench<span class="sc">$</span>grade <span class="sc">==</span> <span class="st">&quot;A&quot;</span>),</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>             <span class="fu">mean</span>(bench<span class="sc">$</span>grade <span class="sc">==</span> <span class="st">&quot;B&quot;</span>))</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>)</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt;               metric value</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; 1         n_profiles    31</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; 2     top1_agreement     1</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; 3 indeterminate_rate     0</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt; 4   evidence_grade_A     1</span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt; 5   evidence_grade_B     0</span></span></code></pre></div>
+<p>Confusion matrix on the mini set:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">table</span>(<span class="at">target =</span> bench<span class="sc">$</span>target, <span class="at">assigned =</span> bench<span class="sc">$</span>assigned)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt;              assigned</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt; target        Acrisols Alisols Andosols Anthrosols Arenosols Calcisols</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt;   Acrisols           1       0        0          0         0         0</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt;   Alisols            0       1        0          0         0         0</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt;   Andosols           0       0        1          0         0         0</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt;   Anthrosols         0       0        0          1         0         0</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt;   Arenosols          0       0        0          0         1         0</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt;   Calcisols          0       0        0          0         0         1</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt;   Cambisols          0       0        0          0         0         0</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt;   Chernozems         0       0        0          0         0         0</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt;   Cryosols           0       0        0          0         0         0</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt;   Durisols           0       0        0          0         0         0</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt;   Ferralsols         0       0        0          0         0         0</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt;   Fluvisols          0       0        0          0         0         0</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt;   Gleysols           0       0        0          0         0         0</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt;   Gypsisols          0       0        0          0         0         0</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt;   Histosols          0       0        0          0         0         0</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt;   Kastanozems        0       0        0          0         0         0</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt;   Leptosols          0       0        0          0         0         0</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt;   Lixisols           0       0        0          0         0         0</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt;   Luvisols           0       0        0          0         0         0</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt;   Nitisols           0       0        0          0         0         0</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt;   Phaeozems          0       0        0          0         0         0</span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt;   Planosols          0       0        0          0         0         0</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt;   Plinthosols        0       0        0          0         0         0</span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt;   Podzols            0       0        0          0         0         0</span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt;   Retisols           0       0        0          0         0         0</span></span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt;   Solonchaks         0       0        0          0         0         0</span></span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt;   Solonetz           0       0        0          0         0         0</span></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt;   Stagnosols         0       0        0          0         0         0</span></span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a><span class="co">#&gt;   Technosols         0       0        0          0         0         0</span></span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a><span class="co">#&gt;   Umbrisols          0       0        0          0         0         0</span></span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a><span class="co">#&gt;   Vertisols          0       0        0          0         0         0</span></span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a><span class="co">#&gt;              assigned</span></span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a><span class="co">#&gt; target        Cambisols Chernozems Cryosols Durisols Ferralsols Fluvisols</span></span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a><span class="co">#&gt;   Acrisols            0          0        0        0          0         0</span></span>
+<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a><span class="co">#&gt;   Alisols             0          0        0        0          0         0</span></span>
+<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a><span class="co">#&gt;   Andosols            0          0        0        0          0         0</span></span>
+<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a><span class="co">#&gt;   Anthrosols          0          0        0        0          0         0</span></span>
+<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a><span class="co">#&gt;   Arenosols           0          0        0        0          0         0</span></span>
+<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a><span class="co">#&gt;   Calcisols           0          0        0        0          0         0</span></span>
+<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a><span class="co">#&gt;   Cambisols           1          0        0        0          0         0</span></span>
+<span id="cb3-44"><a href="#cb3-44" tabindex="-1"></a><span class="co">#&gt;   Chernozems          0          1        0        0          0         0</span></span>
+<span id="cb3-45"><a href="#cb3-45" tabindex="-1"></a><span class="co">#&gt;   Cryosols            0          0        1        0          0         0</span></span>
+<span id="cb3-46"><a href="#cb3-46" tabindex="-1"></a><span class="co">#&gt;   Durisols            0          0        0        1          0         0</span></span>
+<span id="cb3-47"><a href="#cb3-47" tabindex="-1"></a><span class="co">#&gt;   Ferralsols          0          0        0        0          1         0</span></span>
+<span id="cb3-48"><a href="#cb3-48" tabindex="-1"></a><span class="co">#&gt;   Fluvisols           0          0        0        0          0         1</span></span>
+<span id="cb3-49"><a href="#cb3-49" tabindex="-1"></a><span class="co">#&gt;   Gleysols            0          0        0        0          0         0</span></span>
+<span id="cb3-50"><a href="#cb3-50" tabindex="-1"></a><span class="co">#&gt;   Gypsisols           0          0        0        0          0         0</span></span>
+<span id="cb3-51"><a href="#cb3-51" tabindex="-1"></a><span class="co">#&gt;   Histosols           0          0        0        0          0         0</span></span>
+<span id="cb3-52"><a href="#cb3-52" tabindex="-1"></a><span class="co">#&gt;   Kastanozems         0          0        0        0          0         0</span></span>
+<span id="cb3-53"><a href="#cb3-53" tabindex="-1"></a><span class="co">#&gt;   Leptosols           0          0        0        0          0         0</span></span>
+<span id="cb3-54"><a href="#cb3-54" tabindex="-1"></a><span class="co">#&gt;   Lixisols            0          0        0        0          0         0</span></span>
+<span id="cb3-55"><a href="#cb3-55" tabindex="-1"></a><span class="co">#&gt;   Luvisols            0          0        0        0          0         0</span></span>
+<span id="cb3-56"><a href="#cb3-56" tabindex="-1"></a><span class="co">#&gt;   Nitisols            0          0        0        0          0         0</span></span>
+<span id="cb3-57"><a href="#cb3-57" tabindex="-1"></a><span class="co">#&gt;   Phaeozems           0          0        0        0          0         0</span></span>
+<span id="cb3-58"><a href="#cb3-58" tabindex="-1"></a><span class="co">#&gt;   Planosols           0          0        0        0          0         0</span></span>
+<span id="cb3-59"><a href="#cb3-59" tabindex="-1"></a><span class="co">#&gt;   Plinthosols         0          0        0        0          0         0</span></span>
+<span id="cb3-60"><a href="#cb3-60" tabindex="-1"></a><span class="co">#&gt;   Podzols             0          0        0        0          0         0</span></span>
+<span id="cb3-61"><a href="#cb3-61" tabindex="-1"></a><span class="co">#&gt;   Retisols            0          0        0        0          0         0</span></span>
+<span id="cb3-62"><a href="#cb3-62" tabindex="-1"></a><span class="co">#&gt;   Solonchaks          0          0        0        0          0         0</span></span>
+<span id="cb3-63"><a href="#cb3-63" tabindex="-1"></a><span class="co">#&gt;   Solonetz            0          0        0        0          0         0</span></span>
+<span id="cb3-64"><a href="#cb3-64" tabindex="-1"></a><span class="co">#&gt;   Stagnosols          0          0        0        0          0         0</span></span>
+<span id="cb3-65"><a href="#cb3-65" tabindex="-1"></a><span class="co">#&gt;   Technosols          0          0        0        0          0         0</span></span>
+<span id="cb3-66"><a href="#cb3-66" tabindex="-1"></a><span class="co">#&gt;   Umbrisols           0          0        0        0          0         0</span></span>
+<span id="cb3-67"><a href="#cb3-67" tabindex="-1"></a><span class="co">#&gt;   Vertisols           0          0        0        0          0         0</span></span>
+<span id="cb3-68"><a href="#cb3-68" tabindex="-1"></a><span class="co">#&gt;              assigned</span></span>
+<span id="cb3-69"><a href="#cb3-69" tabindex="-1"></a><span class="co">#&gt; target        Gleysols Gypsisols Histosols Kastanozems Leptosols Lixisols</span></span>
+<span id="cb3-70"><a href="#cb3-70" tabindex="-1"></a><span class="co">#&gt;   Acrisols           0         0         0           0         0        0</span></span>
+<span id="cb3-71"><a href="#cb3-71" tabindex="-1"></a><span class="co">#&gt;   Alisols            0         0         0           0         0        0</span></span>
+<span id="cb3-72"><a href="#cb3-72" tabindex="-1"></a><span class="co">#&gt;   Andosols           0         0         0           0         0        0</span></span>
+<span id="cb3-73"><a href="#cb3-73" tabindex="-1"></a><span class="co">#&gt;   Anthrosols         0         0         0           0         0        0</span></span>
+<span id="cb3-74"><a href="#cb3-74" tabindex="-1"></a><span class="co">#&gt;   Arenosols          0         0         0           0         0        0</span></span>
+<span id="cb3-75"><a href="#cb3-75" tabindex="-1"></a><span class="co">#&gt;   Calcisols          0         0         0           0         0        0</span></span>
+<span id="cb3-76"><a href="#cb3-76" tabindex="-1"></a><span class="co">#&gt;   Cambisols          0         0         0           0         0        0</span></span>
+<span id="cb3-77"><a href="#cb3-77" tabindex="-1"></a><span class="co">#&gt;   Chernozems         0         0         0           0         0        0</span></span>
+<span id="cb3-78"><a href="#cb3-78" tabindex="-1"></a><span class="co">#&gt;   Cryosols           0         0         0           0         0        0</span></span>
+<span id="cb3-79"><a href="#cb3-79" tabindex="-1"></a><span class="co">#&gt;   Durisols           0         0         0           0         0        0</span></span>
+<span id="cb3-80"><a href="#cb3-80" tabindex="-1"></a><span class="co">#&gt;   Ferralsols         0         0         0           0         0        0</span></span>
+<span id="cb3-81"><a href="#cb3-81" tabindex="-1"></a><span class="co">#&gt;   Fluvisols          0         0         0           0         0        0</span></span>
+<span id="cb3-82"><a href="#cb3-82" tabindex="-1"></a><span class="co">#&gt;   Gleysols           1         0         0           0         0        0</span></span>
+<span id="cb3-83"><a href="#cb3-83" tabindex="-1"></a><span class="co">#&gt;   Gypsisols          0         1         0           0         0        0</span></span>
+<span id="cb3-84"><a href="#cb3-84" tabindex="-1"></a><span class="co">#&gt;   Histosols          0         0         1           0         0        0</span></span>
+<span id="cb3-85"><a href="#cb3-85" tabindex="-1"></a><span class="co">#&gt;   Kastanozems        0         0         0           1         0        0</span></span>
+<span id="cb3-86"><a href="#cb3-86" tabindex="-1"></a><span class="co">#&gt;   Leptosols          0         0         0           0         1        0</span></span>
+<span id="cb3-87"><a href="#cb3-87" tabindex="-1"></a><span class="co">#&gt;   Lixisols           0         0         0           0         0        1</span></span>
+<span id="cb3-88"><a href="#cb3-88" tabindex="-1"></a><span class="co">#&gt;   Luvisols           0         0         0           0         0        0</span></span>
+<span id="cb3-89"><a href="#cb3-89" tabindex="-1"></a><span class="co">#&gt;   Nitisols           0         0         0           0         0        0</span></span>
+<span id="cb3-90"><a href="#cb3-90" tabindex="-1"></a><span class="co">#&gt;   Phaeozems          0         0         0           0         0        0</span></span>
+<span id="cb3-91"><a href="#cb3-91" tabindex="-1"></a><span class="co">#&gt;   Planosols          0         0         0           0         0        0</span></span>
+<span id="cb3-92"><a href="#cb3-92" tabindex="-1"></a><span class="co">#&gt;   Plinthosols        0         0         0           0         0        0</span></span>
+<span id="cb3-93"><a href="#cb3-93" tabindex="-1"></a><span class="co">#&gt;   Podzols            0         0         0           0         0        0</span></span>
+<span id="cb3-94"><a href="#cb3-94" tabindex="-1"></a><span class="co">#&gt;   Retisols           0         0         0           0         0        0</span></span>
+<span id="cb3-95"><a href="#cb3-95" tabindex="-1"></a><span class="co">#&gt;   Solonchaks         0         0         0           0         0        0</span></span>
+<span id="cb3-96"><a href="#cb3-96" tabindex="-1"></a><span class="co">#&gt;   Solonetz           0         0         0           0         0        0</span></span>
+<span id="cb3-97"><a href="#cb3-97" tabindex="-1"></a><span class="co">#&gt;   Stagnosols         0         0         0           0         0        0</span></span>
+<span id="cb3-98"><a href="#cb3-98" tabindex="-1"></a><span class="co">#&gt;   Technosols         0         0         0           0         0        0</span></span>
+<span id="cb3-99"><a href="#cb3-99" tabindex="-1"></a><span class="co">#&gt;   Umbrisols          0         0         0           0         0        0</span></span>
+<span id="cb3-100"><a href="#cb3-100" tabindex="-1"></a><span class="co">#&gt;   Vertisols          0         0         0           0         0        0</span></span>
+<span id="cb3-101"><a href="#cb3-101" tabindex="-1"></a><span class="co">#&gt;              assigned</span></span>
+<span id="cb3-102"><a href="#cb3-102" tabindex="-1"></a><span class="co">#&gt; target        Luvisols Nitisols Phaeozems Planosols Plinthosols Podzols</span></span>
+<span id="cb3-103"><a href="#cb3-103" tabindex="-1"></a><span class="co">#&gt;   Acrisols           0        0         0         0           0       0</span></span>
+<span id="cb3-104"><a href="#cb3-104" tabindex="-1"></a><span class="co">#&gt;   Alisols            0        0         0         0           0       0</span></span>
+<span id="cb3-105"><a href="#cb3-105" tabindex="-1"></a><span class="co">#&gt;   Andosols           0        0         0         0           0       0</span></span>
+<span id="cb3-106"><a href="#cb3-106" tabindex="-1"></a><span class="co">#&gt;   Anthrosols         0        0         0         0           0       0</span></span>
+<span id="cb3-107"><a href="#cb3-107" tabindex="-1"></a><span class="co">#&gt;   Arenosols          0        0         0         0           0       0</span></span>
+<span id="cb3-108"><a href="#cb3-108" tabindex="-1"></a><span class="co">#&gt;   Calcisols          0        0         0         0           0       0</span></span>
+<span id="cb3-109"><a href="#cb3-109" tabindex="-1"></a><span class="co">#&gt;   Cambisols          0        0         0         0           0       0</span></span>
+<span id="cb3-110"><a href="#cb3-110" tabindex="-1"></a><span class="co">#&gt;   Chernozems         0        0         0         0           0       0</span></span>
+<span id="cb3-111"><a href="#cb3-111" tabindex="-1"></a><span class="co">#&gt;   Cryosols           0        0         0         0           0       0</span></span>
+<span id="cb3-112"><a href="#cb3-112" tabindex="-1"></a><span class="co">#&gt;   Durisols           0        0         0         0           0       0</span></span>
+<span id="cb3-113"><a href="#cb3-113" tabindex="-1"></a><span class="co">#&gt;   Ferralsols         0        0         0         0           0       0</span></span>
+<span id="cb3-114"><a href="#cb3-114" tabindex="-1"></a><span class="co">#&gt;   Fluvisols          0        0         0         0           0       0</span></span>
+<span id="cb3-115"><a href="#cb3-115" tabindex="-1"></a><span class="co">#&gt;   Gleysols           0        0         0         0           0       0</span></span>
+<span id="cb3-116"><a href="#cb3-116" tabindex="-1"></a><span class="co">#&gt;   Gypsisols          0        0         0         0           0       0</span></span>
+<span id="cb3-117"><a href="#cb3-117" tabindex="-1"></a><span class="co">#&gt;   Histosols          0        0         0         0           0       0</span></span>
+<span id="cb3-118"><a href="#cb3-118" tabindex="-1"></a><span class="co">#&gt;   Kastanozems        0        0         0         0           0       0</span></span>
+<span id="cb3-119"><a href="#cb3-119" tabindex="-1"></a><span class="co">#&gt;   Leptosols          0        0         0         0           0       0</span></span>
+<span id="cb3-120"><a href="#cb3-120" tabindex="-1"></a><span class="co">#&gt;   Lixisols           0        0         0         0           0       0</span></span>
+<span id="cb3-121"><a href="#cb3-121" tabindex="-1"></a><span class="co">#&gt;   Luvisols           1        0         0         0           0       0</span></span>
+<span id="cb3-122"><a href="#cb3-122" tabindex="-1"></a><span class="co">#&gt;   Nitisols           0        1         0         0           0       0</span></span>
+<span id="cb3-123"><a href="#cb3-123" tabindex="-1"></a><span class="co">#&gt;   Phaeozems          0        0         1         0           0       0</span></span>
+<span id="cb3-124"><a href="#cb3-124" tabindex="-1"></a><span class="co">#&gt;   Planosols          0        0         0         1           0       0</span></span>
+<span id="cb3-125"><a href="#cb3-125" tabindex="-1"></a><span class="co">#&gt;   Plinthosols        0        0         0         0           1       0</span></span>
+<span id="cb3-126"><a href="#cb3-126" tabindex="-1"></a><span class="co">#&gt;   Podzols            0        0         0         0           0       1</span></span>
+<span id="cb3-127"><a href="#cb3-127" tabindex="-1"></a><span class="co">#&gt;   Retisols           0        0         0         0           0       0</span></span>
+<span id="cb3-128"><a href="#cb3-128" tabindex="-1"></a><span class="co">#&gt;   Solonchaks         0        0         0         0           0       0</span></span>
+<span id="cb3-129"><a href="#cb3-129" tabindex="-1"></a><span class="co">#&gt;   Solonetz           0        0         0         0           0       0</span></span>
+<span id="cb3-130"><a href="#cb3-130" tabindex="-1"></a><span class="co">#&gt;   Stagnosols         0        0         0         0           0       0</span></span>
+<span id="cb3-131"><a href="#cb3-131" tabindex="-1"></a><span class="co">#&gt;   Technosols         0        0         0         0           0       0</span></span>
+<span id="cb3-132"><a href="#cb3-132" tabindex="-1"></a><span class="co">#&gt;   Umbrisols          0        0         0         0           0       0</span></span>
+<span id="cb3-133"><a href="#cb3-133" tabindex="-1"></a><span class="co">#&gt;   Vertisols          0        0         0         0           0       0</span></span>
+<span id="cb3-134"><a href="#cb3-134" tabindex="-1"></a><span class="co">#&gt;              assigned</span></span>
+<span id="cb3-135"><a href="#cb3-135" tabindex="-1"></a><span class="co">#&gt; target        Retisols Solonchaks Solonetz Stagnosols Technosols Umbrisols</span></span>
+<span id="cb3-136"><a href="#cb3-136" tabindex="-1"></a><span class="co">#&gt;   Acrisols           0          0        0          0          0         0</span></span>
+<span id="cb3-137"><a href="#cb3-137" tabindex="-1"></a><span class="co">#&gt;   Alisols            0          0        0          0          0         0</span></span>
+<span id="cb3-138"><a href="#cb3-138" tabindex="-1"></a><span class="co">#&gt;   Andosols           0          0        0          0          0         0</span></span>
+<span id="cb3-139"><a href="#cb3-139" tabindex="-1"></a><span class="co">#&gt;   Anthrosols         0          0        0          0          0         0</span></span>
+<span id="cb3-140"><a href="#cb3-140" tabindex="-1"></a><span class="co">#&gt;   Arenosols          0          0        0          0          0         0</span></span>
+<span id="cb3-141"><a href="#cb3-141" tabindex="-1"></a><span class="co">#&gt;   Calcisols          0          0        0          0          0         0</span></span>
+<span id="cb3-142"><a href="#cb3-142" tabindex="-1"></a><span class="co">#&gt;   Cambisols          0          0        0          0          0         0</span></span>
+<span id="cb3-143"><a href="#cb3-143" tabindex="-1"></a><span class="co">#&gt;   Chernozems         0          0        0          0          0         0</span></span>
+<span id="cb3-144"><a href="#cb3-144" tabindex="-1"></a><span class="co">#&gt;   Cryosols           0          0        0          0          0         0</span></span>
+<span id="cb3-145"><a href="#cb3-145" tabindex="-1"></a><span class="co">#&gt;   Durisols           0          0        0          0          0         0</span></span>
+<span id="cb3-146"><a href="#cb3-146" tabindex="-1"></a><span class="co">#&gt;   Ferralsols         0          0        0          0          0         0</span></span>
+<span id="cb3-147"><a href="#cb3-147" tabindex="-1"></a><span class="co">#&gt;   Fluvisols          0          0        0          0          0         0</span></span>
+<span id="cb3-148"><a href="#cb3-148" tabindex="-1"></a><span class="co">#&gt;   Gleysols           0          0        0          0          0         0</span></span>
+<span id="cb3-149"><a href="#cb3-149" tabindex="-1"></a><span class="co">#&gt;   Gypsisols          0          0        0          0          0         0</span></span>
+<span id="cb3-150"><a href="#cb3-150" tabindex="-1"></a><span class="co">#&gt;   Histosols          0          0        0          0          0         0</span></span>
+<span id="cb3-151"><a href="#cb3-151" tabindex="-1"></a><span class="co">#&gt;   Kastanozems        0          0        0          0          0         0</span></span>
+<span id="cb3-152"><a href="#cb3-152" tabindex="-1"></a><span class="co">#&gt;   Leptosols          0          0        0          0          0         0</span></span>
+<span id="cb3-153"><a href="#cb3-153" tabindex="-1"></a><span class="co">#&gt;   Lixisols           0          0        0          0          0         0</span></span>
+<span id="cb3-154"><a href="#cb3-154" tabindex="-1"></a><span class="co">#&gt;   Luvisols           0          0        0          0          0         0</span></span>
+<span id="cb3-155"><a href="#cb3-155" tabindex="-1"></a><span class="co">#&gt;   Nitisols           0          0        0          0          0         0</span></span>
+<span id="cb3-156"><a href="#cb3-156" tabindex="-1"></a><span class="co">#&gt;   Phaeozems          0          0        0          0          0         0</span></span>
+<span id="cb3-157"><a href="#cb3-157" tabindex="-1"></a><span class="co">#&gt;   Planosols          0          0        0          0          0         0</span></span>
+<span id="cb3-158"><a href="#cb3-158" tabindex="-1"></a><span class="co">#&gt;   Plinthosols        0          0        0          0          0         0</span></span>
+<span id="cb3-159"><a href="#cb3-159" tabindex="-1"></a><span class="co">#&gt;   Podzols            0          0        0          0          0         0</span></span>
+<span id="cb3-160"><a href="#cb3-160" tabindex="-1"></a><span class="co">#&gt;   Retisols           1          0        0          0          0         0</span></span>
+<span id="cb3-161"><a href="#cb3-161" tabindex="-1"></a><span class="co">#&gt;   Solonchaks         0          1        0          0          0         0</span></span>
+<span id="cb3-162"><a href="#cb3-162" tabindex="-1"></a><span class="co">#&gt;   Solonetz           0          0        1          0          0         0</span></span>
+<span id="cb3-163"><a href="#cb3-163" tabindex="-1"></a><span class="co">#&gt;   Stagnosols         0          0        0          1          0         0</span></span>
+<span id="cb3-164"><a href="#cb3-164" tabindex="-1"></a><span class="co">#&gt;   Technosols         0          0        0          0          1         0</span></span>
+<span id="cb3-165"><a href="#cb3-165" tabindex="-1"></a><span class="co">#&gt;   Umbrisols          0          0        0          0          0         1</span></span>
+<span id="cb3-166"><a href="#cb3-166" tabindex="-1"></a><span class="co">#&gt;   Vertisols          0          0        0          0          0         0</span></span>
+<span id="cb3-167"><a href="#cb3-167" tabindex="-1"></a><span class="co">#&gt;              assigned</span></span>
+<span id="cb3-168"><a href="#cb3-168" tabindex="-1"></a><span class="co">#&gt; target        Vertisols</span></span>
+<span id="cb3-169"><a href="#cb3-169" tabindex="-1"></a><span class="co">#&gt;   Acrisols            0</span></span>
+<span id="cb3-170"><a href="#cb3-170" tabindex="-1"></a><span class="co">#&gt;   Alisols             0</span></span>
+<span id="cb3-171"><a href="#cb3-171" tabindex="-1"></a><span class="co">#&gt;   Andosols            0</span></span>
+<span id="cb3-172"><a href="#cb3-172" tabindex="-1"></a><span class="co">#&gt;   Anthrosols          0</span></span>
+<span id="cb3-173"><a href="#cb3-173" tabindex="-1"></a><span class="co">#&gt;   Arenosols           0</span></span>
+<span id="cb3-174"><a href="#cb3-174" tabindex="-1"></a><span class="co">#&gt;   Calcisols           0</span></span>
+<span id="cb3-175"><a href="#cb3-175" tabindex="-1"></a><span class="co">#&gt;   Cambisols           0</span></span>
+<span id="cb3-176"><a href="#cb3-176" tabindex="-1"></a><span class="co">#&gt;   Chernozems          0</span></span>
+<span id="cb3-177"><a href="#cb3-177" tabindex="-1"></a><span class="co">#&gt;   Cryosols            0</span></span>
+<span id="cb3-178"><a href="#cb3-178" tabindex="-1"></a><span class="co">#&gt;   Durisols            0</span></span>
+<span id="cb3-179"><a href="#cb3-179" tabindex="-1"></a><span class="co">#&gt;   Ferralsols          0</span></span>
+<span id="cb3-180"><a href="#cb3-180" tabindex="-1"></a><span class="co">#&gt;   Fluvisols           0</span></span>
+<span id="cb3-181"><a href="#cb3-181" tabindex="-1"></a><span class="co">#&gt;   Gleysols            0</span></span>
+<span id="cb3-182"><a href="#cb3-182" tabindex="-1"></a><span class="co">#&gt;   Gypsisols           0</span></span>
+<span id="cb3-183"><a href="#cb3-183" tabindex="-1"></a><span class="co">#&gt;   Histosols           0</span></span>
+<span id="cb3-184"><a href="#cb3-184" tabindex="-1"></a><span class="co">#&gt;   Kastanozems         0</span></span>
+<span id="cb3-185"><a href="#cb3-185" tabindex="-1"></a><span class="co">#&gt;   Leptosols           0</span></span>
+<span id="cb3-186"><a href="#cb3-186" tabindex="-1"></a><span class="co">#&gt;   Lixisols            0</span></span>
+<span id="cb3-187"><a href="#cb3-187" tabindex="-1"></a><span class="co">#&gt;   Luvisols            0</span></span>
+<span id="cb3-188"><a href="#cb3-188" tabindex="-1"></a><span class="co">#&gt;   Nitisols            0</span></span>
+<span id="cb3-189"><a href="#cb3-189" tabindex="-1"></a><span class="co">#&gt;   Phaeozems           0</span></span>
+<span id="cb3-190"><a href="#cb3-190" tabindex="-1"></a><span class="co">#&gt;   Planosols           0</span></span>
+<span id="cb3-191"><a href="#cb3-191" tabindex="-1"></a><span class="co">#&gt;   Plinthosols         0</span></span>
+<span id="cb3-192"><a href="#cb3-192" tabindex="-1"></a><span class="co">#&gt;   Podzols             0</span></span>
+<span id="cb3-193"><a href="#cb3-193" tabindex="-1"></a><span class="co">#&gt;   Retisols            0</span></span>
+<span id="cb3-194"><a href="#cb3-194" tabindex="-1"></a><span class="co">#&gt;   Solonchaks          0</span></span>
+<span id="cb3-195"><a href="#cb3-195" tabindex="-1"></a><span class="co">#&gt;   Solonetz            0</span></span>
+<span id="cb3-196"><a href="#cb3-196" tabindex="-1"></a><span class="co">#&gt;   Stagnosols          0</span></span>
+<span id="cb3-197"><a href="#cb3-197" tabindex="-1"></a><span class="co">#&gt;   Technosols          0</span></span>
+<span id="cb3-198"><a href="#cb3-198" tabindex="-1"></a><span class="co">#&gt;   Umbrisols           0</span></span>
+<span id="cb3-199"><a href="#cb3-199" tabindex="-1"></a><span class="co">#&gt;   Vertisols           1</span></span></code></pre></div>
+</div>
+<div id="confusion-at-the-qualifier-level" class="section level1">
+<h1>3. Confusion at the qualifier level</h1>
+<p>Beyond the RSG, <code>classify_wrb2022()</code> returns the
+principal- and supplementary-qualifier lists. The benchmark can be
+deepened to track agreement on the <strong>qualifier prefix</strong> of
+the soil name (the strongest principal that fired). For the canonical
+fixtures:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>qualifier_prefix <span class="ot">&lt;-</span> <span class="fu">vapply</span>(<span class="fu">names</span>(expected), <span class="cf">function</span>(code) {</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  fx <span class="ot">&lt;-</span> fixfns[[code]]()</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <span class="fu">classify_wrb2022</span>(fx, <span class="at">on_missing =</span> <span class="st">&quot;silent&quot;</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">length</span>(res<span class="sc">$</span>qualifiers<span class="sc">$</span>principal) <span class="sc">==</span> <span class="dv">0</span>) <span class="cn">NA_character_</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="cf">else</span> res<span class="sc">$</span>qualifiers<span class="sc">$</span>principal[<span class="dv">1</span>]</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>}, <span class="fu">character</span>(<span class="dv">1</span>))</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">fixture          =</span> <span class="fu">names</span>(qualifier_prefix),</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>             <span class="at">principal_prefix =</span> qualifier_prefix),</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;Most-specific principal qualifier per canonical fixture.&quot;</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>)</span></code></pre></div>
+<table>
+<caption>Most-specific principal qualifier per canonical
+fixture.</caption>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="left">fixture</th>
+<th align="left">principal_prefix</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">HS</td>
+<td align="left">HS</td>
+<td align="left">Floatic</td>
+</tr>
+<tr class="even">
+<td align="left">AT</td>
+<td align="left">AT</td>
+<td align="left">Hortic</td>
+</tr>
+<tr class="odd">
+<td align="left">TC</td>
+<td align="left">TC</td>
+<td align="left">Mollic</td>
+</tr>
+<tr class="even">
+<td align="left">CR</td>
+<td align="left">CR</td>
+<td align="left">Cambic</td>
+</tr>
+<tr class="odd">
+<td align="left">LP</td>
+<td align="left">LP</td>
+<td align="left">Lithic</td>
+</tr>
+<tr class="even">
+<td align="left">SN</td>
+<td align="left">SN</td>
+<td align="left">Albic</td>
+</tr>
+<tr class="odd">
+<td align="left">VR</td>
+<td align="left">VR</td>
+<td align="left">Protocalcic</td>
+</tr>
+<tr class="even">
+<td align="left">SC</td>
+<td align="left">SC</td>
+<td align="left">Sodic</td>
+</tr>
+<tr class="odd">
+<td align="left">GL</td>
+<td align="left">GL</td>
+<td align="left">Haplic</td>
+</tr>
+<tr class="even">
+<td align="left">AN</td>
+<td align="left">AN</td>
+<td align="left">Vitric</td>
+</tr>
+<tr class="odd">
+<td align="left">PZ</td>
+<td align="left">PZ</td>
+<td align="left">Albic</td>
+</tr>
+<tr class="even">
+<td align="left">PT</td>
+<td align="left">PT</td>
+<td align="left">Plinthic</td>
+</tr>
+<tr class="odd">
+<td align="left">PL</td>
+<td align="left">PL</td>
+<td align="left">Albic</td>
+</tr>
+<tr class="even">
+<td align="left">ST</td>
+<td align="left">ST</td>
+<td align="left">Albic</td>
+</tr>
+<tr class="odd">
+<td align="left">NT</td>
+<td align="left">NT</td>
+<td align="left">Luvic</td>
+</tr>
+<tr class="even">
+<td align="left">FR</td>
+<td align="left">FR</td>
+<td align="left">Geric</td>
+</tr>
+<tr class="odd">
+<td align="left">CH</td>
+<td align="left">CH</td>
+<td align="left">Vermic</td>
+</tr>
+<tr class="even">
+<td align="left">KS</td>
+<td align="left">KS</td>
+<td align="left">Hypocalcic</td>
+</tr>
+<tr class="odd">
+<td align="left">PH</td>
+<td align="left">PH</td>
+<td align="left">Pachic</td>
+</tr>
+<tr class="even">
+<td align="left">UM</td>
+<td align="left">UM</td>
+<td align="left">Cambic</td>
+</tr>
+<tr class="odd">
+<td align="left">DU</td>
+<td align="left">DU</td>
+<td align="left">Duric</td>
+</tr>
+<tr class="even">
+<td align="left">GY</td>
+<td align="left">GY</td>
+<td align="left">Gypsic</td>
+</tr>
+<tr class="odd">
+<td align="left">CL</td>
+<td align="left">CL</td>
+<td align="left">Calcic</td>
+</tr>
+<tr class="even">
+<td align="left">RT</td>
+<td align="left">RT</td>
+<td align="left">Albic</td>
+</tr>
+<tr class="odd">
+<td align="left">AC</td>
+<td align="left">AC</td>
+<td align="left">Albic</td>
+</tr>
+<tr class="even">
+<td align="left">LX</td>
+<td align="left">LX</td>
+<td align="left">Albic</td>
+</tr>
+<tr class="odd">
+<td align="left">AL</td>
+<td align="left">AL</td>
+<td align="left">Hyperalic</td>
+</tr>
+<tr class="even">
+<td align="left">LV</td>
+<td align="left">LV</td>
+<td align="left">Albic</td>
+</tr>
+<tr class="odd">
+<td align="left">CM</td>
+<td align="left">CM</td>
+<td align="left">Eutric</td>
+</tr>
+<tr class="even">
+<td align="left">AR</td>
+<td align="left">AR</td>
+<td align="left">Protic</td>
+</tr>
+<tr class="odd">
+<td align="left">FL</td>
+<td align="left">FL</td>
+<td align="left">Haplic</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="benchmark-protocol-against-wosis-run-once-paper-grade" class="section level1">
+<h1>4. Benchmark protocol against WoSIS (run-once, paper-grade)</h1>
+<p>The mini-benchmark above proves the package’s internal consistency.
+The paper-grade benchmark runs the same flow against ISRIC WoSIS, a
+global archive of ~118 000 georeferenced pedon descriptions with WRB
+2014 / 2022 classifications.</p>
+<p>The protocol is intentionally separated from the package itself (no
+live download in vignettes) so it can be re-run at a controlled date.
+The driver script is shipped at
+<code>inst/benchmarks/run_wosis_benchmark.R</code>. Skeleton:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">library</span>(soilKey)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co"># 1. Pull a snapshot of WoSIS profiles via the WoSIS API.</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>profiles <span class="ot">&lt;-</span> <span class="fu">read_wosis_profiles</span>(</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">url     =</span> <span class="st">&quot;https://wosis.isric.org/api/v3/profiles?format=json&quot;</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">page_size =</span> <span class="dv">500</span><span class="dt">L</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>)</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co"># 2. Build a PedonRecord per profile.</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>pedons <span class="ot">&lt;-</span> <span class="fu">lapply</span>(profiles, build_pedon_from_wosis)</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co"># 3. Classify each through the v0.9.3 key.</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>classifications <span class="ot">&lt;-</span> <span class="fu">lapply</span>(pedons, classify_wrb2022, <span class="at">on_missing =</span> <span class="st">&quot;silent&quot;</span>)</span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co"># 4. Compare against the WoSIS-recorded RSG.</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a>bench <span class="ot">&lt;-</span> <span class="fu">mapply</span>(<span class="cf">function</span>(c, p) {</span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a>  <span class="fu">data.frame</span>(</span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a>    <span class="at">profile_id  =</span> p<span class="sc">$</span>site<span class="sc">$</span>id,</span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a>    <span class="at">target_rsg  =</span> p<span class="sc">$</span>site<span class="sc">$</span>wosis_rsg,</span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a>    <span class="at">assigned    =</span> c<span class="sc">$</span>rsg_or_order,</span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a>    <span class="at">grade       =</span> c<span class="sc">$</span>evidence_grade,</span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a>    <span class="at">match       =</span> c<span class="sc">$</span>rsg_or_order <span class="sc">==</span> p<span class="sc">$</span>site<span class="sc">$</span>wosis_rsg</span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a>  )</span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a>}, classifications, pedons, <span class="at">SIMPLIFY =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a>bench <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, bench)</span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a></span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="co"># 5. Headline numbers.</span></span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a><span class="fu">list</span>(</span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a>  <span class="at">n              =</span> <span class="fu">nrow</span>(bench),</span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a>  <span class="at">top1           =</span> <span class="fu">mean</span>(bench<span class="sc">$</span>match, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a>  <span class="at">indeterminate  =</span> <span class="fu">mean</span>(<span class="fu">is.na</span>(bench<span class="sc">$</span>assigned)),</span>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a>  <span class="at">pct_grade_A    =</span> <span class="fu">mean</span>(bench<span class="sc">$</span>grade <span class="sc">==</span> <span class="st">&quot;A&quot;</span>),</span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a>  <span class="at">by_rsg         =</span> <span class="fu">table</span>(bench<span class="sc">$</span>target_rsg, bench<span class="sc">$</span>assigned)</span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a>)</span></code></pre></div>
+<p>The same flow extends naturally to:</p>
+<ul>
+<li><strong>WoSIS subsets by region</strong> – e.g. South America only,
+or Brazilian profiles only (most relevant for the SiBCS cross-system
+check).</li>
+<li><strong>WoSIS profiles missing one or more attributes</strong> –
+exercise the gap-filling pipeline (vignette 05) and report the agreement
+uplift from <code>predicted_spectra</code>.</li>
+<li><strong>WoSIS profiles labelled with v2014 vs v2022 RSGs</strong> –
+the benchmark separates them so <code>soilKey</code>’s v2022-only key is
+not penalised when WoSIS used a deprecated RSG name.</li>
+</ul>
+</div>
+<div id="reporting-standards" class="section level1">
+<h1>5. Reporting standards</h1>
+<p>Each benchmark run produces a versioned report at
+<code>inst/benchmarks/reports/wosis_&lt;DATE&gt;.md</code>
+containing:</p>
+<ul>
+<li>Snapshot date and WoSIS subset used.</li>
+<li>Top-1 / Top-3 agreement, with 95% CI from a non-parametric
+bootstrap.</li>
+<li>Confusion matrix (RSG-level) and qualifier-prefix agreement.</li>
+<li>Per-RSG agreement and the most common confused pair for each.</li>
+<li>Evidence-grade distribution.</li>
+<li>Notable disagreements with diagnostic-level traces, for QA.</li>
+</ul>
+<p>The same script is used for the periodic regression run that ships
+with each minor <code>soilKey</code> release.</p>
+</div>
+<div id="offline-canonical-fixture-run-release-time-sanity-check" class="section level1">
+<h1>6. Offline canonical-fixture run (release-time sanity check)</h1>
+<p>The package ships an offline benchmark driver alongside the WoSIS one
+— <code>run_canonical_benchmark()</code> in
+<code>inst/benchmarks/run_wosis_benchmark.R</code> — that loops over the
+31 canonical fixtures under <code>inst/extdata/</code>, runs all three
+keys, compares to the known target encoded in the filename and the
+cross-system correspondence table (Schad 2023 Annex Table 1; SiBCS 5ª
+ed. Annex A), and writes a versioned report to
+<code>inst/benchmarks/reports/canonical_&lt;DATE&gt;.md</code>.</p>
+<p>Sourcing the file and running it from the package root produces real,
+reproducible numbers without any network call:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">source</span>(<span class="fu">system.file</span>(<span class="st">&quot;benchmarks&quot;</span>, <span class="st">&quot;run_wosis_benchmark.R&quot;</span>,</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>                    <span class="at">package =</span> <span class="st">&quot;soilKey&quot;</span>))</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>bench <span class="ot">&lt;-</span> <span class="fu">run_canonical_benchmark</span>()</span></code></pre></div>
+<p>The most recent canonical run (committed under
+<code>inst/benchmarks/reports/</code>) achieved:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">System</th>
+<th align="right">n</th>
+<th align="right">match</th>
+<th align="right">top-1</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">WRB 2022</td>
+<td align="right">31</td>
+<td align="right">31</td>
+<td align="right">1.000</td>
+</tr>
+<tr class="even">
+<td align="left">SiBCS 5</td>
+<td align="right">20</td>
+<td align="right">20</td>
+<td align="right">1.000</td>
+</tr>
+<tr class="odd">
+<td align="left">USDA ST 13</td>
+<td align="right">31</td>
+<td align="right">31</td>
+<td align="right">1.000</td>
+</tr>
+</tbody>
+</table>
+<p>The canonical run is the release-time CI check that the key +
+qualifier system + cross-system mapping all hold up; the WoSIS run is
+the paper-grade external validation.</p>
+</div>
+<div id="summary" class="section level1">
+<h1>Summary</h1>
+<p><code>soilKey</code>’s benchmarking layer is intentionally
+minimal:</p>
+<ol style="list-style-type: decimal">
+<li>The mini-benchmark on canonical fixtures (this vignette) is fully
+reproducible inside the rendered HTML and acts as a CI check that the
+key + qualifier system holds 100% top-1 agreement on profiles
+constructed to match each RSG.</li>
+<li>The offline <code>run_canonical_benchmark()</code> driver runs all
+three systems against multi-valued cross-system targets and writes a
+versioned report — invoked once per release, network-free.</li>
+<li>The full WoSIS benchmark is run-once-per-release, off-line for the
+paper, with the driver script and reports versioned under
+<code>inst/benchmarks/</code>.</li>
+<li>All three layers report by the same metrics so comparison across
+releases is direct.</li>
+</ol>
+<p>This closes the methodological loop opened in the architecture
+document: the deterministic key, the side modules (VLM, spatial, OSSL),
+and the benchmark are integrated without any of them being able to
+overrule the others.</p>
+</div>
+<div id="v0.9.27-per-page-retry-graceful-degradation" class="section level1">
+<h1>7. v0.9.27 – per-page retry + graceful degradation</h1>
+<p>The ISRIC WoSIS GraphQL endpoint occasionally returns <em>“canceling
+statement due to statement timeout”</em> under load — we observed this
+consistently after ~40 profiles per session in May 2026. A naïve
+<code>read_wosis_profiles_graphql()</code> would abort the whole pull
+and surface a hard error; that is unfriendly when 30+ profiles already
+came back fine.</p>
+<p><code>v0.9.27</code> adds a <strong>per-page retry with exponential
+backoff</strong> (1 s, 2 s, 4 s, 8 s; up to 4 attempts) plus
+<strong>graceful degradation</strong>: once at least one page has
+succeeded, transient failures on later pages return the partial pull
+rather than aborting. This makes the live WoSIS benchmark robust enough
+to run from CI and from casual user sessions without surprise
+crashes.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">source</span>(<span class="fu">system.file</span>(<span class="st">&quot;benchmarks&quot;</span>, <span class="st">&quot;run_wosis_benchmark.R&quot;</span>,</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>                    <span class="at">package =</span> <span class="st">&quot;soilKey&quot;</span>))</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>profs <span class="ot">&lt;-</span> <span class="fu">read_wosis_profiles_graphql</span>(</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">continent =</span> <span class="st">&quot;South America&quot;</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">n_max     =</span> <span class="dv">100</span><span class="dt">L</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">page_size =</span> <span class="dv">10</span><span class="dt">L</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">verbose   =</span> <span class="cn">TRUE</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>)</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="fu">length</span>(profs)</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; [1] 40   # 100 was requested but server timed out at offset = 40;</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt;          # the partial pull was returned cleanly.</span></span></code></pre></div>
+</div>
+<div id="v0.9.30-bundled-wosis-sample-for-offline-ci-testing" class="section level1">
+<h1>8. v0.9.30 – bundled WoSIS sample for offline / CI testing</h1>
+<p>For tests, CI, and casual users who want to exercise the WRB
+benchmark path without depending on ISRIC server availability,
+<code>v0.9.30</code> ships a frozen 40-profile snapshot under
+<code>inst/extdata/wosis_sa_sample.rds</code> (49 KB). Helper:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>sample <span class="ot">&lt;-</span> <span class="fu">load_wosis_sample</span>()</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">length</span>(sample<span class="sc">$</span>pedons)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; [1] 40</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>sample<span class="sc">$</span>pulled_on</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; [1] &quot;2026-05-03&quot;</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co"># Classify offline:</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="fu">classify_wrb2022</span>(sample<span class="sc">$</span>pedons[[<span class="dv">1</span>]])<span class="sc">$</span>rsg_or_order</span></code></pre></div>
+<p>The bundled snapshot is for <strong>reproducible tests, not current
+ground-truth claims</strong>. For up-to-date paper-grade benchmarks,
+callers should still use <code>run_wosis_benchmark_graphql()</code>
+against the live endpoint.</p>
+<p>For the <strong>multi-level USDA Soil Taxonomy benchmark</strong>
+(Order / Suborder / Great Group / Subgroup) on the KSSL gpkg + NASIS
+sqlite join, see vignette <code>v08_kssl_nasis_multilevel</code>.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
