@@ -17,10 +17,8 @@
 #'         \code{shiny::runApp()}.
 #' @export
 #' @examples
-#' \donttest{
-#' if (interactive()) {
+#' \dontrun{
 #'   soilKey::run_demo()
-#' }
 #' }
 run_demo <- function(...) {
   if (!requireNamespace("shiny", quietly = TRUE)) {

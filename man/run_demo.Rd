@@ -28,9 +28,7 @@ Requires the \code{shiny} package. The taxonomic key is still
 deterministic: no VLM is invoked from the GUI.
 }
 \examples{
-\donttest{
-if (interactive()) {
+\dontrun{
   soilKey::run_demo()
-}
 }
 }

@@ -59,20 +59,18 @@ object returned here will dispatch over HTTP locally.
 
 \examples{
 \dontshow{if (requireNamespace("ellmer", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-\donttest{
-# Each provider needs either an API key (cloud) or a running daemon
-# (Ollama); the example no-ops on CRAN when neither is available.
-if (nzchar(Sys.getenv("ANTHROPIC_API_KEY"))) {
-  provider <- try(vlm_provider("anthropic"), silent = TRUE)
-}
-if (interactive()) {
-  # Local Gemma 4 edge model -- default, ~3 GB, runs anywhere
-  provider <- try(vlm_provider("ollama"), silent = TRUE)
+\dontrun{
+# Cloud provider (needs ANTHROPIC_API_KEY)
+provider <- vlm_provider("anthropic")
 
-  # Local Gemma 4 frontier dense model -- best quality
-  provider <- try(vlm_provider("ollama", model = "gemma4:31b"),
-                  silent = TRUE)
-}
+# Local Gemma 4 edge model -- default, ~3 GB, runs anywhere
+provider <- vlm_provider("ollama")
+
+# Local Gemma 4 frontier dense model -- best quality
+provider <- vlm_provider("ollama", model = "gemma4:31b")
+
+# Any other multimodal model the user has pulled
+provider <- vlm_provider("ollama", model = "qwen2.5vl:32b")
 }
 \dontshow{\}) # examplesIf}
 }

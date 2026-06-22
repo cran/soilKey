@@ -57,27 +57,23 @@ academic use and publications must cite the source per ABNT.
 the function click "Concordo" on your behalf.}
 }
 \examples{
-\donttest{
-if (requireNamespace("chromote", quietly = TRUE) && interactive()) {
-  out_dir <- file.path(tempdir(), "bdsolos")
-  dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+\dontrun{
+# Single UF (fast, recommended)
+download_bdsolos("soil_data/bdsolos/RJ.csv",
+                  accept_terms = TRUE,
+                  filter_uf    = "RJ")
 
-  # Single UF (fast, recommended)
-  download_bdsolos(file.path(out_dir, "RJ.csv"),
-                    accept_terms = TRUE,
-                    filter_uf    = "RJ")
-
-  # Stitch multiple UFs
-  for (uf in c("RJ", "SP", "MG", "ES")) {
-    download_bdsolos(file.path(out_dir, paste0(uf, ".csv")),
-                      accept_terms = TRUE, filter_uf = uf)
-  }
-
-  # Then load all of them
-  csvs <- list.files(out_dir, "\\\\.csv$", full.names = TRUE)
-  all_pedons <- unlist(lapply(csvs, load_bdsolos_csv), recursive = FALSE)
-  length(all_pedons)
+# Stitch multiple UFs
+for (uf in c("RJ", "SP", "MG", "ES")) {
+  download_bdsolos(file.path("soil_data/bdsolos",
+                               paste0(uf, ".csv")),
+                    accept_terms = TRUE, filter_uf = uf)
 }
+
+# Then load all of them
+csvs <- list.files("soil_data/bdsolos", "\\\\.csv$", full.names = TRUE)
+all_pedons <- unlist(lapply(csvs, load_bdsolos_csv), recursive = FALSE)
+length(all_pedons)
 }
 }
 \seealso{

@@ -27,7 +27,7 @@
 #' }
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_oc_g_kg Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 horizonte_histico <- function(pedon, min_oc_g_kg = 80) {
   h <- pedon$horizons
   # Convert g/kg threshold to %.
@@ -99,7 +99,7 @@ horizonte_histico <- function(pedon, min_oc_g_kg = 80) {
 #' @param max_chroma_moist Numeric threshold or option (see Details).
 #' @param max_value_dry Numeric threshold or option (see Details).
 #' @param min_thickness_cm Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 horizonte_A_chernozemico <- function(pedon,
                                         min_oc_g_kg = 6,
                                         min_v_pct   = 65,
@@ -108,7 +108,24 @@ horizonte_A_chernozemico <- function(pedon,
                                         max_value_dry   = 5,
                                         min_thickness_cm = 18) {
   h <- pedon$horizons
-  candidates <- which(!is.na(h$top_cm) & h$top_cm <= 5)
+  # v0.9.107: the chernic A may be split across stacked A horizons (A1/A2/...);
+  # take the CONTIGUOUS run of A-master horizons from the surface so the
+  # thickness test aggregates the whole chernic A, not just the topmost slice.
+  ord <- order(h$top_cm, na.last = NA)
+  candidates <- integer(0); prev_bot <- 0
+  for (i in ord) {
+    if (is.na(h$top_cm[i])) next
+    is_A <- grepl("^[0-9]*A", h$designation[i] %||% "")
+    if (length(candidates) == 0L) {
+      if (h$top_cm[i] <= 5 && is_A) {
+        candidates <- i
+        prev_bot <- h$bottom_cm[i] %||% h$top_cm[i]
+      }
+    } else if (is_A && h$top_cm[i] <= prev_bot + 1) {
+      candidates <- c(candidates, i)
+      prev_bot <- h$bottom_cm[i] %||% prev_bot
+    } else break
+  }
   if (length(candidates) == 0L) {
     return(DiagnosticResult$new(
       name = "horizonte_A_chernozemico",
@@ -134,9 +151,13 @@ horizonte_A_chernozemico <- function(pedon,
     color_ok <- (is.na(vm) || vm <= max_value_moist) &&
                   (is.na(cm) || cm <= max_chroma_moist) &&
                   (is.na(vd) || vd <= max_value_dry)
+    # v0.9.136: SiBCS Cap 2 p.50 (criterion a) requires structure of grade
+    # "predominantemente moderado ou forte". The prior test only excluded
+    # massive/grain/loose, so a WEAK grade wrongly passed. refine-when-present:
+    # a RECORDED grade must read moderate/strong; absent grade (NA) leaves the
+    # result byte-identical to the pre-v0.9.136 behaviour.
     struct_ok <- is.na(grade) ||
-                   !grepl("massive|grain|loose", grade,
-                            ignore.case = TRUE)
+                   grepl("moder|strong|forte", grade, ignore.case = TRUE)
     layer_pass <- oc_g_kg >= min_oc_g_kg && v >= min_v_pct &&
                     color_ok && struct_ok
     details[[as.character(i)]] <- list(
@@ -148,11 +169,48 @@ horizonte_A_chernozemico <- function(pedon,
   thickness <- if (length(passing) > 0L)
                  sum(h$bottom_cm[passing] - h$top_cm[passing], na.rm = TRUE)
                else 0
-  passed <- length(passing) > 0L && thickness >= min_thickness_cm
+  # v0.9.136: SiBCS Cap 2 p.51 (criterion e) makes the minimum thickness
+  # conditional on solum depth and lithic contact, not a flat 18 cm:
+  #   - >= 10 cm if the A sits directly over a lithic / lithic-fragmentary
+  #     contact (no B horizon);
+  #   - >= 18 cm AND > 1/3 of the solum (A+B), when the solum < 75 cm;
+  #   - >= 25 cm, when the solum >= 75 cm.
+  # min_thickness_cm (default 18) is retained as the fallback used only when
+  # the solum depth cannot be established (no designation / bottom data).
+  desig_all <- h$designation %||% rep(NA_character_, nrow(h))
+  is_B    <- !is.na(desig_all) & grepl("^[0-9]*B", desig_all)
+  is_rock <- !is.na(desig_all) & grepl("^[0-9]*(R|Cr|Cd)", desig_all)
+  a_bottom <- if (length(passing) > 0L)
+                suppressWarnings(max(h$bottom_cm[passing], na.rm = TRUE))
+              else NA_real_
+  if (any(is_B)) {
+    solum_cm <- suppressWarnings(max(h$bottom_cm[is_B], na.rm = TRUE))
+  } else {
+    nonrock <- which(!is_rock & !is.na(h$bottom_cm))
+    solum_cm <- if (length(nonrock))
+                  suppressWarnings(max(h$bottom_cm[nonrock], na.rm = TRUE))
+                else NA_real_
+  }
+  over_rock <- !any(is_B) && any(is_rock & !is.na(h$top_cm) &
+                                   !is.na(a_bottom) &
+                                   h$top_cm <= a_bottom + 1)
+  if (length(passing) == 0L) {
+    thick_ok <- FALSE
+  } else if (over_rock) {
+    thick_ok <- thickness >= 10
+  } else if (is.finite(solum_cm) && solum_cm >= 75) {
+    thick_ok <- thickness >= 25
+  } else if (is.finite(solum_cm)) {
+    thick_ok <- thickness >= 18 && thickness > solum_cm / 3
+  } else {
+    thick_ok <- thickness >= min_thickness_cm
+  }
+  passed <- length(passing) > 0L && thick_ok
   DiagnosticResult$new(
     name = "horizonte_A_chernozemico",
     passed = passed, layers = passing,
-    evidence = list(layers = details, thickness_cm = thickness),
+    evidence = list(layers = details, thickness_cm = thickness,
+                     solum_cm = solum_cm, over_rock = over_rock),
     missing = unique(missing),
     reference = "Embrapa (2018), SiBCS 5a ed., Cap 2, p. 50-51"
   )
@@ -167,7 +225,7 @@ horizonte_A_chernozemico <- function(pedon,
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_v_pct_max Numeric threshold or option (see Details).
 #' @param min_thickness_cm Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 horizonte_A_humico <- function(pedon, min_v_pct_max = 65,
                                   min_thickness_cm = 18) {
   h <- pedon$horizons
@@ -215,9 +273,18 @@ horizonte_A_humico <- function(pedon, min_v_pct_max = 65,
   bs_vals <- h$bs_pct[a_layers]
   v_max <- if (any(!is.na(bs_vals))) max(bs_vals, na.rm = TRUE) else NA_real_
   thickness_cm <- thickness_dm * 10
+  # v0.9.136: SiBCS Cap 2 p.51 opens the A humico definition with "valor e
+  # croma (cor do solo umido) iguais ou inferiores a 4". The prior code never
+  # checked colour, so an A meeting only the CO inequation could pass even if
+  # light-coloured. refine-when-present: an A sub-horizon carrying a RECORDED
+  # value/chroma (moist) > 4 disqualifies; absent colour (all NA) leaves the
+  # result byte-identical to the pre-v0.9.136 behaviour.
+  vm_a <- h$munsell_value_moist[a_layers]
+  cm_a <- h$munsell_chroma_moist[a_layers]
+  color_ok <- all(is.na(vm_a) | vm_a <= 4) && all(is.na(cm_a) | cm_a <= 4)
   passed <- !is.na(threshold) && oc_total >= threshold &&
               !is.na(v_max) && v_max < min_v_pct_max &&
-              thickness_cm >= min_thickness_cm
+              thickness_cm >= min_thickness_cm && color_ok
   DiagnosticResult$new(
     name = "horizonte_A_humico",
     passed = passed, layers = a_layers,
@@ -226,6 +293,7 @@ horizonte_A_humico <- function(pedon, min_v_pct_max = 65,
       oc_total_g_dm_kg = oc_total,
       threshold = threshold,
       bs_pct_max = v_max,
+      color_ok = color_ok,
       thickness_cm = thickness_cm
     ),
     missing = character(0),
@@ -238,7 +306,7 @@ horizonte_A_humico <- function(pedon, min_v_pct_max = 65,
 #'
 #' Como A chernozemico (cor escura, OC >= 6 g/kg) **mas com V < 65\%**.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 horizonte_A_proeminente <- function(pedon) {
   ch <- horizonte_A_chernozemico(pedon, min_v_pct = 0)  # bypass V check
   if (!isTRUE(ch$passed)) {
@@ -271,13 +339,34 @@ horizonte_A_proeminente <- function(pedon) {
 #' \\>= 30 mg/kg + evidencias antropogenicas. Reuso de \code{\link{hortic}}
 #' (WRB) com criterios SiBCS-specific.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 horizonte_A_antropico <- function(pedon) {
   res <- hortic(pedon, min_thickness = 20, min_oc = 0.6,
                   min_p_mehlich3 = 30)
+  # SiBCS Cap 2 p.53: the espessura >= 20 cm "e" P-Mehlich1 >= 30 mg/kg
+  # requirements are an AND (verbatim connector "e"), which hortic already
+  # enforces -- so no logic change there. But the manual ALSO makes the
+  # presence of human artefacts (ceramica / litico / ossos / conchas /
+  # carvao-cinzas) "de presenca OBRIGATORIA". The prior wrapper omitted that
+  # gate, so any P-rich thick surface keyed as antropico without artefacts.
+  # v0.9.136 refine-when-present: when artefacts_pct is RECORDED and absent
+  # (all zero) in the diagnostic layers, the horizon cannot be antropico;
+  # when the column is absent / NA we cannot disprove it and defer to hortic
+  # (byte-identical on data lacking the field, e.g. every benchmark pedon).
+  h <- pedon$horizons
+  art <- h[["artefacts_pct"]]
+  has_art_data <- !is.null(art) && any(!is.na(art))
+  if (has_art_data) {
+    lyr <- if (length(res$layers)) res$layers else which(!is.na(art))
+    artefacts_present <- any(!is.na(art[lyr]) & art[lyr] > 0)
+    passed <- if (!artefacts_present) FALSE else res$passed
+  } else {
+    passed <- res$passed
+  }
   DiagnosticResult$new(
-    name = "horizonte_A_antropico", passed = res$passed,
-    layers = res$layers, evidence = list(hortic = res),
+    name = "horizonte_A_antropico", passed = passed,
+    layers = res$layers,
+    evidence = list(hortic = res, artefacts_recorded = has_art_data),
     missing = res$missing,
     reference = "Embrapa (2018), SiBCS 5a ed., Cap 2, p. 53"
   )
@@ -287,7 +376,7 @@ horizonte_A_antropico <- function(pedon) {
 #' Horizonte A fraco (SiBCS Cap 2, p 53): cor clara + estrutura grao
 #' simples/macica + OC < 6 g/kg; OR espessura < 5 cm.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 horizonte_A_fraco <- function(pedon) {
   h <- pedon$horizons
   candidates <- which(!is.na(h$top_cm) & h$top_cm <= 5)
@@ -342,7 +431,7 @@ horizonte_A_fraco <- function(pedon) {
 #' Returns TRUE quando o solo tem horizonte superficial mas nao se
 #' enquadra nas demais classes diagnosticas superficiais.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 horizonte_A_moderado <- function(pedon) {
   others <- list(
     histico    = horizonte_histico(pedon),
@@ -386,13 +475,29 @@ horizonte_A_moderado <- function(pedon) {
 #' estruturas (criterio i.1 / i.2 / i.3); lamelas \\>= 15 cm combinadas.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param ... Reserved for future arguments.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 B_textural <- function(pedon, ...) {
   res <- argic(pedon, ...)
+  # v0.9.138: UNION the verbatim SiBCS Cap 2 p.56 item (h) relacao-textural
+  # ratio (test_ratio_textural_sibcs) with the WRB argic clay-increase. The two
+  # mostly coincide -- (h) is a subset of argic EXCEPT for very sandy A horizons
+  # (clay < ~7.5%), where the ratio (>1.80) is a smaller absolute jump than
+  # argic's +6 pp. The union therefore only ADDS sandy-A B-textural cases argic
+  # misses; it can never remove an argic pass. Other paths -- (f) E-horizon,
+  # (g) abrupt change, (i) cerosidade, (j) lithologic discontinuity -- remain
+  # delegated/deferred (cerosidade morphology is data-sparse).
+  h_ratio <- test_ratio_textural_sibcs(pedon$horizons)
+  if (isTRUE(h_ratio$passed)) {
+    res$layers <- union(res$layers %||% integer(0), h_ratio$layers)
+    res$passed <- length(res$layers) > 0L
+    res$evidence <- c(res$evidence %||% list(),
+                       list(relacao_textural_sibcs = h_ratio))
+  }
   res$name      <- "B_textural"
   res$reference <- "Embrapa (2018), SiBCS 5a ed., Cap 2, p. 54-57"
-  res$notes     <- paste0("v0.7: clay-increase via WRB argic; ",
-                            "criterios de cerosidade e lamelas em v0.8")
+  res$notes     <- paste0("v0.9.138: clay-increase via WRB argic UNION SiBCS ",
+                            "relacao-textural (h); cerosidade (i)/lamelas em v0.8")
   res
 }
 
@@ -424,6 +529,7 @@ B_textural <- function(pedon, ...) {
 #'   \code{NULL} reads \code{getOption("soilKey.diagnostic_engine")}.
 #'   Forwarded to \code{\link{ferralic}}.
 #' @param ... Reserved for future arguments.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 B_latossolico <- function(pedon, min_thickness = 50,
                               max_cec_per_clay = NULL,
@@ -528,6 +634,7 @@ B_latossolico <- function(pedon, min_thickness = 50,
 #' }
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_thickness Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 B_incipiente <- function(pedon, min_thickness = 10) {
   h <- pedon$horizons
@@ -550,11 +657,28 @@ B_incipiente <- function(pedon, min_thickness = 10) {
   esp  <- spodic(pedon)
   plan <- planic_features(pedon)
   ver  <- vertic_horizon(pedon)
+  # v0.9.137: SiBCS Cap 2 p.60 (a) -- B incipiente must ALSO NOT show
+  # cementation/hardening (duripa, petrocalcico), fragipa brittleness, the
+  # plinthite of a plintico, nor distinct gleyic reduction. The prior list
+  # missed these five, so a cemented Bkm (petrocalcico) or a gleyed Bg could
+  # leak through the ^B[wikvgnzj] designation gate (which admits k and g).
+  # Each test returns no layers when its evidence is absent, so the added
+  # exclusions are byte-identical on pedons lacking that evidence.
+  dur  <- duric_horizon(pedon)
+  pet  <- petrocalcic(pedon)
+  fra  <- fragic(pedon)
+  pli  <- plinthic(pedon)
+  gle  <- gleyic_properties(pedon)
   excluded <- unique(c(fer$layers %||% integer(0),
                         arg$layers %||% integer(0),
                         esp$layers %||% integer(0),
                         plan$layers %||% integer(0),
-                        ver$layers %||% integer(0)))
+                        ver$layers %||% integer(0),
+                        dur$layers %||% integer(0),
+                        pet$layers %||% integer(0),
+                        fra$layers %||% integer(0),
+                        pli$layers %||% integer(0),
+                        gle$layers %||% integer(0)))
   layers_ok <- setdiff(candidates, excluded)
   thick_test <- test_minimum_thickness(h, min_cm = min_thickness,
                                           candidate_layers = layers_ok)
@@ -567,7 +691,9 @@ B_incipiente <- function(pedon, min_thickness = 10) {
       thickness   = thick_test,
       excluded_by = list(ferralic = fer$layers, argic = arg$layers,
                            spodic = esp$layers, planic = plan$layers,
-                           vertic = ver$layers)
+                           vertic = ver$layers, duric = dur$layers,
+                           petrocalcic = pet$layers, fragic = fra$layers,
+                           plinthic = pli$layers, gleyic = gle$layers)
     ),
     missing = c(desg_match$missing, thick_test$missing),
     reference = "Embrapa (2018), SiBCS 5a ed., Cap 2, p. 59-61"
@@ -588,6 +714,7 @@ B_incipiente <- function(pedon, min_thickness = 10) {
 #' @param min_clay_pct Numeric threshold or option (see Details).
 #' @param max_b_a_ratio Numeric threshold or option (see Details).
 #' @param min_cerosidade Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 B_nitico <- function(pedon, min_thickness = 30, min_clay_pct = 35,
                         max_b_a_ratio = 1.5,
@@ -618,32 +745,50 @@ B_nitico <- function(pedon, min_thickness = 30, min_clay_pct = 35,
   # nitico structure descriptor in tropical Nitossolos (estrutura em
   # blocos sub-angulares evoluindo para "poliedrica") that the older
   # regex was missing.
-  struct_ok <- any(!is.na(h$structure_type[clay_ok]) &
-                     grepl(paste0("blocks|block|blocos|bloco|",
-                                    "prismatic|prismatica|",
-                                    "polyhedral|polyedric|poliedric"),
-                              h$structure_type[clay_ok], ignore.case = TRUE))
-  # Step 4: cerosidade (clay_films_amount) no minimo "comum" -- discriminante
-  # critico vs Latossolos (que tem no maximo "pouca e fraca")
-  cerosidade_ok <- any(!is.na(h$clay_films_amount[clay_ok]) &
-                           h$clay_films_amount[clay_ok] %in% min_cerosidade)
-  # Step 5: thickness
-  thk <- test_minimum_thickness(h, min_cm = min_thickness,
+  # v0.9.137: SiBCS Cap 2 p.62 (c) requires the structure GRADE to be moderate
+  # or strong (not merely the type in blocks/prismatic). refine-when-present:
+  # a RECORDED structure_grade must read moderate/strong; NA grade -> the layer
+  # is admitted as before (byte-identical).
+  type_match <- !is.na(h$structure_type[clay_ok]) &
+                  grepl(paste0("blocks|block|blocos|bloco|",
+                                 "prismatic|prismatica|",
+                                 "polyhedral|polyedric|poliedric"),
+                          h$structure_type[clay_ok], ignore.case = TRUE)
+  grade_ok   <- is.na(h$structure_grade[clay_ok]) |
+                  grepl("moder|strong|forte", h$structure_grade[clay_ok],
+                          ignore.case = TRUE)
+  struct_ok  <- any(type_match & grade_ok)
+  # Step 4: cerosidade. SiBCS Cap 2 p.62 (c): quantity >= "comum" AND GRADE
+  # >= moderate ("grau forte ou moderado") -- the critical discriminant vs
+  # Latossolos (which carry at most "pouca e fraca" clay-skins). The prior test
+  # checked only quantity; refine-when-present adds the grade gate via
+  # clay_films_strength (NA strength -> byte-identical).
+  ceros_amount  <- !is.na(h$clay_films_amount[clay_ok]) &
+                     h$clay_films_amount[clay_ok] %in% min_cerosidade
+  ceros_grade   <- is.na(h$clay_films_strength[clay_ok]) |
+                     grepl("moder|strong|forte", h$clay_films_strength[clay_ok],
+                             ignore.case = TRUE)
+  cerosidade_ok <- any(ceros_amount & ceros_grade)
+  # Step 5: thickness. SiBCS Cap 2 p.62 (a): >= 30 cm, EXCEPT >= 15 cm when a
+  # lithic / lithic-fragmentary contact occurs within the first 50 cm.
+  contact_shallow <- any(!is.na(h$designation) &
+                           grepl("^[0-9]*(R|Cr|Cd)", h$designation) &
+                           !is.na(h$top_cm) & h$top_cm <= 50)
+  eff_min_thick <- if (contact_shallow) 15 else min_thickness
+  thk <- test_minimum_thickness(h, min_cm = eff_min_thick,
                                    candidate_layers = clay_ok)
-  # Step 6: argila atividade baixa OR (alta + alitico) OR (alta +
-  # carater ferri). Per SiBCS Cap 2 p. 62, the canonical Nitossolos
-  # Vermelho Ferri / Eutroferrico carry high CTC clays *plus* a
-  # ferri-mineralogical signature (>= 8 % Fe-DCB or >= 18 % Fe2O3 in
-  # the clay fraction); without the ferric path, every Tropical Ta
-  # Nitossolo without aluminic character was being rejected by
-  # B_nitico (and falling through to Argissolos). v0.9.10 adds the
-  # ferri short-circuit using `fe_dcb_pct` on the candidate B layers.
+  # Step 6: argila atividade baixa OR (atividade alta + carater aluminico).
+  # v0.9.137: this is the VERBATIM SiBCS Cap 2 p.62 criterion (d) -- there is
+  # no "ferric / high-Fe" alternative path in the B nitico DEFINITION. The
+  # earlier v0.9.10 `ferri_ok` short-circuit (>= 8% Fe-DCB) was a deviation
+  # added on the premise that high-activity ferric Nitossolos were being lost
+  # to Argissolos; it is REMOVED here because (1) it is not in the verbatim
+  # definition and (2) measured removal is benchmark-neutral (BDsolos RJ
+  # confusion and Redape order accuracy both unchanged) -- ferric Nitossolos
+  # are oxidic, hence low-activity, and already pass via the low-activity path.
   ta_alta <- atividade_argila_alta(pedon)
   ali     <- carater_alitico(pedon)
-  fe_vals <- if ("fe_dcb_pct" %in% names(h)) h$fe_dcb_pct[clay_ok]
-             else NA_real_
-  ferri_ok <- any(!is.na(fe_vals) & fe_vals >= 8)
-  ativ_ok <- !isTRUE(ta_alta$passed) || isTRUE(ali$passed) || ferri_ok
+  ativ_ok <- !isTRUE(ta_alta$passed) || isTRUE(ali$passed)
   passed <- length(clay_ok) > 0L && ratio_ok && struct_ok &&
               cerosidade_ok && isTRUE(thk$passed) && ativ_ok
   DiagnosticResult$new(
@@ -672,6 +817,7 @@ B_nitico <- function(pedon, min_thickness = 30, min_clay_pct = 35,
 #' identicos.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param ... Reserved for future arguments.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 B_espodico <- function(pedon, ...) {
   res <- spodic(pedon, ...)
@@ -686,6 +832,7 @@ B_espodico <- function(pedon, ...) {
 #' Tipo especial de B textural com mudanca textural abrupta +
 #' permeabilidade lenta + cores neutras/escurecidas + cromas baixos.
 #' @param pedon A \code{\link{PedonRecord}}.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 B_planico <- function(pedon) {
   h <- pedon$horizons
@@ -717,7 +864,7 @@ B_planico <- function(pedon) {
 #' Reuso de \code{\link{albic}} (WRB Ch 3.1) com criterios identicos.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param ... Reserved for future arguments.
-#' @export
+#' @noRd
 horizonte_E_albico <- function(pedon, ...) {
   res <- albic(pedon, ...)
   res$name <- "horizonte_E_albico"
@@ -734,7 +881,7 @@ horizonte_E_albico <- function(pedon, ...) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_plinthite_pct Numeric threshold or option (see Details).
 #' @param min_thickness Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 horizonte_plintico <- function(pedon, min_plinthite_pct = 15,
                                   min_thickness = 15) {
   res <- plinthic(pedon, min_thickness = min_thickness,
@@ -752,7 +899,7 @@ horizonte_plintico <- function(pedon, min_plinthite_pct = 15,
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_petroplinthite_pct Numeric threshold or option (see Details).
 #' @param min_thickness Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 horizonte_concrecionario <- function(pedon, min_petroplinthite_pct = 50,
                                         min_thickness = 30) {
   h <- pedon$horizons
@@ -780,7 +927,7 @@ horizonte_concrecionario <- function(pedon, min_petroplinthite_pct = 50,
 #' \code{\link{petroplinthic}} (WRB), espessura \\>= 10 cm.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_thickness Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 horizonte_litoplintico <- function(pedon, min_thickness = 10) {
   res <- petroplinthic(pedon, min_thickness = min_thickness)
   res$name <- "horizonte_litoplintico"
@@ -797,7 +944,7 @@ horizonte_litoplintico <- function(pedon, min_thickness = 10) {
 #' SiBCS.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_thickness Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 horizonte_glei <- function(pedon, min_thickness = 15) {
   gl <- gleyic_properties(pedon)
   if (!isTRUE(gl$passed)) {
@@ -828,9 +975,37 @@ horizonte_glei <- function(pedon, min_thickness = 15) {
 #' espessura \\>= 15 cm.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param ... Reserved for future arguments.
-#' @export
+#' @noRd
 horizonte_calcico <- function(pedon, ...) {
   res <- calcic(pedon, ...)
+  # v0.9.139: SiBCS Cap 2 p.71 requires the calcic horizon to carry >= 50 g/kg
+  # (5% absolute) MORE CaCO3 than the subjacent layer -- and, unlike WRB/USDA,
+  # SiBCS has NO protocalcic morphological alternative (the "expresso em volume"
+  # caveat is only a measurement method for gravelly secondary carbonate, still
+  # the same +50 enrichment). So the enrichment is enforced HERE (SiBCS-only),
+  # not in the shared calcic() core, whose WRB/USDA consumers rely on the
+  # unmeasured protocalcic OR-path (see calcic_enrichment_v09139.md). Refine-
+  # when-present: only drops a layer that can be disproven.
+  if (isTRUE(res$passed)) {
+    hh  <- pedon$horizons
+    enr <- test_caco3_enrichment(hh, candidate_layers = res$layers)
+    # v0.9.142: the SiBCS "expresso em volume" alternative -- the +50 enrichment
+    # may instead be shown as >= 5% by-volume secondary carbonate (gravelly /
+    # concretionary / powdery). refine-when-present: absent -> byte-identical.
+    sc    <- hh[["secondary_carbonates_pct"]]
+    byvol <- if (!is.null(sc))
+               res$layers[!is.na(sc[res$layers]) & sc[res$layers] >= 5]
+             else integer(0)
+    keep <- union(enr$layers, byvol)
+    if (length(keep) == 0L) {
+      res$passed <- FALSE
+      res$layers <- integer(0)
+    } else {
+      res$layers <- keep
+    }
+    res$evidence <- c(res$evidence %||% list(),
+                       list(enrichment = enr, by_volume_layers = byvol))
+  }
   res$name <- "horizonte_calcico"
   res$reference <- "Embrapa (2018), SiBCS 5a ed., Cap 2, p. 71-72"
   res
@@ -842,7 +1017,7 @@ horizonte_calcico <- function(pedon, ...) {
 #' Reuso de \code{\link{petrocalcic}} (WRB v0.3.3).
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param ... Reserved for future arguments.
-#' @export
+#' @noRd
 horizonte_petrocalcico <- function(pedon, ...) {
   res <- petrocalcic(pedon, ...)
   res$name <- "horizonte_petrocalcico"
@@ -857,9 +1032,34 @@ horizonte_petrocalcico <- function(pedon, ...) {
 #' material + espessura \\>= 15 cm.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param ... Reserved for future arguments.
-#' @export
+#' @noRd
 horizonte_sulfurico <- function(pedon, ...) {
   res <- thionic(pedon, max_pH = 3.5, ...)
+  # SiBCS Cap 2 p.72-73: sulfurico = thickness >= 15 cm + pH(H2O 1:2.5) <= 3.5
+  # AND >= 1 of (a) jarosite, (b) sulfidic material immediately below,
+  # (c) >= 0.05% water-soluble sulfate. thionic encodes only the sulfidic-
+  # material path. v0.9.137 adds the JAROSITE OR-path (jarosite_present field,
+  # v0.9.133) -- refine-when-present, so a pedon with no jarosite datum keeps
+  # thionic's result unchanged. (The soluble-sulfate path stays schema-blocked:
+  # no soluble-sulfate column.)
+  h <- pedon$horizons
+  jar <- h[["jarosite_present"]]
+  if (!isTRUE(res$passed) && !is.null(jar) && any(jar %in% TRUE)) {
+    ph_low     <- test_ph_below(h, max_ph = 3.5)
+    jar_layers <- which(jar %in% TRUE)
+    cand       <- intersect(ph_low$layers, jar_layers)
+    if (length(cand)) {
+      thk <- test_minimum_thickness(h, min_cm = 15, candidate_layers = cand)
+      if (isTRUE(thk$passed)) {
+        return(DiagnosticResult$new(
+          name = "horizonte_sulfurico", passed = TRUE, layers = thk$layers,
+          evidence = list(thionic = res, jarosite_path = TRUE,
+                           ph = ph_low, thickness = thk),
+          missing = character(0),
+          reference = "Embrapa (2018), SiBCS 5a ed., Cap 2, p. 72-73"))
+      }
+    }
+  }
   res$name <- "horizonte_sulfurico"
   res$reference <- "Embrapa (2018), SiBCS 5a ed., Cap 2, p. 72-73"
   res
@@ -874,9 +1074,13 @@ horizonte_sulfurico <- function(pedon, ...) {
 #' COLE \\>= 0.06 (proxy via shrink-swell).
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param ... Reserved for future arguments.
-#' @export
+#' @noRd
 horizonte_vertico <- function(pedon, ...) {
-  res <- vertic_horizon(pedon, min_thickness = 20, ...)
+  # v0.9.137: SiBCS Cap 2 p.73 requires cracks ">= 1 cm" wide (vs the WRB/USDA
+  # 0.5 cm). Pass min_crack_width_cm = 1.0 so the SiBCS vertico is stricter on
+  # the field-crack path; the COLE and 'v'-designation paths are unaffected, so
+  # a Vertissolo recorded via COLE or a v-modifier designation still passes.
+  res <- vertic_horizon(pedon, min_thickness = 20, min_crack_width_cm = 1.0, ...)
   res$name <- "horizonte_vertico"
   res$reference <- "Embrapa (2018), SiBCS 5a ed., Cap 2, p. 73"
   res
@@ -890,6 +1094,7 @@ horizonte_vertico <- function(pedon, ...) {
 #' quebradicidade.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param ... Reserved for future arguments.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 fragipa <- function(pedon, ...) {
   res <- fragic(pedon, ...)
@@ -905,6 +1110,7 @@ fragipa <- function(pedon, ...) {
 #' cimentado por silica, continuo ou em \\>= 50\% volume.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param ... Reserved for future arguments.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 duripa <- function(pedon, ...) {
   res <- duric_horizon(pedon, ...)

@@ -116,18 +116,16 @@ v0.9.48 \code{\link{lookup_soilgrids}} fills texture; v0.9.46
 chemistry / Munsell gaps when Vis-NIR is available.
 }
 \examples{
-\donttest{
-lucas_dir <- file.path(tempdir(), "LUCAS-SOIL-2018-v2")
-esdb_dir  <- file.path(tempdir(), "ESDB-Raster-Library-1k-GeoTIFF-20240507")
-if (dir.exists(lucas_dir) && dir.exists(esdb_dir)) {
-  pedons <- load_lucas_soil_2018(lucas_dir, countries = "ES", max_n = 50)
-  bench <- benchmark_lucas_2018(
-    pedons,
-    esdb_root = esdb_dir,
-    fill_texture_from = "soilgrids")
-  bench$accuracy
-  bench$per_rsg
-}
+\dontrun{
+pedons <- load_lucas_soil_2018(
+  "soil_data/eu_lucas/LUCAS-SOIL-2018-data-report-readme-v2/LUCAS-SOIL-2018-v2",
+  countries = c("ES"), max_n = 50)
+bench <- benchmark_lucas_2018(
+  pedons,
+  esdb_root = "soil_data/eu_lucas/ESDB-Raster-Library-1k-GeoTIFF-20240507",
+  fill_texture_from = "soilgrids")
+bench$accuracy
+bench$per_rsg
 }
 }
 \seealso{

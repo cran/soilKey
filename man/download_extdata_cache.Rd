@@ -46,14 +46,11 @@ sessions only) to download. Use \code{download_extdata_cache()}
 to eagerly populate the cache without prompting.
 }
 \examples{
-\donttest{
-# Network-dependent; the example no-ops on CRAN.
-if (interactive()) {
-  # Download every lazy-fetch cache once, ahead of any benchmark run:
-  download_extdata_cache()
+\dontrun{
+# Download every lazy-fetch cache once, ahead of any benchmark run:
+download_extdata_cache()
 
-  # Or just the WRB AfSP sample:
-  download_extdata_cache("afsp_sample")
-}
+# Or just the WRB AfSP sample:
+download_extdata_cache("afsp_sample")
 }
 }

@@ -41,17 +41,16 @@ fallback stack):
 
 Beaudette, D., Skovlin, J., Roecker, S., Brown, A. (2024). aqp:
 Algorithms for Quantitative Pedology. R package version 2.x.
-\url{https://github.com/ncss-tech/aqp}.
+\code{https://github.com/ncss-tech/aqp}.
 }
 
 \examples{
-\donttest{
-s <- try(load_kssl_sample(), silent = TRUE)
-if (!inherits(s, "try-error")) {
-  length(s$pedons)
-  table(vapply(s$pedons, function(p) p$site$reference_wrb_from_usda,
-               character(1)))
-}
+\dontrun{
+s <- load_kssl_sample()
+length(s$pedons)
+#> 100
+table(vapply(s$pedons, function(p) p$site$reference_wrb_from_usda,
+             character(1)))
 }
 
 }

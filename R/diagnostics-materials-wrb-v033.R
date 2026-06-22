@@ -17,6 +17,7 @@
 #' v0.3.3 detects via \code{rock_origin == "aeolian"} OR
 #' \code{layer_origin == "aeolic"}.
 #' @param pedon A \code{\link{PedonRecord}}.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 aeolic_material <- function(pedon) {
   h <- pedon$horizons
@@ -43,6 +44,7 @@ aeolic_material <- function(pedon) {
 #' \code{artefacts_pct >= 1}.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_pct Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 artefacts <- function(pedon, min_pct = 1) {
   h <- pedon$horizons
@@ -63,6 +65,7 @@ artefacts <- function(pedon, min_pct = 1) {
 #' fine earth, primary carbonates from the parent material.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_caco3_pct Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 calcaric_material <- function(pedon, min_caco3_pct = 2) {
   h <- pedon$horizons
@@ -82,6 +85,7 @@ calcaric_material <- function(pedon, min_caco3_pct = 2) {
 #' Claric material (WRB 2022 Ch 3.3.4): light-coloured fine earth with
 #' Munsell criteria.
 #' @param pedon A \code{\link{PedonRecord}}.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 claric_material <- function(pedon) {
   h <- pedon$horizons
@@ -101,6 +105,7 @@ claric_material <- function(pedon) {
 #' CaCO3/MgCO3 < 1.5. v0.3.3: detects via designation pattern
 #' \code{kdo|do|magn} as proxy when ratio data missing.
 #' @param pedon A \code{\link{PedonRecord}}.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 dolomitic_material <- function(pedon) {
   h <- pedon$horizons
@@ -128,6 +133,7 @@ dolomitic_material <- function(pedon) {
 #' explicitly carries gypsic-horizon designation.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_caso4_pct Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 gypsiric_material <- function(pedon, min_caso4_pct = 5) {
   h <- pedon$horizons
@@ -155,6 +161,7 @@ gypsiric_material <- function(pedon, min_caso4_pct = 5) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_s_pct Numeric threshold or option (see Details).
 #' @param min_pH Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 hypersulfidic_material <- function(pedon, min_s_pct = 0.01,
                                       min_pH = 4) {
@@ -176,28 +183,46 @@ hypersulfidic_material <- function(pedon, min_s_pct = 0.01,
     details = list()
   )
   shared <- intersect(tests$sulfidic$layers, tests$pH$layers)
-  passed <- if (length(shared) > 0L) TRUE
+  # Criterion 3 (WRB 3.3.8): aerobic incubation drops pH < 4. When the
+  # incubation pH is measured, a layer that stays >= 4 does NOT acidify and is
+  # therefore NOT hypersulfidic (it is hyposulfidic). Absent => prior
+  # behaviour, where every sulfidic + pH>=4 layer is reported as a candidate
+  # ("potential" -- the incubation test is the only way to confirm). v0.9.128.
+  inc_col <- h[["incubation_ph"]]
+  inc <- if (is.null(inc_col)) rep(NA_real_, nrow(h)) else inc_col
+  acidifies <- is.na(inc[shared]) | inc[shared] < 4
+  hyper_layers <- shared[acidifies]
+  excluded_non_acid <- length(shared) > length(hyper_layers)
+  passed <- if (length(hyper_layers) > 0L) TRUE
+            else if (excluded_non_acid) FALSE
             else if (is.na(tests$sulfidic$passed) ||
                      is.na(tests$pH$passed)) NA
             else FALSE
   DiagnosticResult$new(
     name = "hypersulfidic_material",
-    passed = passed, layers = shared,
+    passed = passed, layers = hyper_layers,
     evidence = tests,
     missing = unique(c(tests$sulfidic$missing, tests$pH$missing)),
     reference = "IUSS Working Group WRB (2022), Chapter 3.3.8",
-    notes = "v0.3.3: 8-week incubation acidification test deferred"
+    notes = if (is.null(inc_col))
+              "v0.9.128: incubation pH absent -> potential (criterion 3 unconfirmed)"
+            else "v0.9.128: criterion 3 evaluated from incubation_ph"
   )
 }
 
 
-#' Hyposulfidic material (WRB 2022 Ch 3.3.9): same S and pH as
-#' hypersulfidic but does NOT consist of hypersulfidic (i.e. not capable
-#' of severe acidification). v0.3.3: returns sulfidic layers that don't
-#' meet hypersulfidic.
+#' Hyposulfidic material (WRB 2022 Ch 3.3.9): same inorganic sulfidic S and
+#' field pH as hypersulfidic but does NOT consist of hypersulfidic (criterion 3
+#' -- does not acidify to pH < 4 on aerobic incubation, usually self-neutralised
+#' by carbonate). Reachable from v0.9.128: when \code{incubation_ph} is measured,
+#' a sulfidic + pH>=4 layer that stays >= 4 on incubation is the set-complement
+#' of \code{\link{hypersulfidic_material}} and is reported here. Without an
+#' incubation pH the two cannot be told apart, so this returns empty (the layer
+#' is reported as potential hypersulfidic instead).
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_s_pct Numeric threshold or option (see Details).
 #' @param min_pH Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 hyposulfidic_material <- function(pedon, min_s_pct = 0.01,
                                      min_pH = 4) {
@@ -227,6 +252,7 @@ hyposulfidic_material <- function(pedon, min_s_pct = 0.01,
 #' earth, diatomaceous earth, marl, gyttja). v0.3.3: detects via
 #' \code{rock_origin \%in\% c("lacustrine", "marine")} or designation pattern.
 #' @param pedon A \code{\link{PedonRecord}}.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 limnic_material <- function(pedon) {
   h <- pedon$horizons
@@ -253,6 +279,7 @@ limnic_material <- function(pedon) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param max_oc Numeric threshold or option (see Details).
 #' @param max_organotechnic Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 mineral_material <- function(pedon, max_oc = 20, max_organotechnic = 35) {
   h <- pedon$horizons
@@ -291,6 +318,7 @@ mineral_material <- function(pedon, max_oc = 20, max_organotechnic = 35) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_oc Numeric threshold or option (see Details).
 #' @param max_chroma Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 mulmic_material <- function(pedon, min_oc = 8, max_chroma = 2) {
   h <- pedon$horizons
@@ -325,6 +353,7 @@ mulmic_material <- function(pedon, min_oc = 8, max_chroma = 2) {
 #' criteria. v0.3.3: SOC threshold only.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_oc Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 organic_material <- function(pedon, min_oc = 20) {
   h <- pedon$horizons
@@ -346,6 +375,7 @@ organic_material <- function(pedon, min_oc = 20) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_artefacts Numeric threshold or option (see Details).
 #' @param max_oc Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 organotechnic_material <- function(pedon, min_artefacts = 35,
                                      max_oc = 20) {
@@ -379,6 +409,7 @@ organotechnic_material <- function(pedon, min_artefacts = 35,
 #' Mehlich-3 P >= 750 mg/kg + designation pattern \code{Aornit|Bornit}.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_p_mehlich3 Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 ornithogenic_material <- function(pedon, min_p_mehlich3 = 750) {
   h <- pedon$horizons
@@ -387,10 +418,13 @@ ornithogenic_material <- function(pedon, min_p_mehlich3 = 750) {
                                    threshold = min_p_mehlich3)
   tests$designation <- test_pattern_match(h, "designation",
                                               "ornit|bird|guano")
-  if (isTRUE(tests$p$passed) || isTRUE(tests$designation$passed)) {
-    layers <- union(tests$p$layers, tests$designation$layers)
-    passed <- TRUE
-  } else if (is.na(tests$p$passed) && is.na(tests$designation$passed)) {
+  # WRB 2022 Ch 3.3.15: ornithogenic material requires BOTH (1) remnants of
+  # birds / bird activity AND (2) >= 750 mg/kg Mehlich-3 P -- not either/or.
+  # (Corrected from a union to an intersection of the two conditions.)
+  if (isTRUE(tests$p$passed) && isTRUE(tests$designation$passed)) {
+    layers <- intersect(tests$p$layers, tests$designation$layers)
+    passed <- length(layers) > 0L
+  } else if (is.na(tests$p$passed) || is.na(tests$designation$passed)) {
     layers <- integer(0); passed <- NA
   } else {
     layers <- integer(0); passed <- FALSE
@@ -411,6 +445,7 @@ ornithogenic_material <- function(pedon, min_p_mehlich3 = 750) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_oc Numeric threshold or option (see Details).
 #' @param max_artefacts Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 soil_organic_carbon <- function(pedon, min_oc = 0.1,
                                    max_artefacts = 35) {
@@ -445,6 +480,7 @@ soil_organic_carbon <- function(pedon, min_oc = 0.1,
 #' via \code{rock_origin == "colluvial"} OR \code{layer_origin ==
 #' "solimovic"}.
 #' @param pedon A \code{\link{PedonRecord}}.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 solimovic_material <- function(pedon) {
   h <- pedon$horizons
@@ -468,6 +504,7 @@ solimovic_material <- function(pedon) {
 #' Technic hard material (WRB 2022 Ch 3.3.18): consolidated human-made
 #' material (asphalt, concrete, worked stones).
 #' @param pedon A \code{\link{PedonRecord}}.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 technic_hard_material <- function(pedon) {
   h <- pedon$horizons
@@ -497,6 +534,7 @@ technic_hard_material <- function(pedon) {
 #' 0.02-2 mm fraction AND no andic / vitric properties.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_glass Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 tephric_material <- function(pedon, min_glass = 30) {
   h <- pedon$horizons

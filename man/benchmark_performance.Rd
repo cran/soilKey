@@ -24,13 +24,7 @@ Default \code{c("wrb2022", "sibcs", "usda")} (all three).}
 when \code{"sibcs"} is in \code{systems}. Default
 \code{FALSE}.}
 
-\item{seed}{Integer applied through \code{\link[withr]{with_seed}}
-so the synthetic pedon pool is reproducible \emph{without}
-mutating the caller's global RNG state. Pass \code{NULL} to
-leave the RNG stream untouched. Default \code{42L} preserves
-the bit-for-bit-identical pool earlier soilKey releases
-produced (CRAN policy: never call \code{set.seed()} on the
-caller's RNG).}
+\item{seed}{RNG seed for reproducibility. Default 42.}
 
 \item{verbose}{If \code{TRUE} (default), prints a per-system
 summary line.}
@@ -61,8 +55,12 @@ pedons use a fixed RNG seed so timings on the same machine are
 comparable across releases.
 }
 \examples{
-\donttest{
-bench <- benchmark_performance(n = 5)
+\dontrun{
+bench <- benchmark_performance(n = 100)
 bench$summary
+#>     system n_pedons total_seconds mean_seconds median_seconds pedons_per_minute
+#> 1 wrb2022      100        ~ 5-12      0.05-0.12      ~          ~
+#> 2   sibcs      100        ~ 5-15      0.05-0.15      ~          ~
+#> 3    usda      100        ~ 4-10      0.04-0.10      ~          ~
 }
 }

@@ -39,7 +39,7 @@
 #' Open Soil Spectral Library (OSSL) global summary statistics.
 #'
 #' @return Named list of \code{c(min, max)} numeric pairs.
-#' @keywords internal
+#' @noRd
 .ossl_property_ranges <- function() {
   list(
     clay_pct    = c(0,    90),
@@ -60,7 +60,7 @@
 #' Currently a thin pass-through; reserved for future remapping (e.g.
 #' "south_america" -> ISRIC region tag). Validates the spelling.
 #'
-#' @keywords internal
+#' @noRd
 .resolve_region <- function(region) {
   region <- match.arg(region, c("global", "south_america", "north_america",
                                   "europe", "africa"))
@@ -74,7 +74,7 @@
 #' numeric matrix so that synthetic predictions are reproducible per
 #' input spectrum without relying on global RNG state.
 #'
-#' @keywords internal
+#' @noRd
 .seed_from_matrix <- function(X) {
   v <- as.numeric(X)
   v <- v[is.finite(v)]
@@ -140,10 +140,23 @@ predict_ossl_mbl <- function(X,
                   requireNamespace("resemble", quietly = TRUE)
 
   if (use_resemble) {
-    out <- .predict_ossl_mbl_resemble(X, properties, k = k,
-                                        ossl_library = ossl_library, ...)
-    data.table::setattr(out, "backend", "resemble")
-    return(out[])
+    # The resemble backend is opt-in and version-fragile (e.g. resemble >= 2.0
+    # removed mbl()'s k / k_diss / k_range arguments). Any failure -- a changed
+    # API, an unusable library -- degrades to the deterministic synthetic
+    # predictor with a warning rather than aborting the classification.
+    out <- tryCatch(
+      .predict_ossl_mbl_resemble(X, properties, k = k,
+                                 ossl_library = ossl_library, ...),
+      error = function(e) {
+        rlang::warn(sprintf(
+          "resemble backend unavailable (%s); using the synthetic predictor.",
+          conditionMessage(e)))
+        NULL
+      })
+    if (!is.null(out)) {
+      data.table::setattr(out, "backend", "resemble")
+      return(out[])
+    }
   }
 
   out <- .predict_synthetic(X, properties, region = region, k = k,
@@ -180,11 +193,22 @@ predict_ossl_plsr_local <- function(X,
                   requireNamespace("resemble", quietly = TRUE)
 
   if (use_resemble) {
-    out <- .predict_ossl_mbl_resemble(X, properties, k = k,
-                                        ossl_library = ossl_library,
-                                        local_algorithm = "pls", ...)
-    data.table::setattr(out, "backend", "resemble")
-    return(out[])
+    # Same version-fragility guard as predict_ossl_mbl(): a resemble API change
+    # falls back to the synthetic predictor instead of aborting.
+    out <- tryCatch(
+      .predict_ossl_mbl_resemble(X, properties, k = k,
+                                 ossl_library = ossl_library,
+                                 local_algorithm = "pls", ...),
+      error = function(e) {
+        rlang::warn(sprintf(
+          "resemble backend unavailable (%s); using the synthetic predictor.",
+          conditionMessage(e)))
+        NULL
+      })
+    if (!is.null(out)) {
+      data.table::setattr(out, "backend", "resemble")
+      return(out[])
+    }
   }
 
   out <- .predict_synthetic(X, properties, region = region, k = k,
@@ -259,7 +283,7 @@ predict_ossl_pretrained <- function(X,
 
 #' Validate inputs to a prediction backend
 #'
-#' @keywords internal
+#' @noRd
 .check_predict_inputs <- function(X, properties) {
   if (is.null(X) || !is.numeric(X) || (!is.matrix(X) && !is.data.frame(X))) {
     rlang::abort("predict_ossl_*(): X must be a numeric matrix")
@@ -287,7 +311,7 @@ predict_ossl_pretrained <- function(X,
 #' schema. Only invoked when both \code{resemble} and a populated
 #' \code{ossl_library} are present.
 #'
-#' @keywords internal
+#' @noRd
 .predict_ossl_mbl_resemble <- function(X, properties, k, ossl_library, ...) {
   if (!is.list(ossl_library) ||
       !all(c("Xr", "Yr") %in% names(ossl_library))) {
@@ -337,28 +361,19 @@ predict_ossl_pretrained <- function(X,
 #' model -- it exists so that the v0.4 plumbing can be tested end-to-end
 #' without OSSL installed.
 #'
-#' @keywords internal
+#' @noRd
 .predict_synthetic <- function(X, properties, region, k, method_label) {
   ranges <- .ossl_property_ranges()
   n_h <- nrow(X)
   seed <- .seed_from_matrix(X)
   rows <- vector("list", length(properties))
-  # Internal-only helper. We must not call set.seed() on the caller's
-  # RNG (CRAN policy), so each property's draw runs under
-  # withr::with_seed() with a stable per-property offset derived from
-  # the input matrix -- the prior RNG stream is restored on exit.
-  draw_one <- function(rng_) {
-    centre <- runif(n_h, min = rng_[1] + 0.1 * diff(rng_),
-                          max = rng_[2] - 0.1 * diff(rng_))
-    spread <- 0.05 * diff(rng_) * (1 + abs(rnorm(n_h)))
-    list(centre = centre, spread = spread)
-  }
   for (i in seq_along(properties)) {
     prop <- properties[i]
     rng  <- ranges[[prop]]
-    draws <- withr::with_seed(seed + i * 1009L, draw_one(rng))
-    centre <- draws$centre
-    spread <- draws$spread
+    set.seed(seed + i * 1009L)
+    centre  <- runif(n_h, min = rng[1] + 0.1 * diff(rng),
+                            max = rng[2] - 0.1 * diff(rng))
+    spread  <- 0.05 * diff(rng) * (1 + abs(rnorm(n_h)))
     # Region tweak: tightening of intervals for "global" since training
     # set is largest. Synthetic only.
     if (region != "global") spread <- spread * 1.2

@@ -24,7 +24,7 @@
 #' minimum spodic threshold per WRB Ch 3.1. v0.9.1 also requires
 #' p-retention >= 85\% in the same layers when available.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_hyperspodic <- function(pedon) {
   sp <- spodic(pedon)
   if (!isTRUE(sp$passed))
@@ -52,7 +52,7 @@ qual_hyperspodic <- function(pedon) {
 #' v0.9.1: spodic + OC >= 6\% in some spodic layer (the WRB threshold for
 #' Carbic / "humus-Podzol" expression).
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_carbic <- function(pedon) {
   sp <- spodic(pedon)
   if (!isTRUE(sp$passed))
@@ -77,7 +77,7 @@ qual_carbic <- function(pedon) {
 #' spodic + OC < 1\% AND active iron (Fe_ox) >= 0.5\% in the same spodic
 #' layer (humus-poor, Fe-rich ortstein / Bs).
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_rustic <- function(pedon) {
   sp <- spodic(pedon)
   if (!isTRUE(sp$passed))
@@ -103,7 +103,7 @@ qual_rustic <- function(pedon) {
 #' Ortsteinic qualifier (os): cemented spodic horizon. v0.9.1:
 #' spodic horizon + cementation_class strongly OR indurated.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_ortsteinic <- function(pedon) {
   sp <- spodic(pedon)
   if (!isTRUE(sp$passed))
@@ -129,14 +129,16 @@ qual_ortsteinic <- function(pedon) {
 #' with cementation_class strongly or indurated AND thickness <= 2.5 cm,
 #' anywhere in the upper 100 cm.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_placic <- function(pedon) {
   h <- pedon$horizons
   layers <- which(!is.na(h$top_cm) & h$top_cm <= 100)
   ce <- h$cementation_class[layers]
   thk <- pmax(0, h$bottom_cm[layers] - h$top_cm[layers])
-  ok <- !is.na(ce) & ce %in% c("strongly", "indurated") &
-          !is.na(thk) & thk <= 2.5
+  # WRB 2022 Ch 5 Placic: layer >= 0.1 and < 2.5 cm thick, Fe-cemented at
+  # AT LEAST weakly (was restricted to strongly/indurated).
+  ok <- !is.na(ce) & ce %in% c("weakly", "moderately", "strongly", "indurated") &
+          !is.na(thk) & thk >= 0.1 & thk < 2.5
   passed <- any(ok)
   DiagnosticResult$new(
     name = "Placic", passed = passed,
@@ -150,7 +152,7 @@ qual_placic <- function(pedon) {
 #' Densic qualifier (dn): bulk density >= 1.8 g/cm3 in some root-
 #' restricting layer within 100 cm.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_densic <- function(pedon) {
   h <- pedon$horizons
   layers <- which(!is.na(h$top_cm) & h$top_cm <= 100)
@@ -180,7 +182,7 @@ qual_densic <- function(pedon) {
 #' Stagnosol / Planosol profiles). Non-contiguous albic layers
 #' separated by an illuvial Bs / Bt do NOT count toward the threshold.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_hyperalbic <- function(pedon) {
   ab <- albic(pedon)
   if (!isTRUE(ab$passed))
@@ -250,7 +252,7 @@ qual_hyperalbic <- function(pedon) {
 #' (delta pH = pH_KCl - pH_H2O > 0). The "or" path makes Geric / Posic
 #' overlap by design (per WRB Ch 5).
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_geric <- function(pedon) {
   h <- pedon$horizons
   layers <- which(!is.na(h$top_cm) & h$top_cm <= 100)
@@ -264,19 +266,20 @@ qual_geric <- function(pedon) {
   k  <- h$k_cmol[layers];  na <- h$na_cmol[layers]
   al <- h$al_kcl_cmol[layers]
   if (all(is.na(al))) al <- h$al_cmol[layers]
+  # WRB 2022 Ch 5 Geric: (sum of exch bases + exch Al) < 6 cmol_c per kg CLAY
+  # (Hypergeric is < 1.5). The v0.9 code used <= 1.5 cmol per kg fine earth and
+  # a spurious delta-pH (Posic) branch; both removed (v0.9.132).
+  clay <- h$clay_pct[layers]
   ecec <- ca + mg + k + na + ifelse(is.na(al), 0, al)
-  ok_ecec <- !is.na(ecec) & ecec <= 1.5
-  ph_h <- h$ph_h2o[layers]; ph_k <- h$ph_kcl[layers]
-  delta_ph <- ph_k - ph_h
-  ok_dph <- !is.na(delta_ph) & delta_ph > 0
-  ok <- ok_ecec | ok_dph
+  ecec_per_clay <- ecec / pmax(clay, 1) * 100
+  ok <- !is.na(ecec_per_clay) & !is.na(clay) & clay > 0 & ecec_per_clay < 6
   passed <- any(ok)
   DiagnosticResult$new(
     name = "Geric", passed = passed,
     layers = layers[ok],
-    evidence = list(ecec_proxy = ecec, delta_ph = delta_ph),
-    missing = if (all(is.na(ecec)) && all(is.na(delta_ph)))
-                c("cec components", "ph_kcl", "ph_h2o") else character(0),
+    evidence = list(ecec_per_kg_clay = ecec_per_clay),
+    missing = if (all(is.na(ecec)) || all(is.na(clay)))
+                c("cec components", "clay_pct") else character(0),
     reference = "WRB (2022) Ch 5, Geric"
   )
 }
@@ -285,7 +288,7 @@ qual_geric <- function(pedon) {
 #' 6 cmol+/kg clay in some layer at <= 100 cm. Stronger than the
 #' ferralic-CEC threshold (<= 16 cmol+/kg clay).
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_vetic <- function(pedon) {
   h <- pedon$horizons
   layers <- which(!is.na(h$top_cm) & h$top_cm <= 100)
@@ -314,7 +317,7 @@ qual_vetic <- function(pedon) {
 #' in some layer at <= 100 cm. Diagnostic of the most weathered
 #' Ferralsols where free Fe / Al oxides dominate the surface charge.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_posic <- function(pedon) {
   h <- pedon$horizons
   layers <- which(!is.na(h$top_cm) & h$top_cm <= 100)
@@ -339,57 +342,32 @@ qual_posic <- function(pedon) {
 
 # ---------- BASE-SATURATION EXTREMES ----------------------------------------
 
-#' Hyperdystric qualifier (yd): base saturation < 5\% throughout the
-#' upper 100 cm (mineral soil layers only). Stronger than Dystric (BS
-#' < 50\%).
+#' Hyperdystric qualifier (yd), WRB 2022 Ch 5.
+#'
+#' Exchangeable Al > exchangeable bases THROUGHOUT 20-100 cm AND, in the major
+#' part, exch. Al > 4 times the bases (Al-saturation > 80\%). Stronger than
+#' Dystric. Strict exchangeable-Al criterion; no base-saturation fallback.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_hyperdystric <- function(pedon) {
-  h <- pedon$horizons
-  layers <- which(!is.na(h$top_cm) & h$top_cm >= 20 & h$top_cm <= 100)
-  if (length(layers) == 0L)
-    return(DiagnosticResult$new(name = "Hyperdystric", passed = NA,
-            layers = integer(0), evidence = list(),
-            missing = "bs_pct",
-            reference = "WRB (2022) Ch 5, Hyperdystric"))
-  bs <- h$bs_pct[layers]
-  passed <- length(bs) > 0L && all(!is.na(bs) & bs < 5)
-  DiagnosticResult$new(
-    name = "Hyperdystric", passed = passed,
-    layers = if (passed) layers else integer(0),
-    evidence = list(bs_pct = bs),
-    missing = if (any(is.na(bs))) "bs_pct" else character(0),
-    reference = "WRB (2022) Ch 5, Hyperdystric"
-  )
+  .wrb_hyper_status_result(pedon, "Hyperdystric", "dystric", 20, 100)
 }
 
-#' Hypereutric qualifier (ye): base saturation >= 80\% throughout the
-#' upper 100 cm. Stronger than Eutric (BS >= 50\%).
+#' Hypereutric qualifier (ye), WRB 2022 Ch 5.
+#'
+#' Exchangeable bases >= exchangeable Al THROUGHOUT 20-100 cm AND, in the major
+#' part, bases >= 4 times Al (Al-saturation <= 20\%). Stronger than Eutric.
+#' Strict; no base-saturation fallback.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_hypereutric <- function(pedon) {
-  h <- pedon$horizons
-  layers <- which(!is.na(h$top_cm) & h$top_cm >= 20 & h$top_cm <= 100)
-  if (length(layers) == 0L)
-    return(DiagnosticResult$new(name = "Hypereutric", passed = NA,
-            layers = integer(0), evidence = list(),
-            missing = "bs_pct",
-            reference = "WRB (2022) Ch 5, Hypereutric"))
-  bs <- h$bs_pct[layers]
-  passed <- length(bs) > 0L && all(!is.na(bs) & bs >= 80)
-  DiagnosticResult$new(
-    name = "Hypereutric", passed = passed,
-    layers = if (passed) layers else integer(0),
-    evidence = list(bs_pct = bs),
-    missing = if (any(is.na(bs))) "bs_pct" else character(0),
-    reference = "WRB (2022) Ch 5, Hypereutric"
-  )
+  .wrb_hyper_status_result(pedon, "Hypereutric", "eutric", 20, 100)
 }
 
 #' Hyperalic qualifier (yl): argic horizon with Al saturation >= 50\% in
 #' some layer of the argic part within 100 cm. Stronger version of Alic.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_hyperalic <- function(pedon) {
   arg <- argic(pedon)
   if (!isTRUE(arg$passed))
@@ -419,7 +397,7 @@ qual_hyperalic <- function(pedon) {
 #' spodic or ferralic criteria from being Sombric -- those have
 #' specific qualifiers of their own. v0.9.1 enforces both exclusions.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_sombric <- function(pedon) {
   so <- sombric(pedon)
   if (!isTRUE(so$passed))

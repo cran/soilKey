@@ -72,24 +72,20 @@ compare against your own user-supplied reference classification
 \code{L0..L4}).
 
 Authentication: register a free AgroAPI account at
-\url{https://www.agroapi.cnptia.embrapa.br/portal/}, subscribe to
+\code{https://www.agroapi.cnptia.embrapa.br/portal/}, subscribe to
 the SmartSolosExpert API and generate an access token. Pass it via
 the \code{AGROAPI_TOKEN} environment variable or the
 \code{api_key} argument.
 }
 \examples{
-\donttest{
-# Needs a SmartSolos Expert API token (set AGROAPI_TOKEN) and
-# network access; the example no-ops on CRAN.
-if (nzchar(Sys.getenv("AGROAPI_TOKEN")) &&
-      requireNamespace("httr", quietly = TRUE)) {
-  res <- try(classify_via_smartsolos_api(make_argissolo_canonical()),
-             silent = TRUE)
-  if (!inherits(res, "try-error")) {
-    res$rsg_or_order      # "ARGISSOLO"
-    res$qualifiers
-  }
-}
+\dontrun{
+Sys.setenv(AGROAPI_TOKEN = "<your token>")
+res <- classify_via_smartsolos_api(make_argissolo_canonical())
+res$rsg_or_order      # "ARGISSOLO"
+res$qualifiers
+#> $subordem  "VERMELHO"
+#> $gde_grupo "Distrofico"
+#> $subgrupo  "tipico"
 }
 }
 \references{

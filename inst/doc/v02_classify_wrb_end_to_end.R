@@ -90,14 +90,19 @@ res$evidence_grade
 #   classify_sibcs(pr, include_familia = TRUE),
 #   classify_usda(pr)
 # )
-# out_html <- file.path(tempdir(), "perfil_ferralsol.html")
-# report(results, file = out_html, pedon = pr)
+# report(results, file = "perfil_ferralsol.html", pedon = pr)
 # 
 # # Or pass the pedon directly and let report() run the three keys:
-# report(pr, file = out_html)
+# report(pr, file = "perfil_ferralsol.html")
 # 
 # # Same content as PDF (requires LaTeX):
-# # report(pr, file = file.path(tempdir(), "perfil_ferralsol.pdf"))
+# # report(pr, file = "perfil_ferralsol.pdf")
+
+## ----strict, eval = FALSE-----------------------------------------------------
+# # A profile with 32 % clay above a vertic horizon: a Vertisol under the
+# # default gate, but below the 35 % strict floor.
+# classify_wrb2022(pr, strict = FALSE)$rsg_or_order  # default
+# classify_wrb2022(pr, strict = TRUE)$rsg_or_order   # Tier-3 strict
 
 ## ----summary, echo = FALSE----------------------------------------------------
 cat(sprintf("WRB 2022 name : %s\n", res$name))

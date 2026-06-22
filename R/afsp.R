@@ -50,7 +50,7 @@ wrb06_code_to_rsg <- function(code) {
 
 
 #' Convert AfSP NoData sentinel (-9999) to NA
-#' @keywords internal
+#' @noRd
 .afsp_unna <- function(x) {
   if (is.numeric(x)) {
     x[!is.na(x) & x == -9999] <- NA_real_
@@ -63,7 +63,7 @@ wrb06_code_to_rsg <- function(code) {
 
 
 #' Parse AfSP Munsell colour string (e.g. "10YR 4/3") into hue/value/chroma
-#' @keywords internal
+#' @noRd
 .afsp_parse_munsell <- function(s) {
   if (is.na(s) || !nzchar(s)) return(list(hue = NA_character_,
                                               value = NA_real_,
@@ -84,7 +84,7 @@ wrb06_code_to_rsg <- function(code) {
 
 
 #' Build a soilKey PedonRecord from AfSP Profiles + Layers rows
-#' @keywords internal
+#' @noRd
 .afsp_to_pedon <- function(profile_row, layer_rows) {
   # Map AfSP Layers fields -> soilKey horizon schema
   hz_list <- lapply(seq_len(nrow(layer_rows)), function(i) {
@@ -169,7 +169,7 @@ wrb06_code_to_rsg <- function(code) {
 #'
 #' Reads the AfSP DBase tables shipped inside \code{AF-AfSP1.2.zip}
 #' (downloadable from
-#' \url{https://files.isric.org/public/afsp/AF-AfSP1.2.zip}) and
+#' \code{https://files.isric.org/public/afsp/AF-AfSP1.2.zip}) and
 #' converts each profile + its horizons to a soilKey
 #' \code{\link{PedonRecord}}. Filters to profiles with a populated
 #' WRB 2006 RSG code (i.e.\ classifiable; AfSP has ~7000 of these of
@@ -193,7 +193,7 @@ wrb06_code_to_rsg <- function(code) {
 #' (2014). Africa Soil Profiles Database, Version 1.2. ISRIC Report
 #' 2014/01. ISRIC -- World Soil Information, Wageningen.
 #' Project page:
-#' \url{https://isric.org/projects/africa-soil-profiles-database-afsp}.
+#' \code{https://isric.org/projects/africa-soil-profiles-database-afsp}.
 #'
 #' @export
 load_afsp_pedons <- function(afsp_dir,

@@ -116,7 +116,7 @@ download_redape_dataset <- function(dest_dir,
 #'
 #' @param path Path to a JSON file.
 #' @return List of items (typically length 1).
-#' @keywords internal
+#' @noRd
 .redape_read_json <- function(path) {
   if (!requireNamespace("jsonlite", quietly = TRUE)) {
     stop(".redape_read_json() requires 'jsonlite'.")
@@ -139,7 +139,7 @@ download_redape_dataset <- function(dest_dir,
 
 
 #' Convert one Redape GeoTab horizon record to a soilKey horizon row
-#' @keywords internal
+#' @noRd
 .redape_horizon_to_soilkey <- function(h) {
   # Texture: g/kg -> %
   argila_g    <- h$ARGILA   %||% NA_real_
@@ -191,9 +191,29 @@ download_redape_dataset <- function(dest_dir,
     al_cmol                 = al,
     p_mehlich3_mg_kg        = h$P_ASSIM %||% NA_real_,
     fe_dcb_pct              = h$TEOR_FE %||% NA_real_,
-    plinthite_pct           = if (isTRUE(h$PETROPLINTICO) || isTRUE(h$LITOPLINTICO))
+    # v0.9.107: also honour the 'f' (plintita) master-letter suffix (e.g. Btf,
+    # 2Btf) -- the curator's plinthite assertion -- when no petro/lito flag is
+    # set. Never overrides a higher measured value (the gate uses its own
+    # plinthite_pct thresholds downstream).
+    plinthite_pct           = if (isTRUE(h$PETROPLINTICO) || isTRUE(h$LITOPLINTICO) ||
+                                    grepl("[A-Z][a-z0-9]*f", h$SIMB_HORIZ %||% ""))
                                 30 else NA_real_,
-    redoximorphic_features_pct = if (isTRUE(h$REDOXICO)) 10 else NA_real_,
+    # v0.9.107: the 'g' (gleyic) master-letter suffix in SIMB_HORIZ is the
+    # curator's direct gleyic assertion; the GeoTab REDOXICO flag (mottling/
+    # concretions) is a stricter, different concept and is FALSE on the reduced
+    # Cg matrices. Promote the suffix too, mirroring the plinthite line above.
+    redoximorphic_features_pct = if (isTRUE(h$REDOXICO) ||
+                                       grepl("[A-Z][a-z0-9]*g",
+                                             h$SIMB_HORIZ %||% "")) 10 else NA_real_,
+    # v0.9.107: the 'v' (vertic) master-letter suffix (Bv, Bvk, Cvz, Btv) is
+    # the curator's vertic-morphology assertion; promote it to the canonical
+    # slickensides + cracks signal (the clay gate downstream still applies),
+    # so field-described Vertissolos are recovered without flipping any global
+    # default. Mirrors the g/f promotions above.
+    slickensides            = if (grepl("[A-Z][a-z0-9]*v", h$SIMB_HORIZ %||% ""))
+                                "common" else NA_character_,
+    cracks_width_cm         = if (grepl("[A-Z][a-z0-9]*v", h$SIMB_HORIZ %||% ""))
+                                1 else NA_real_,
     structure_grade         = NA_character_,  # numeric code -> categorical TBD
     structure_size          = NA_character_,
     structure_type          = NA_character_,
@@ -204,7 +224,7 @@ download_redape_dataset <- function(dest_dir,
 
 
 #' Convert one Redape GeoTab item to a soilKey PedonRecord
-#' @keywords internal
+#' @noRd
 .redape_item_to_pedon <- function(item) {
   hz_rows <- lapply(item$HORIZONTES %||% list(),
                      .redape_horizon_to_soilkey)
@@ -338,7 +358,7 @@ load_redape_pedons <- function(json_dir, max_n = NULL, verbose = TRUE) {
 #' their ASCII equivalents (\code{A}-acute, \code{O}-tilde,
 #' \code{C}-cedilla, etc., for all five Portuguese vowel classes).
 #'
-#' @keywords internal
+#' @noRd
 .redape_strip_accents <- function(s) {
   if (is.null(s)) return(NA_character_)
   s <- as.character(s)[1L]
@@ -365,7 +385,7 @@ load_redape_pedons <- function(json_dir, max_n = NULL, verbose = TRUE) {
 #'         modifiers; -al / -el / -ol words don't appear in the
 #'         SiBCS taxonomy at these levels).
 #' }
-#' @keywords internal
+#' @noRd
 .redape_pluralise_pt <- function(w) {
   if (is.na(w) || !nzchar(w)) return(w)
   if (nchar(w) <= 2L) return(w)
@@ -375,7 +395,7 @@ load_redape_pedons <- function(json_dir, max_n = NULL, verbose = TRUE) {
 
 
 #' Normalise a Portuguese SiBCS label to a plural-canonical comparison key
-#' @keywords internal
+#' @noRd
 .redape_canonical_label <- function(s, pluralise = TRUE) {
   s <- .redape_strip_accents(s)
   if (is.na(s) || !nzchar(s)) return(NA_character_)
@@ -392,7 +412,7 @@ load_redape_pedons <- function(json_dir, max_n = NULL, verbose = TRUE) {
 #' nominal phrase) and applies plural-canonical normalisation so the
 #' result is comparable to the soilKey predicted label
 #' (e.g.\ "Argissolos Amarelos Distroficos abrupticos").
-#' @keywords internal
+#' @noRd
 .redape_compose_ref <- function(pedon, level) {
   s <- pedon$site
   parts <- switch(level,
@@ -417,7 +437,7 @@ load_redape_pedons <- function(json_dir, max_n = NULL, verbose = TRUE) {
 #'
 #' @details The returned label is a \code{ClassificationResult} field
 #'   for the requested level (Order / Subordem / Grande Grupo / Subgrupo).
-#' @keywords internal
+#' @noRd
 .redape_extract_pred <- function(res, level) {
   if (is.null(res)) return(NA_character_)
   raw <- switch(level,

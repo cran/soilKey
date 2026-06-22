@@ -54,16 +54,10 @@ function returns the prediction data.table directly without
 touching any pedon.
 }
 \examples{
-\donttest{
-if (requireNamespace("pls", quietly = TRUE)) {
-  data(ossl_demo_sa)
-  models <- try(train_pls_from_ossl(ossl_demo_sa,
-                                      properties = c("clay_pct", "ph_h2o"),
-                                      min_n = 10L,
-                                      validation = "none"),
-                 silent = TRUE)
-  # Prediction step needs a synthetic pedon with spectra attached.
-  # predict_from_spectra(my_pedon, models = models)
-}
+\dontrun{
+lib <- download_ossl_subset(region = "south_america")
+models <- train_pls_from_ossl(lib,
+                                properties = c("clay_pct", "ph_h2o"))
+predict_from_spectra(my_pedon, models = models)
 }
 }

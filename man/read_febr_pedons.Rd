@@ -51,22 +51,15 @@ Per the May 2026 scan, ~80% of FEBR datasets have Munsell. Use
 Munsell-bearing dataset IDs.
 }
 \examples{
-\donttest{
-# 'febr' is not on CRAN; we resolve the name through a variable so
-# R CMD check does not flag a missing Suggests entry. The example
-# no-ops on CRAN's machines and runs locally once the user has
-# installed it from GitHub (febr-team/febr-package).
-febr_pkg <- "febr"
-if (requireNamespace(febr_pkg, quietly = TRUE)) {
-  # Single dataset (35 perfis, 100\% Munsell coverage)
-  pedons <- try(read_febr_pedons("ctb0039"), silent = TRUE)
+\dontrun{
+# Single dataset (35 perfis, 100\% Munsell coverage)
+pedons <- read_febr_pedons("ctb0039")
 
-  # Multiple datasets
-  # pedons <- read_febr_pedons(c("ctb0032", "ctb0562", "ctb0568"))
+# Multiple datasets
+pedons <- read_febr_pedons(c("ctb0032", "ctb0562", "ctb0568"))
 
-  # All Munsell-bearing datasets (slow; 200 datasets, ~36k horizons)
-  # all_pedons <- read_febr_pedons("all")
-}
+# All Munsell-bearing datasets (slow; 200 datasets, ~36k horizons)
+all_pedons <- read_febr_pedons("all")
 }
 }
 \seealso{

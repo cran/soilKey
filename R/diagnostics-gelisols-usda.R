@@ -31,7 +31,7 @@
 #' @param max_top_cm Default 50.
 #' @return A \code{\link{DiagnosticResult}}.
 #' @references Soil Survey Staff (2022), KST 13ed, Ch. 9, p 189.
-#' @export
+#' @noRd
 histel_qualifying_usda <- function(pedon,
                                        min_thickness_cm = 40,
                                        max_top_cm = 50) {
@@ -88,7 +88,7 @@ histel_qualifying_usda <- function(pedon,
 #' @return A \code{\link{DiagnosticResult}}.
 #' @references Soil Survey Staff (2022), KST 13ed, Ch. 3, p 45;
 #'   Ch. 9 various Subgroups.
-#' @export
+#' @noRd
 lithic_contact_usda <- function(pedon, max_top_cm = 50) {
   h <- pedon$horizons
   if (nrow(h) == 0L) {
@@ -128,7 +128,7 @@ lithic_contact_usda <- function(pedon, max_top_cm = 50) {
 #' @param min_sphagnum_pct Default 75.
 #' @return A \code{\link{DiagnosticResult}}.
 #' @references Soil Survey Staff (2022), KST 13ed, Ch. 9, p 190.
-#' @export
+#' @noRd
 sphagnic_usda <- function(pedon, max_top_cm = 50, min_sphagnum_pct = 75) {
   h <- pedon$horizons
   org <- which(!is.na(h$designation) & grepl("^[OH]", h$designation) &
@@ -169,7 +169,7 @@ sphagnic_usda <- function(pedon, max_top_cm = 50, min_sphagnum_pct = 75) {
 #' @param max_top_cm Default 100.
 #' @return A \code{\link{DiagnosticResult}}.
 #' @references Soil Survey Staff (2022), KST 13ed, Ch. 9.
-#' @export
+#' @noRd
 terric_usda <- function(pedon, min_thickness_cm = 30, max_top_cm = 100) {
   h <- pedon$horizons
   if (nrow(h) == 0L) {
@@ -225,7 +225,7 @@ terric_usda <- function(pedon, min_thickness_cm = 30, max_top_cm = 100) {
 #' @return A \code{\link{DiagnosticResult}}.
 #' @references Soil Survey Staff (2022), KST 13ed, Ch. 3, p 45;
 #'   Ch. 9 Hemistels / Sapristels.
-#' @export
+#' @noRd
 limnic_usda <- function(pedon, min_thickness_cm = 5, max_top_cm = 130) {
   h <- pedon$horizons
   if (nrow(h) == 0L) {
@@ -279,7 +279,7 @@ limnic_usda <- function(pedon, min_thickness_cm = 5, max_top_cm = 130) {
 #' @param min_oc_pct Default 1.0.
 #' @return A \code{\link{DiagnosticResult}}.
 #' @references Soil Survey Staff (2022), KST 13ed, Ch. 9 various.
-#' @export
+#' @noRd
 thapto_humic_usda <- function(pedon,
                                   max_top_cm = 200,
                                   min_thickness_cm = 20,
@@ -339,7 +339,7 @@ thapto_humic_usda <- function(pedon,
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
 #' @references Soil Survey Staff (2022), KST 13ed, Ch. 9.
-#' @export
+#' @noRd
 fluvaquentic_usda <- function(pedon) {
   h <- pedon$horizons
   if (nrow(h) == 0L) {
@@ -374,7 +374,7 @@ fluvaquentic_usda <- function(pedon) {
 #' Fluventic Subgroup helper (irregular OC decrease, NO aquic req.)
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 fluventic_usda <- function(pedon) {
   h <- pedon$horizons
   band <- which(!is.na(h$top_cm) & h$top_cm >= 25 & h$top_cm <= 125)
@@ -408,7 +408,7 @@ fluventic_usda <- function(pedon) {
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 andic_subgroup_usda <- function(pedon) {
   h <- pedon$horizons
   cand <- which(!is.na(h$top_cm) & h$top_cm < 75)
@@ -458,7 +458,7 @@ andic_subgroup_usda <- function(pedon) {
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 vitrandic_subgroup_usda <- function(pedon) {
   h <- pedon$horizons
   cand <- which(!is.na(h$top_cm) & h$top_cm < 75)
@@ -469,9 +469,13 @@ vitrandic_subgroup_usda <- function(pedon) {
     fe <- h$fe_ox_pct[i]
     vg <- h$volcanic_glass_pct[i]
     cf <- h$coarse_fragments_pct[i]
+    p002 <- .col_at(h, "particles_002_2mm_pct", i)
     if (is.na(vg)) miss <- c(miss, "volcanic_glass_pct")
     branch_a <- !is.na(cf) && cf > 35  # cinders/pumice branch (proxy)
-    branch_b <- !is.na(vg) && vg >= 5
+    # branch 2: >= 5% glass in 0.02-2 mm AND fine earth >= 30% in 0.02-2 mm.
+    # The fine-earth size requirement is enforced only when measured
+    # (particles_002_2mm_pct); absent => prior behaviour (v0.9.128).
+    branch_b <- !is.na(vg) && vg >= 5 && (is.na(p002) || p002 >= 30)
     score <- if (!is.na(al) && !is.na(fe) && !is.na(vg))
                (al + 0.5 * fe) * 60 + vg
              else NA_real_
@@ -514,15 +518,21 @@ vitrandic_subgroup_usda <- function(pedon) {
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 vertic_subgroup_usda <- function(pedon) {
   h <- pedon$horizons
   miss <- character(0)
-  # Branch 1: cracks
+  # Branch 1: cracks >= 5 mm wide through >= 30 cm thickness, WITHIN 125 cm of
+  # the surface, plus slickensides / wedge-shaped peds. The "within 125 cm"
+  # depth is enforced per layer only when cracks_top_cm is measured; absent =>
+  # prior behaviour (v0.9.128).
   cw <- h$cracks_width_cm
   cd <- h$cracks_depth_cm
   ss <- h$slickensides
-  cracks_ok <- any(!is.na(cw) & cw >= 0.5 & !is.na(cd) & cd >= 30) &&
+  ct_col <- h[["cracks_top_cm"]]
+  ct <- if (is.null(ct_col)) rep(NA_real_, nrow(h)) else ct_col
+  cracks_ok <- any(!is.na(cw) & cw >= 0.5 & !is.na(cd) & cd >= 30 &
+                     (is.na(ct) | ct < 125)) &&
                  any(!is.na(ss) & tolower(ss) %in%
                        c("few", "common", "many", "continuous"))
   # Branch 2: LE >= 6
@@ -547,7 +557,7 @@ vertic_subgroup_usda <- function(pedon) {
 #' Aquic Subgroup helper (within 100 cm of mineral soil surface)
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 aquic_subgroup_usda <- function(pedon) {
   res <- aquic_conditions_usda(pedon, max_top_cm = 100)
   res$name <- "aquic_subgroup_usda"
@@ -560,7 +570,7 @@ aquic_subgroup_usda <- function(pedon) {
 #' Folistic Subgroup helper (folistic_epipedon present)
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 folistic_subgroup_usda <- function(pedon) {
   res <- folistic_epipedon_usda(pedon)
   res$name <- "folistic_subgroup_usda"
@@ -584,7 +594,7 @@ folistic_subgroup_usda <- function(pedon) {
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 cumulic_subgroup_usda <- function(pedon) {
   h <- pedon$horizons
   ms_top <- .mineral_soil_surface_cm(h)
@@ -642,7 +652,7 @@ cumulic_subgroup_usda <- function(pedon) {
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 spodic_subgroup_usda <- function(pedon) {
   h <- pedon$horizons
   if (nrow(h) < 2L) {
@@ -696,7 +706,7 @@ spodic_subgroup_usda <- function(pedon) {
 #' @param max_top_cm Default 100.
 #' @param min_s_pct Default 0.75.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 sulfuric_horizon_usda <- function(pedon, max_top_cm = 100,
                                        min_s_pct = 0.75) {
   h <- pedon$horizons
@@ -724,7 +734,7 @@ sulfuric_horizon_usda <- function(pedon, max_top_cm = 100,
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param max_top_cm Default 100.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 petrogypsic_horizon_usda <- function(pedon, max_top_cm = 100) {
   h <- pedon$horizons
   cand <- which(!is.na(h$top_cm) & h$top_cm < max_top_cm)
@@ -754,7 +764,7 @@ petrogypsic_horizon_usda <- function(pedon, max_top_cm = 100) {
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 nitric_subgroup_usda <- function(pedon) {
   DiagnosticResult$new(
     name = "nitric_subgroup_usda", passed = NA, layers = integer(0),
@@ -776,7 +786,7 @@ nitric_subgroup_usda <- function(pedon) {
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 ruptic_histic_subgroup_usda <- function(pedon) {
   DiagnosticResult$new(
     name = "ruptic_histic_subgroup_usda", passed = FALSE,
@@ -796,7 +806,7 @@ ruptic_histic_subgroup_usda <- function(pedon) {
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 ruptic_subgroup_usda <- function(pedon) {
   DiagnosticResult$new(
     name = "ruptic_subgroup_usda", passed = FALSE, layers = integer(0),
@@ -817,7 +827,7 @@ ruptic_subgroup_usda <- function(pedon) {
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 psammentic_subgroup_usda <- function(pedon) {
   h <- pedon$horizons
   cand <- which(!is.na(h$top_cm) & h$top_cm < 100)
@@ -858,7 +868,7 @@ psammentic_subgroup_usda <- function(pedon) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param max_top_cm Default 100 cm.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 argillic_within_usda <- function(pedon, max_top_cm = 100) {
   res <- argillic_usda(pedon)
   if (isTRUE(res$passed) && length(res$layers) > 0L) {
@@ -882,7 +892,7 @@ argillic_within_usda <- function(pedon, max_top_cm = 100) {
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 natric_horizon_usda <- function(pedon) {
   res <- natric_horizon(pedon)
   res$name <- "natric_horizon_usda"
@@ -895,7 +905,7 @@ natric_horizon_usda <- function(pedon) {
 #' Salic horizon (USDA, delegates to WRB salic).
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param max_top_cm Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 salic_horizon_usda <- function(pedon, max_top_cm = 100) {
   res <- salic(pedon)
   res$name <- "salic_horizon_usda"
@@ -911,7 +921,7 @@ salic_horizon_usda <- function(pedon, max_top_cm = 100) {
 #' Gypsic horizon (USDA, delegates to WRB gypsic).
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param max_top_cm Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 gypsic_horizon_usda <- function(pedon, max_top_cm = 100) {
   res <- gypsic(pedon)
   res$name <- "gypsic_horizon_usda"
@@ -927,7 +937,7 @@ gypsic_horizon_usda <- function(pedon, max_top_cm = 100) {
 #' Calcic horizon (USDA, delegates to WRB calcic).
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param max_top_cm Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 calcic_horizon_usda <- function(pedon, max_top_cm = 100) {
   res <- calcic(pedon)
   res$name <- "calcic_horizon_usda"

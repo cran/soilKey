@@ -58,13 +58,14 @@
 #' @return A \code{aqp::SoilProfileCollection}.
 #' @seealso \code{\link{from_aqp}}, the inverse conversion.
 #' @examples
-#' \donttest{
-#' if (requireNamespace("aqp", quietly = TRUE)) {
-#'   pedons <- list(make_ferralsol_canonical(), make_luvisol_canonical())
-#'   spc <- as_aqp(pedons)
-#'   length(spc)         # 2 profiles
-#'   aqp::horizons(spc)  # one row per horizon, aqp-named columns
-#' }
+#' \dontrun{
+#' library(soilKey)
+#' library(aqp)
+#'
+#' pedons <- list(make_ferralsol_canonical(), make_luvisol_canonical())
+#' spc <- as_aqp(pedons)
+#' length(spc)         # 2 profiles
+#' aqp::horizons(spc)  # one row per horizon, aqp-named columns
 #' }
 #' @export
 as_aqp <- function(x) {
@@ -139,14 +140,12 @@ as_aqp <- function(x) {
 #'         \code{length(spc)}).
 #' @seealso \code{\link{as_aqp}}, the forward conversion.
 #' @examples
-#' \donttest{
-#' if (requireNamespace("aqp", quietly = TRUE)) {
-#'   pedons <- list(make_ferralsol_canonical(), make_luvisol_canonical())
-#'   spc <- as_aqp(pedons)
-#'   pedons2 <- from_aqp(spc)
-#'   identical(pedons[[1]]$horizons$clay_pct, pedons2[[1]]$horizons$clay_pct)
-#'   #> [1] TRUE
-#' }
+#' \dontrun{
+#' pedons <- list(make_ferralsol_canonical(), make_luvisol_canonical())
+#' spc <- as_aqp(pedons)
+#' pedons2 <- from_aqp(spc)
+#' identical(pedons[[1]]$horizons$clay_pct, pedons2[[1]]$horizons$clay_pct)
+#' #> [1] TRUE
 #' }
 #' @export
 from_aqp <- function(spc) {

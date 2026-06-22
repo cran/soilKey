@@ -47,7 +47,7 @@
 #' @param name Provider name; one of \code{"anthropic"}, \code{"openai"},
 #'        \code{"google"}, \code{"ollama"}.
 #' @return Character scalar with the default model identifier.
-#' @keywords internal
+#' @noRd
 default_model <- function(name) {
   name <- match.arg(name, c("auto", "anthropic", "openai", "google", "ollama"))
   if (identical(name, "auto")) name <- vlm_pick_provider(verbose = FALSE)
@@ -101,20 +101,18 @@ default_model <- function(name) {
 #'         method for sending prompts.
 #' @export
 #' @examplesIf requireNamespace("ellmer", quietly = TRUE)
-#' \donttest{
-#' # Each provider needs either an API key (cloud) or a running daemon
-#' # (Ollama); the example no-ops on CRAN when neither is available.
-#' if (nzchar(Sys.getenv("ANTHROPIC_API_KEY"))) {
-#'   provider <- try(vlm_provider("anthropic"), silent = TRUE)
-#' }
-#' if (interactive()) {
-#'   # Local Gemma 4 edge model -- default, ~3 GB, runs anywhere
-#'   provider <- try(vlm_provider("ollama"), silent = TRUE)
+#' \dontrun{
+#' # Cloud provider (needs ANTHROPIC_API_KEY)
+#' provider <- vlm_provider("anthropic")
 #'
-#'   # Local Gemma 4 frontier dense model -- best quality
-#'   provider <- try(vlm_provider("ollama", model = "gemma4:31b"),
-#'                   silent = TRUE)
-#' }
+#' # Local Gemma 4 edge model -- default, ~3 GB, runs anywhere
+#' provider <- vlm_provider("ollama")
+#'
+#' # Local Gemma 4 frontier dense model -- best quality
+#' provider <- vlm_provider("ollama", model = "gemma4:31b")
+#'
+#' # Any other multimodal model the user has pulled
+#' provider <- vlm_provider("ollama", model = "qwen2.5vl:32b")
 #' }
 vlm_provider <- function(name = c("auto", "anthropic", "openai", "google", "ollama"),
                           model = NULL, ...) {

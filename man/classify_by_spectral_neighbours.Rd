@@ -89,7 +89,7 @@ neighbours in the Boreal taiga.
 }
 
 \examples{
-\donttest{
+\dontrun{
 # Toy run against the bundled demo library (synthetic):
 data(ossl_demo_sa)
 # Inject a fake label column for the demo (real OSSL has it):

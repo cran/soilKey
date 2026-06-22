@@ -19,7 +19,7 @@
 #' `test_numeric_above`, `test_pattern_match`, `test_shrink_swell_cracks`
 #' on fixtures whose schema predates v0.3.3 column extensions.
 #'
-#' @keywords internal
+#' @noRd
 .col_at <- function(h, column, i, default = NA) {
   v <- h[[column]]
   if (is.null(v)) return(default)
@@ -42,7 +42,7 @@
 #' @param threshold Minimum value (inclusive).
 #' @param candidate_layers Optional layer index restriction.
 #' @return Sub-test result list.
-#' @keywords internal
+#' @noRd
 test_numeric_above <- function(h, column, threshold,
                                   candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -72,7 +72,7 @@ test_numeric_above <- function(h, column, threshold,
 #' @param pattern Regex (case-insensitive).
 #' @param candidate_layers Optional restriction.
 #' @return Sub-test result.
-#' @keywords internal
+#' @noRd
 test_pattern_match <- function(h, column, pattern,
                                   candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -97,11 +97,11 @@ test_pattern_match <- function(h, column, pattern,
 
 #' Test that a layer's top is at or below a target depth
 #'
-#' Inverse of \code{\link{test_top_at_or_above}}: returns layers whose top
+#' Inverse of \code{test_top_at_or_above}: returns layers whose top
 #' is shallower than or equal to \code{max_top_cm}, i.e. that start within
 #' the upper part of the profile.
 #'
-#' @keywords internal
+#' @noRd
 test_starts_within <- function(h, max_top_cm,
                                  candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -135,7 +135,7 @@ test_starts_within <- function(h, max_top_cm,
 #' @param h Horizons table.
 #' @param min_class One of "weakly", "moderately", "strongly", "indurated".
 #' @param candidate_layers Optional restriction.
-#' @keywords internal
+#' @noRd
 test_cemented <- function(h, min_class = "moderately",
                             candidate_layers = NULL) {
   ladder <- c("none" = 0L, "weakly" = 1L, "moderately" = 2L,
@@ -185,7 +185,7 @@ test_cemented <- function(h, min_class = "moderately",
 #' Munsell is present); the uncoated-grain check is deferred (treated as
 #' satisfied when the colour passes).
 #'
-#' @keywords internal
+#' @noRd
 test_claric_munsell <- function(h, candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
   passing <- integer(0); missing <- character(0); details <- list()
@@ -239,7 +239,7 @@ test_claric_munsell <- function(h, candidate_layers = NULL) {
 #' designation pattern matching (\code{Bss}, \code{Css}, etc.) and
 #' \code{slickensides} >= "common" as proxy evidence.
 #'
-#' @keywords internal
+#' @noRd
 test_shrink_swell_cracks <- function(h, min_width_cm = 0.5,
                                         min_depth_cm = 0,
                                         candidate_layers = NULL) {
@@ -295,7 +295,7 @@ test_shrink_swell_cracks <- function(h, min_width_cm = 0.5,
 #'   \item methane (not in schema, deferred).
 #' }
 #'
-#' @keywords internal
+#' @noRd
 test_reducing_conditions <- function(h, min_redox_pct = 5,
                                         candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -341,7 +341,7 @@ test_reducing_conditions <- function(h, min_redox_pct = 5,
 #' Reuses \code{compute_alfe_ox()} (declared inline below to keep the file
 #' self-contained); pass thresholds for andic (>=2.0) or vitric (>=0.4).
 #'
-#' @keywords internal
+#' @noRd
 test_alfe_ox_above <- function(h, min_pct,
                                  candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -379,7 +379,7 @@ test_alfe_ox_above <- function(h, min_pct,
 #' (\code{varnish_pct} >= 10 OR \code{ventifact_pct} >= 10 OR
 #' \code{vesicular_pores} \%in\% c("common", "many")) on the surface
 #' layer (top_cm <= 5).
-#' @keywords internal
+#' @noRd
 test_yermic_surface <- function(h) {
   surface <- which(!is.na(h$top_cm) & h$top_cm <= 5)
   if (length(surface) == 0L) {
@@ -426,7 +426,7 @@ test_yermic_surface <- function(h) {
 #' plastic" when moist, EC < 4 dS/m OR >= 1 dS/m less than the layer
 #' below. v0.3.3 enforces texture + structure + cracks + EC.
 #'
-#' @keywords internal
+#' @noRd
 test_takyric_surface <- function(h) {
   surface <- which(!is.na(h$top_cm) & h$top_cm <= 5)
   if (length(surface) == 0L) {
@@ -467,4 +467,143 @@ test_takyric_surface <- function(h) {
     missing = character(0),
     details = list(`1` = details)
   )
+}
+
+
+# ---- cambic horizon criterion 3 (evidence of soil formation) ---------------
+
+#' Munsell hue as a continuous position on the red-to-yellow scale.
+#'
+#' Maps a soil Munsell hue name (e.g. "7.5YR") to a numeric position in
+#' Munsell hue units, increasing toward yellow: 2.5R = 0, 5R = 2.5, ...,
+#' 10R = 7.5, 2.5YR = 10, ..., 10YR = 17.5, 2.5Y = 20, ..., 10Y = 27.5.
+#' Adjacent hue pages differ by 2.5 units. Returns \code{NA} for neutral
+#' (N) or unparseable hues. A LOWER value is redder; a HIGHER value is
+#' yellower. Used to evaluate "\eqn{\ge} 2.5 units redder/yellower" in
+#' WRB 2022 cambic-horizon criterion 3.
+#'
+#' @param hue Character Munsell hue (single value or vector).
+#' @noRd
+.munsell_hue_units <- function(hue) {
+  one <- function(x) {
+    if (is.na(x)) return(NA_real_)
+    key <- toupper(gsub("\\s", "", x))
+    m <- regmatches(key, regexec("^([0-9.]+)(YR|Y|R)$", key))[[1]]
+    if (length(m) != 3L) return(NA_real_)
+    num <- suppressWarnings(as.numeric(m[2]))
+    if (is.na(num)) return(NA_real_)
+    base <- switch(m[3], "R" = 0, "YR" = 10, "Y" = 20, NA_real_)
+    if (is.na(base)) return(NA_real_)
+    base + (num - 2.5)
+  }
+  vapply(as.character(hue), one, numeric(1), USE.NAMES = FALSE)
+}
+
+#' Test cambic-horizon criterion 3 (evidence of soil formation), WRB 2022 Ch 3.1.5.
+#'
+#' A layer shows evidence of soil formation if ANY of the following holds,
+#' compared with an adjacent layer not separated from it by a lithic
+#' discontinuity:
+#' \itemize{
+#'   \item \strong{3.a} vs the directly underlying layer: hue \eqn{\ge} 2.5
+#'         units redder (or yellower if the underlying hue is 5YR or redder);
+#'         OR chroma \eqn{\ge} 1 unit higher; OR clay \eqn{\ge} 4\% (absolute)
+#'         higher;
+#'   \item \strong{3.b} vs an overlying mineral layer \eqn{\ge} 5 cm thick: hue
+#'         \eqn{\ge} 2.5 units redder; OR value \eqn{\ge} 1 unit higher; OR
+#'         chroma \eqn{\ge} 1 unit higher;
+#'   \item \strong{3.c} vs the directly underlying layer: \eqn{\ge} 5\%
+#'         (absolute) less calcium carbonate equivalent (carbonate removal);
+#'   \item \strong{3.d} Fe-dith \eqn{\ge} 0.1\%, Fe-ox/Fe-dith \eqn{\ge} 0.1,
+#'         and hue 2.5YR-2.5Y with chroma > 3.
+#' }
+#' Simplifications relative to the verbatim text (documented; no schema
+#' support): the \eqn{\ge} 90\% exposed-area Munsell qualifier is treated as
+#' met by the recorded layer colour; gypsum removal in 3.c is omitted (no
+#' gypsum column); the lithic-discontinuity check uses the leading-integer
+#' designation convention (e.g. \code{2C}); 3.b's "overlying MINERAL layer"
+#' excludes O-designated layers. A layer with no assessable evidence (all
+#' relevant adjacency data absent) contributes \code{NA}, not a pass.
+#'
+#' @param h Horizons table.
+#' @param candidate_layers Optional integer layer indices to restrict to.
+#' @noRd
+test_cambic_soil_formation <- function(h, candidate_layers = NULL) {
+  cl <- .candidate_layers(h, candidate_layers)
+  n  <- nrow(h)
+  lith_num <- function(i) {
+    d <- .col_at(h, "designation", i)
+    if (is.na(d)) return(NA_integer_)
+    m <- regmatches(d, regexpr("^[0-9]+", d))
+    if (length(m) && nzchar(m)) as.integer(m) else 1L
+  }
+  no_lith_break <- function(i, j) {
+    a <- lith_num(i); b <- lith_num(j)
+    if (is.na(a) || is.na(b)) return(TRUE)
+    a == b
+  }
+  is_mineral <- function(i) {
+    d  <- .col_at(h, "designation", i)
+    oc <- .col_at(h, "oc_pct", i)
+    !(isTRUE(grepl("^[0-9]*O", as.character(d))) ||
+        isTRUE(!is.na(oc) && oc >= 20))
+  }
+  hue_u <- function(i) .munsell_hue_units(.col_at(h, "munsell_hue_moist", i))
+
+  passing <- integer(0); missing <- character(0); details <- list()
+  for (i in cl) {
+    up <- i - 1L; dn <- i + 1L
+    ev <- list()
+
+    # --- 3.a vs directly underlying ---
+    if (dn <= n && no_lith_break(i, dn)) {
+      hi <- hue_u(i); hj <- hue_u(dn)
+      if (!is.na(hi) && !is.na(hj))
+        ev$a_hue <- if (hj <= 12.5) (hi - hj) >= 2.5 else (hj - hi) >= 2.5
+      ci <- .col_at(h, "munsell_chroma_moist", i)
+      cj <- .col_at(h, "munsell_chroma_moist", dn)
+      if (!is.na(ci) && !is.na(cj)) ev$a_chroma <- (ci - cj) >= 1
+      kli <- .col_at(h, "clay_pct", i); klj <- .col_at(h, "clay_pct", dn)
+      if (!is.na(kli) && !is.na(klj)) ev$a_clay <- (kli - klj) >= 4
+    }
+    # --- 3.b vs overlying mineral layer >= 5 cm ---
+    if (up >= 1L && no_lith_break(up, i) && is_mineral(up)) {
+      thk <- .col_at(h, "bottom_cm", up) - .col_at(h, "top_cm", up)
+      if (is.na(thk) || thk >= 5) {
+        hi <- hue_u(i); hj <- hue_u(up)
+        if (!is.na(hi) && !is.na(hj)) ev$b_hue <- (hj - hi) >= 2.5
+        vi <- .col_at(h, "munsell_value_moist", i)
+        vj <- .col_at(h, "munsell_value_moist", up)
+        if (!is.na(vi) && !is.na(vj)) ev$b_value <- (vi - vj) >= 1
+        ci <- .col_at(h, "munsell_chroma_moist", i)
+        cj <- .col_at(h, "munsell_chroma_moist", up)
+        if (!is.na(ci) && !is.na(cj)) ev$b_chroma <- (ci - cj) >= 1
+      }
+    }
+    # --- 3.c carbonate removal vs underlying ---
+    if (dn <= n && no_lith_break(i, dn)) {
+      cai <- .col_at(h, "caco3_pct", i); caj <- .col_at(h, "caco3_pct", dn)
+      if (!is.na(cai) && !is.na(caj)) ev$c_caco3 <- (caj - cai) >= 5
+    }
+    # --- 3.d Fe ---
+    fed <- .col_at(h, "fe_dcb_pct", i); feo <- .col_at(h, "fe_ox_pct", i)
+    chi <- .col_at(h, "munsell_chroma_moist", i); hui <- hue_u(i)
+    if (!is.na(fed) && !is.na(feo) && !is.na(chi) && !is.na(hui))
+      ev$d_fe <- fed >= 0.1 && (feo / fed) >= 0.1 &&
+                   hui >= 10 && hui <= 20 && chi > 3
+
+    layer_pass <- any(vapply(ev, isTRUE, logical(1)))
+    details[[as.character(i)]] <- list(idx = i, evidence = ev,
+                                        passed = layer_pass)
+    if (isTRUE(layer_pass)) passing <- c(passing, i)
+    else if (length(ev) == 0L) missing <- c(missing, "soil_formation_evidence")
+  }
+  any_evaluable <- any(vapply(details,
+                              function(d) length(d$evidence) > 0L, logical(1)))
+  passed <- if (length(passing) > 0L) TRUE
+            else if (any_evaluable) FALSE
+            else if (length(missing) > 0L) NA
+            else FALSE
+  .subtest_result(passed = passed, layers = passing,
+                   missing = unique(missing), details = details)
 }

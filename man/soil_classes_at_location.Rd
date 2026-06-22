@@ -54,7 +54,7 @@ confirm.
 
 For real use, point \code{source_url} at a regional SoilGrids
 "MostProbable WRB" GeoTIFF / COG (one of the cuts at
-\url{https://files.isric.org/soilgrids/latest/data/wrb/}). For
+\code{https://files.isric.org/soilgrids/latest/data/wrb/}). For
 tests, \code{options(soilKey.test_raster = "/tmp/syn.tif")} is
 honoured. When no source is given, the function emits a
 \code{cli_alert_warning()} and returns an empty result -- it does
@@ -79,21 +79,16 @@ A list with three elements:
 }
 
 \examples{
-\donttest{
-if (requireNamespace("terra", quietly = TRUE)) {
-  # Mata Atlantica, Rio de Janeiro state (needs internet -- try() guards it).
-  res <- try(soil_classes_at_location(
-    lat        = -22.7,
-    lon        = -43.7,
-    system     = "wrb2022",
-    source_url = paste0("https://files.isric.org/soilgrids/latest/",
-                          "data/wrb/MostProbable.vrt")
-  ), silent = TRUE)
-  if (!inherits(res, "try-error")) {
-    res$distribution         # ranked list of likely RSGs
-    res$typical_attributes   # canonical thresholds per RSG to confirm
-  }
-}
+\dontrun{
+# Mata Atlântica, Rio de Janeiro state.
+res <- soil_classes_at_location(
+  lat        = -22.7,
+  lon        = -43.7,
+  system     = "wrb2022",
+  source_url = "https://files.isric.org/soilgrids/latest/data/wrb/MostProbable.vrt"
+)
+res$distribution         # ranked list of likely RSGs
+res$typical_attributes   # canonical thresholds per RSG to confirm
 }
 }
 \seealso{

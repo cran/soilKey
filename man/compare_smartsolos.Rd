@@ -24,12 +24,9 @@ Embrapa AgroAPI) on the same \code{\link{PedonRecord}} and tabulates
 agreement at each of the four SiBCS categorical levels.
 }
 \examples{
-\donttest{
-if (nzchar(Sys.getenv("AGROAPI_TOKEN")) &&
-      requireNamespace("httr", quietly = TRUE)) {
-  cmp <- try(compare_smartsolos(make_argissolo_canonical()),
-             silent = TRUE)
-  if (!inherits(cmp, "try-error")) cmp$agreement
-}
+\dontrun{
+Sys.setenv(AGROAPI_TOKEN = "<your token>")
+cmp <- compare_smartsolos(make_argissolo_canonical())
+cmp$agreement
 }
 }

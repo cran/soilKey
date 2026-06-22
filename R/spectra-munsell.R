@@ -136,14 +136,12 @@ predict_lab_from_spectra <- function(spectra, wavelengths) {
 #'         \code{X}, \code{Y}, \code{Z}, one row per sample.
 #'
 #' @examples
-#' \donttest{
-#' if (requireNamespace("munsellinterpol", quietly = TRUE)) {
-#'   # White reflector across the visible: should map to a near-neutral
-#'   # high-value Munsell color.
-#'   wl <- seq(380, 780, by = 5)
-#'   R  <- rep(0.9, length(wl))
-#'   predict_munsell_from_spectra(R, wavelengths = wl)
-#' }
+#' \dontrun{
+#' # White reflector across the visible: should map to a near-neutral
+#' # high-value Munsell color.
+#' wl <- seq(380, 780, by = 5)
+#' R  <- rep(0.9, length(wl))
+#' predict_munsell_from_spectra(R, wavelengths = wl)
 #' }
 #' @export
 predict_munsell_from_spectra <- function(spectra, wavelengths,

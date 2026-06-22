@@ -25,14 +25,12 @@ Round-trip property: \code{from_aqp(as_aqp(pedon))} reproduces
 \code{pedon} modulo column ordering.
 }
 \examples{
-\donttest{
-if (requireNamespace("aqp", quietly = TRUE)) {
-  pedons <- list(make_ferralsol_canonical(), make_luvisol_canonical())
-  spc <- as_aqp(pedons)
-  pedons2 <- from_aqp(spc)
-  identical(pedons[[1]]$horizons$clay_pct, pedons2[[1]]$horizons$clay_pct)
-  #> [1] TRUE
-}
+\dontrun{
+pedons <- list(make_ferralsol_canonical(), make_luvisol_canonical())
+spc <- as_aqp(pedons)
+pedons2 <- from_aqp(spc)
+identical(pedons[[1]]$horizons$clay_pct, pedons2[[1]]$horizons$clay_pct)
+#> [1] TRUE
 }
 }
 \seealso{

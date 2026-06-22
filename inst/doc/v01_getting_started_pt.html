@@ -372,7 +372,7 @@ grade</em>.</p>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>pedon <span class="ot">&lt;-</span> <span class="fu">make_ferralsol_canonical</span>()   <span class="co"># Latossolo Vermelho canônico</span></span>
 <span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">classify_wrb2022</span>(pedon, <span class="at">on_missing =</span> <span class="st">&quot;silent&quot;</span>)<span class="sc">$</span>name</span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Geric Ferric Rhodic Chromic Ferralsol (Clayic, Humic, Dystric, Ochric, Rubic)&quot;</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Geric Ferric Rhodic Ferralsol (Clayic, Humic, Eutric, Ochric, Rubic)&quot;</span></span>
 <span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="fu">classify_sibcs</span>(pedon)<span class="sc">$</span>name</span>
 <span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Latossolos Vermelhos Distroficos tipicos&quot;</span></span>
 <span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="fu">classify_usda</span>(pedon, <span class="at">on_missing =</span> <span class="st">&quot;silent&quot;</span>)<span class="sc">$</span>name</span>
@@ -458,7 +458,7 @@ tem</li>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>res_usda  <span class="ot">&lt;-</span> <span class="fu">classify_usda</span>(meu_pedon,  <span class="at">on_missing =</span> <span class="st">&quot;silent&quot;</span>)</span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a></span>
 <span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>res_wrb<span class="sc">$</span>name</span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Chromic Ferralsol (Clayic, Dystric, Ochric, Rubic)&quot;</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Chromic Ferralsol (Clayic, Ochric, Rubic)&quot;</span></span>
 <span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>res_sibcs<span class="sc">$</span>name</span>
 <span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Latossolos Vermelhos Distroficos tipicos, argilosa, moderado&quot;</span></span>
 <span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>res_usda<span class="sc">$</span>name</span>
@@ -467,8 +467,8 @@ tem</li>
 <h2>Atalho: classificar nos três sistemas em uma chamada</h2>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>todos <span class="ot">&lt;-</span> <span class="fu">classify_all</span>(meu_pedon, <span class="at">on_missing =</span> <span class="st">&quot;silent&quot;</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>todos<span class="sc">$</span>summary</span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt;                                                  wrb</span></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; 1 Chromic Ferralsol (Clayic, Dystric, Ochric, Rubic)</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt;                                         wrb</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; 1 Chromic Ferralsol (Clayic, Ochric, Rubic)</span></span>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt;                                                          sibcs           usda</span></span>
 <span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; 1 Latossolos Vermelhos Distroficos tipicos, argilosa, moderado Typic Hapludox</span></span></code></pre></div>
 <p><code>classify_all()</code> retorna uma lista nomeada com
@@ -1454,511 +1454,517 @@ diagnóstico envolvido:</p>
 <span id="cb6-969"><a href="#cb6-969" tabindex="-1"></a><span class="co">#&gt; $GL$evidence[[1]]$evidence$path3_ok</span></span>
 <span id="cb6-970"><a href="#cb6-970" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
 <span id="cb6-971"><a href="#cb6-971" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-972"><a href="#cb6-972" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-973"><a href="#cb6-973" tabindex="-1"></a><span class="co">#&gt; $GL$evidence[[1]]$reference</span></span>
-<span id="cb6-974"><a href="#cb6-974" tabindex="-1"></a><span class="co">#&gt; [1] &quot;IUSS Working Group WRB (2022), Chapter 4, Gleysols (p. 103)&quot;</span></span>
+<span id="cb6-972"><a href="#cb6-972" tabindex="-1"></a><span class="co">#&gt; $GL$evidence[[1]]$evidence$strict_mode</span></span>
+<span id="cb6-973"><a href="#cb6-973" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb6-974"><a href="#cb6-974" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-975"><a href="#cb6-975" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-976"><a href="#cb6-976" tabindex="-1"></a><span class="co">#&gt; $GL$evidence[[1]]$notes</span></span>
-<span id="cb6-977"><a href="#cb6-977" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-976"><a href="#cb6-976" tabindex="-1"></a><span class="co">#&gt; $GL$evidence[[1]]$reference</span></span>
+<span id="cb6-977"><a href="#cb6-977" tabindex="-1"></a><span class="co">#&gt; [1] &quot;IUSS Working Group WRB (2022), Chapter 4, Gleysols (p. 103)&quot;</span></span>
 <span id="cb6-978"><a href="#cb6-978" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-979"><a href="#cb6-979" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-980"><a href="#cb6-980" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-981"><a href="#cb6-981" tabindex="-1"></a><span class="co">#&gt; $GL$missing</span></span>
-<span id="cb6-982"><a href="#cb6-982" tabindex="-1"></a><span class="co">#&gt; [1] &quot;redoximorphic_features_pct&quot;</span></span>
+<span id="cb6-979"><a href="#cb6-979" tabindex="-1"></a><span class="co">#&gt; $GL$evidence[[1]]$notes</span></span>
+<span id="cb6-980"><a href="#cb6-980" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-981"><a href="#cb6-981" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-982"><a href="#cb6-982" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-983"><a href="#cb6-983" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-984"><a href="#cb6-984" tabindex="-1"></a><span class="co">#&gt; $GL$notes</span></span>
-<span id="cb6-985"><a href="#cb6-985" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-984"><a href="#cb6-984" tabindex="-1"></a><span class="co">#&gt; $GL$missing</span></span>
+<span id="cb6-985"><a href="#cb6-985" tabindex="-1"></a><span class="co">#&gt; [1] &quot;redoximorphic_features_pct&quot;</span></span>
 <span id="cb6-986"><a href="#cb6-986" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-987"><a href="#cb6-987" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-988"><a href="#cb6-988" tabindex="-1"></a><span class="co">#&gt; $AN</span></span>
-<span id="cb6-989"><a href="#cb6-989" tabindex="-1"></a><span class="co">#&gt; $AN$code</span></span>
-<span id="cb6-990"><a href="#cb6-990" tabindex="-1"></a><span class="co">#&gt; [1] &quot;AN&quot;</span></span>
-<span id="cb6-991"><a href="#cb6-991" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-992"><a href="#cb6-992" tabindex="-1"></a><span class="co">#&gt; $AN$name</span></span>
-<span id="cb6-993"><a href="#cb6-993" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Andosols&quot;</span></span>
+<span id="cb6-987"><a href="#cb6-987" tabindex="-1"></a><span class="co">#&gt; $GL$notes</span></span>
+<span id="cb6-988"><a href="#cb6-988" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-989"><a href="#cb6-989" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-990"><a href="#cb6-990" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-991"><a href="#cb6-991" tabindex="-1"></a><span class="co">#&gt; $AN</span></span>
+<span id="cb6-992"><a href="#cb6-992" tabindex="-1"></a><span class="co">#&gt; $AN$code</span></span>
+<span id="cb6-993"><a href="#cb6-993" tabindex="-1"></a><span class="co">#&gt; [1] &quot;AN&quot;</span></span>
 <span id="cb6-994"><a href="#cb6-994" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-995"><a href="#cb6-995" tabindex="-1"></a><span class="co">#&gt; $AN$passed</span></span>
-<span id="cb6-996"><a href="#cb6-996" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb6-995"><a href="#cb6-995" tabindex="-1"></a><span class="co">#&gt; $AN$name</span></span>
+<span id="cb6-996"><a href="#cb6-996" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Andosols&quot;</span></span>
 <span id="cb6-997"><a href="#cb6-997" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-998"><a href="#cb6-998" tabindex="-1"></a><span class="co">#&gt; $AN$evidence</span></span>
-<span id="cb6-999"><a href="#cb6-999" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]</span></span>
-<span id="cb6-1000"><a href="#cb6-1000" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$test_name</span></span>
-<span id="cb6-1001"><a href="#cb6-1001" tabindex="-1"></a><span class="co">#&gt; [1] &quot;andosol&quot;</span></span>
-<span id="cb6-1002"><a href="#cb6-1002" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1003"><a href="#cb6-1003" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$passed</span></span>
-<span id="cb6-1004"><a href="#cb6-1004" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb6-998"><a href="#cb6-998" tabindex="-1"></a><span class="co">#&gt; $AN$passed</span></span>
+<span id="cb6-999"><a href="#cb6-999" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb6-1000"><a href="#cb6-1000" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1001"><a href="#cb6-1001" tabindex="-1"></a><span class="co">#&gt; $AN$evidence</span></span>
+<span id="cb6-1002"><a href="#cb6-1002" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]</span></span>
+<span id="cb6-1003"><a href="#cb6-1003" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$test_name</span></span>
+<span id="cb6-1004"><a href="#cb6-1004" tabindex="-1"></a><span class="co">#&gt; [1] &quot;andosol&quot;</span></span>
 <span id="cb6-1005"><a href="#cb6-1005" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1006"><a href="#cb6-1006" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$layers</span></span>
-<span id="cb6-1007"><a href="#cb6-1007" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb6-1006"><a href="#cb6-1006" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$passed</span></span>
+<span id="cb6-1007"><a href="#cb6-1007" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
 <span id="cb6-1008"><a href="#cb6-1008" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1009"><a href="#cb6-1009" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$missing</span></span>
-<span id="cb6-1010"><a href="#cb6-1010" tabindex="-1"></a><span class="co">#&gt; [1] &quot;al_ox_pct&quot;               &quot;fe_ox_pct&quot;              </span></span>
-<span id="cb6-1011"><a href="#cb6-1011" tabindex="-1"></a><span class="co">#&gt; [3] &quot;phosphate_retention_pct&quot; &quot;volcanic_glass_pct&quot;     </span></span>
-<span id="cb6-1012"><a href="#cb6-1012" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1013"><a href="#cb6-1013" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$evidence</span></span>
-<span id="cb6-1014"><a href="#cb6-1014" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$evidence$andic</span></span>
+<span id="cb6-1009"><a href="#cb6-1009" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$layers</span></span>
+<span id="cb6-1010"><a href="#cb6-1010" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb6-1011"><a href="#cb6-1011" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1012"><a href="#cb6-1012" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$missing</span></span>
+<span id="cb6-1013"><a href="#cb6-1013" tabindex="-1"></a><span class="co">#&gt; [1] &quot;al_ox_pct&quot;               &quot;fe_ox_pct&quot;              </span></span>
+<span id="cb6-1014"><a href="#cb6-1014" tabindex="-1"></a><span class="co">#&gt; [3] &quot;phosphate_retention_pct&quot; &quot;volcanic_glass_pct&quot;     </span></span>
 <span id="cb6-1015"><a href="#cb6-1015" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1016"><a href="#cb6-1016" tabindex="-1"></a><span class="co">#&gt; ── DiagnosticResult: andic_properties</span></span>
-<span id="cb6-1017"><a href="#cb6-1017" tabindex="-1"></a><span class="co">#&gt; Status: failed</span></span>
-<span id="cb6-1018"><a href="#cb6-1018" tabindex="-1"></a><span class="co">#&gt; Missing attributes (3): al_ox_pct, fe_ox_pct, phosphate_retention_pct</span></span>
-<span id="cb6-1019"><a href="#cb6-1019" tabindex="-1"></a><span class="co">#&gt; Sub-tests:</span></span>
-<span id="cb6-1020"><a href="#cb6-1020" tabindex="-1"></a><span class="co">#&gt; [ NA ] oc_bd_proxy</span></span>
-<span id="cb6-1021"><a href="#cb6-1021" tabindex="-1"></a><span class="co">#&gt; Reference: IUSS Working Group WRB (2022), Chapter 3, Andic properties</span></span>
-<span id="cb6-1022"><a href="#cb6-1022" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1023"><a href="#cb6-1023" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$evidence$vitric</span></span>
-<span id="cb6-1024"><a href="#cb6-1024" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1025"><a href="#cb6-1025" tabindex="-1"></a><span class="co">#&gt; ── DiagnosticResult: vitric_properties</span></span>
-<span id="cb6-1026"><a href="#cb6-1026" tabindex="-1"></a><span class="co">#&gt; Status: NA (insufficient data)</span></span>
-<span id="cb6-1027"><a href="#cb6-1027" tabindex="-1"></a><span class="co">#&gt; Missing attributes (1): volcanic_glass_pct</span></span>
-<span id="cb6-1028"><a href="#cb6-1028" tabindex="-1"></a><span class="co">#&gt; Sub-tests:</span></span>
-<span id="cb6-1029"><a href="#cb6-1029" tabindex="-1"></a><span class="co">#&gt; [ NA ] volcanic_glass</span></span>
-<span id="cb6-1030"><a href="#cb6-1030" tabindex="-1"></a><span class="co">#&gt; [fail] alfe_ox</span></span>
-<span id="cb6-1031"><a href="#cb6-1031" tabindex="-1"></a><span class="co">#&gt; [fail] phosphate_ret</span></span>
-<span id="cb6-1032"><a href="#cb6-1032" tabindex="-1"></a><span class="co">#&gt; Reference: IUSS Working Group WRB (2022), Chapter 3.2.16</span></span>
-<span id="cb6-1033"><a href="#cb6-1033" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1034"><a href="#cb6-1034" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1035"><a href="#cb6-1035" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$reference</span></span>
-<span id="cb6-1036"><a href="#cb6-1036" tabindex="-1"></a><span class="co">#&gt; [1] &quot;IUSS Working Group WRB (2022), Chapter 4, Andosols (p. 104)&quot;</span></span>
+<span id="cb6-1016"><a href="#cb6-1016" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$evidence</span></span>
+<span id="cb6-1017"><a href="#cb6-1017" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$evidence$andic</span></span>
+<span id="cb6-1018"><a href="#cb6-1018" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1019"><a href="#cb6-1019" tabindex="-1"></a><span class="co">#&gt; ── DiagnosticResult: andic_properties</span></span>
+<span id="cb6-1020"><a href="#cb6-1020" tabindex="-1"></a><span class="co">#&gt; Status: failed</span></span>
+<span id="cb6-1021"><a href="#cb6-1021" tabindex="-1"></a><span class="co">#&gt; Missing attributes (3): al_ox_pct, fe_ox_pct, phosphate_retention_pct</span></span>
+<span id="cb6-1022"><a href="#cb6-1022" tabindex="-1"></a><span class="co">#&gt; Sub-tests:</span></span>
+<span id="cb6-1023"><a href="#cb6-1023" tabindex="-1"></a><span class="co">#&gt; [ NA ] oc_bd_proxy</span></span>
+<span id="cb6-1024"><a href="#cb6-1024" tabindex="-1"></a><span class="co">#&gt; Reference: IUSS Working Group WRB (2022), Chapter 3, Andic properties</span></span>
+<span id="cb6-1025"><a href="#cb6-1025" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1026"><a href="#cb6-1026" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$evidence$vitric</span></span>
+<span id="cb6-1027"><a href="#cb6-1027" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1028"><a href="#cb6-1028" tabindex="-1"></a><span class="co">#&gt; ── DiagnosticResult: vitric_properties</span></span>
+<span id="cb6-1029"><a href="#cb6-1029" tabindex="-1"></a><span class="co">#&gt; Status: NA (insufficient data)</span></span>
+<span id="cb6-1030"><a href="#cb6-1030" tabindex="-1"></a><span class="co">#&gt; Missing attributes (1): volcanic_glass_pct</span></span>
+<span id="cb6-1031"><a href="#cb6-1031" tabindex="-1"></a><span class="co">#&gt; Sub-tests:</span></span>
+<span id="cb6-1032"><a href="#cb6-1032" tabindex="-1"></a><span class="co">#&gt; [ NA ] volcanic_glass</span></span>
+<span id="cb6-1033"><a href="#cb6-1033" tabindex="-1"></a><span class="co">#&gt; [fail] alfe_ox</span></span>
+<span id="cb6-1034"><a href="#cb6-1034" tabindex="-1"></a><span class="co">#&gt; [fail] phosphate_ret</span></span>
+<span id="cb6-1035"><a href="#cb6-1035" tabindex="-1"></a><span class="co">#&gt; Reference: IUSS Working Group WRB (2022), Chapter 3.2.16</span></span>
+<span id="cb6-1036"><a href="#cb6-1036" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-1037"><a href="#cb6-1037" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1038"><a href="#cb6-1038" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$notes</span></span>
-<span id="cb6-1039"><a href="#cb6-1039" tabindex="-1"></a><span class="co">#&gt; [1] &quot;No andic or vitric layers&quot;</span></span>
+<span id="cb6-1038"><a href="#cb6-1038" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$reference</span></span>
+<span id="cb6-1039"><a href="#cb6-1039" tabindex="-1"></a><span class="co">#&gt; [1] &quot;IUSS Working Group WRB (2022), Chapter 4, Andosols (p. 104)&quot;</span></span>
 <span id="cb6-1040"><a href="#cb6-1040" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1041"><a href="#cb6-1041" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1042"><a href="#cb6-1042" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1043"><a href="#cb6-1043" tabindex="-1"></a><span class="co">#&gt; $AN$missing</span></span>
-<span id="cb6-1044"><a href="#cb6-1044" tabindex="-1"></a><span class="co">#&gt; [1] &quot;al_ox_pct&quot;               &quot;fe_ox_pct&quot;              </span></span>
-<span id="cb6-1045"><a href="#cb6-1045" tabindex="-1"></a><span class="co">#&gt; [3] &quot;phosphate_retention_pct&quot; &quot;volcanic_glass_pct&quot;     </span></span>
-<span id="cb6-1046"><a href="#cb6-1046" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1047"><a href="#cb6-1047" tabindex="-1"></a><span class="co">#&gt; $AN$notes</span></span>
-<span id="cb6-1048"><a href="#cb6-1048" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-1041"><a href="#cb6-1041" tabindex="-1"></a><span class="co">#&gt; $AN$evidence[[1]]$notes</span></span>
+<span id="cb6-1042"><a href="#cb6-1042" tabindex="-1"></a><span class="co">#&gt; [1] &quot;No andic or vitric layers&quot;</span></span>
+<span id="cb6-1043"><a href="#cb6-1043" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1044"><a href="#cb6-1044" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1045"><a href="#cb6-1045" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1046"><a href="#cb6-1046" tabindex="-1"></a><span class="co">#&gt; $AN$missing</span></span>
+<span id="cb6-1047"><a href="#cb6-1047" tabindex="-1"></a><span class="co">#&gt; [1] &quot;al_ox_pct&quot;               &quot;fe_ox_pct&quot;              </span></span>
+<span id="cb6-1048"><a href="#cb6-1048" tabindex="-1"></a><span class="co">#&gt; [3] &quot;phosphate_retention_pct&quot; &quot;volcanic_glass_pct&quot;     </span></span>
 <span id="cb6-1049"><a href="#cb6-1049" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1050"><a href="#cb6-1050" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1051"><a href="#cb6-1051" tabindex="-1"></a><span class="co">#&gt; $PZ</span></span>
-<span id="cb6-1052"><a href="#cb6-1052" tabindex="-1"></a><span class="co">#&gt; $PZ$code</span></span>
-<span id="cb6-1053"><a href="#cb6-1053" tabindex="-1"></a><span class="co">#&gt; [1] &quot;PZ&quot;</span></span>
-<span id="cb6-1054"><a href="#cb6-1054" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1055"><a href="#cb6-1055" tabindex="-1"></a><span class="co">#&gt; $PZ$name</span></span>
-<span id="cb6-1056"><a href="#cb6-1056" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Podzols&quot;</span></span>
+<span id="cb6-1050"><a href="#cb6-1050" tabindex="-1"></a><span class="co">#&gt; $AN$notes</span></span>
+<span id="cb6-1051"><a href="#cb6-1051" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-1052"><a href="#cb6-1052" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1053"><a href="#cb6-1053" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1054"><a href="#cb6-1054" tabindex="-1"></a><span class="co">#&gt; $PZ</span></span>
+<span id="cb6-1055"><a href="#cb6-1055" tabindex="-1"></a><span class="co">#&gt; $PZ$code</span></span>
+<span id="cb6-1056"><a href="#cb6-1056" tabindex="-1"></a><span class="co">#&gt; [1] &quot;PZ&quot;</span></span>
 <span id="cb6-1057"><a href="#cb6-1057" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1058"><a href="#cb6-1058" tabindex="-1"></a><span class="co">#&gt; $PZ$passed</span></span>
-<span id="cb6-1059"><a href="#cb6-1059" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1058"><a href="#cb6-1058" tabindex="-1"></a><span class="co">#&gt; $PZ$name</span></span>
+<span id="cb6-1059"><a href="#cb6-1059" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Podzols&quot;</span></span>
 <span id="cb6-1060"><a href="#cb6-1060" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1061"><a href="#cb6-1061" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence</span></span>
-<span id="cb6-1062"><a href="#cb6-1062" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]</span></span>
-<span id="cb6-1063"><a href="#cb6-1063" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$test_name</span></span>
-<span id="cb6-1064"><a href="#cb6-1064" tabindex="-1"></a><span class="co">#&gt; [1] &quot;spodic&quot;</span></span>
-<span id="cb6-1065"><a href="#cb6-1065" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1066"><a href="#cb6-1066" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$passed</span></span>
-<span id="cb6-1067"><a href="#cb6-1067" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1061"><a href="#cb6-1061" tabindex="-1"></a><span class="co">#&gt; $PZ$passed</span></span>
+<span id="cb6-1062"><a href="#cb6-1062" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1063"><a href="#cb6-1063" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1064"><a href="#cb6-1064" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence</span></span>
+<span id="cb6-1065"><a href="#cb6-1065" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]</span></span>
+<span id="cb6-1066"><a href="#cb6-1066" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$test_name</span></span>
+<span id="cb6-1067"><a href="#cb6-1067" tabindex="-1"></a><span class="co">#&gt; [1] &quot;spodic&quot;</span></span>
 <span id="cb6-1068"><a href="#cb6-1068" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1069"><a href="#cb6-1069" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$layers</span></span>
-<span id="cb6-1070"><a href="#cb6-1070" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb6-1069"><a href="#cb6-1069" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$passed</span></span>
+<span id="cb6-1070"><a href="#cb6-1070" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
 <span id="cb6-1071"><a href="#cb6-1071" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1072"><a href="#cb6-1072" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$missing</span></span>
-<span id="cb6-1073"><a href="#cb6-1073" tabindex="-1"></a><span class="co">#&gt; [1] &quot;al_ox_pct&quot; &quot;fe_ox_pct&quot;</span></span>
+<span id="cb6-1072"><a href="#cb6-1072" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$layers</span></span>
+<span id="cb6-1073"><a href="#cb6-1073" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
 <span id="cb6-1074"><a href="#cb6-1074" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1075"><a href="#cb6-1075" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence</span></span>
-<span id="cb6-1076"><a href="#cb6-1076" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$alfe_oxalate</span></span>
-<span id="cb6-1077"><a href="#cb6-1077" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$alfe_oxalate$passed</span></span>
-<span id="cb6-1078"><a href="#cb6-1078" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
-<span id="cb6-1079"><a href="#cb6-1079" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1080"><a href="#cb6-1080" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$alfe_oxalate$layers</span></span>
-<span id="cb6-1081"><a href="#cb6-1081" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb6-1075"><a href="#cb6-1075" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$missing</span></span>
+<span id="cb6-1076"><a href="#cb6-1076" tabindex="-1"></a><span class="co">#&gt; [1] &quot;al_ox_pct&quot; &quot;fe_ox_pct&quot;</span></span>
+<span id="cb6-1077"><a href="#cb6-1077" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1078"><a href="#cb6-1078" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence</span></span>
+<span id="cb6-1079"><a href="#cb6-1079" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$alfe_oxalate</span></span>
+<span id="cb6-1080"><a href="#cb6-1080" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$alfe_oxalate$passed</span></span>
+<span id="cb6-1081"><a href="#cb6-1081" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
 <span id="cb6-1082"><a href="#cb6-1082" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1083"><a href="#cb6-1083" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$alfe_oxalate$missing</span></span>
-<span id="cb6-1084"><a href="#cb6-1084" tabindex="-1"></a><span class="co">#&gt; [1] &quot;al_ox_pct&quot; &quot;fe_ox_pct&quot;</span></span>
+<span id="cb6-1083"><a href="#cb6-1083" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$alfe_oxalate$layers</span></span>
+<span id="cb6-1084"><a href="#cb6-1084" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
 <span id="cb6-1085"><a href="#cb6-1085" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1086"><a href="#cb6-1086" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$alfe_oxalate$details</span></span>
-<span id="cb6-1087"><a href="#cb6-1087" tabindex="-1"></a><span class="co">#&gt; list()</span></span>
+<span id="cb6-1086"><a href="#cb6-1086" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$alfe_oxalate$missing</span></span>
+<span id="cb6-1087"><a href="#cb6-1087" tabindex="-1"></a><span class="co">#&gt; [1] &quot;al_ox_pct&quot; &quot;fe_ox_pct&quot;</span></span>
 <span id="cb6-1088"><a href="#cb6-1088" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1089"><a href="#cb6-1089" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$alfe_oxalate$notes</span></span>
-<span id="cb6-1090"><a href="#cb6-1090" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1089"><a href="#cb6-1089" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$alfe_oxalate$details</span></span>
+<span id="cb6-1090"><a href="#cb6-1090" tabindex="-1"></a><span class="co">#&gt; list()</span></span>
 <span id="cb6-1091"><a href="#cb6-1091" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1092"><a href="#cb6-1092" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1093"><a href="#cb6-1093" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$ph</span></span>
-<span id="cb6-1094"><a href="#cb6-1094" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$ph$passed</span></span>
-<span id="cb6-1095"><a href="#cb6-1095" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
-<span id="cb6-1096"><a href="#cb6-1096" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1097"><a href="#cb6-1097" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$ph$layers</span></span>
-<span id="cb6-1098"><a href="#cb6-1098" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb6-1092"><a href="#cb6-1092" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$alfe_oxalate$notes</span></span>
+<span id="cb6-1093"><a href="#cb6-1093" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1094"><a href="#cb6-1094" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1095"><a href="#cb6-1095" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1096"><a href="#cb6-1096" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$ph</span></span>
+<span id="cb6-1097"><a href="#cb6-1097" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$ph$passed</span></span>
+<span id="cb6-1098"><a href="#cb6-1098" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
 <span id="cb6-1099"><a href="#cb6-1099" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1100"><a href="#cb6-1100" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$ph$missing</span></span>
-<span id="cb6-1101"><a href="#cb6-1101" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
+<span id="cb6-1100"><a href="#cb6-1100" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$ph$layers</span></span>
+<span id="cb6-1101"><a href="#cb6-1101" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
 <span id="cb6-1102"><a href="#cb6-1102" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1103"><a href="#cb6-1103" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$ph$details</span></span>
-<span id="cb6-1104"><a href="#cb6-1104" tabindex="-1"></a><span class="co">#&gt; list()</span></span>
+<span id="cb6-1103"><a href="#cb6-1103" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$ph$missing</span></span>
+<span id="cb6-1104"><a href="#cb6-1104" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
 <span id="cb6-1105"><a href="#cb6-1105" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1106"><a href="#cb6-1106" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$ph$notes</span></span>
-<span id="cb6-1107"><a href="#cb6-1107" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1106"><a href="#cb6-1106" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$ph$details</span></span>
+<span id="cb6-1107"><a href="#cb6-1107" tabindex="-1"></a><span class="co">#&gt; list()</span></span>
 <span id="cb6-1108"><a href="#cb6-1108" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1109"><a href="#cb6-1109" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1110"><a href="#cb6-1110" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$illuvial_signature</span></span>
-<span id="cb6-1111"><a href="#cb6-1111" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$illuvial_signature$passed</span></span>
-<span id="cb6-1112"><a href="#cb6-1112" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
-<span id="cb6-1113"><a href="#cb6-1113" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1114"><a href="#cb6-1114" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$illuvial_signature$layers</span></span>
-<span id="cb6-1115"><a href="#cb6-1115" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb6-1109"><a href="#cb6-1109" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$ph$notes</span></span>
+<span id="cb6-1110"><a href="#cb6-1110" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1111"><a href="#cb6-1111" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1112"><a href="#cb6-1112" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1113"><a href="#cb6-1113" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$illuvial_signature</span></span>
+<span id="cb6-1114"><a href="#cb6-1114" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$illuvial_signature$passed</span></span>
+<span id="cb6-1115"><a href="#cb6-1115" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
 <span id="cb6-1116"><a href="#cb6-1116" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1117"><a href="#cb6-1117" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$illuvial_signature$missing</span></span>
-<span id="cb6-1118"><a href="#cb6-1118" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
+<span id="cb6-1117"><a href="#cb6-1117" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$illuvial_signature$layers</span></span>
+<span id="cb6-1118"><a href="#cb6-1118" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
 <span id="cb6-1119"><a href="#cb6-1119" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1120"><a href="#cb6-1120" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$illuvial_signature$details</span></span>
-<span id="cb6-1121"><a href="#cb6-1121" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$illuvial_signature$details$designation_match</span></span>
-<span id="cb6-1122"><a href="#cb6-1122" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
-<span id="cb6-1123"><a href="#cb6-1123" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1124"><a href="#cb6-1124" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$illuvial_signature$details$albic_above_match</span></span>
+<span id="cb6-1120"><a href="#cb6-1120" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$illuvial_signature$missing</span></span>
+<span id="cb6-1121"><a href="#cb6-1121" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
+<span id="cb6-1122"><a href="#cb6-1122" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1123"><a href="#cb6-1123" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$illuvial_signature$details</span></span>
+<span id="cb6-1124"><a href="#cb6-1124" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$illuvial_signature$details$designation_match</span></span>
 <span id="cb6-1125"><a href="#cb6-1125" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
 <span id="cb6-1126"><a href="#cb6-1126" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1127"><a href="#cb6-1127" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1128"><a href="#cb6-1128" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$illuvial_signature$notes</span></span>
-<span id="cb6-1129"><a href="#cb6-1129" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1127"><a href="#cb6-1127" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$illuvial_signature$details$albic_above_match</span></span>
+<span id="cb6-1128"><a href="#cb6-1128" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb6-1129"><a href="#cb6-1129" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-1130"><a href="#cb6-1130" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1131"><a href="#cb6-1131" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1132"><a href="#cb6-1132" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$thickness</span></span>
-<span id="cb6-1133"><a href="#cb6-1133" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$thickness$passed</span></span>
-<span id="cb6-1134"><a href="#cb6-1134" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
-<span id="cb6-1135"><a href="#cb6-1135" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1136"><a href="#cb6-1136" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$thickness$layers</span></span>
-<span id="cb6-1137"><a href="#cb6-1137" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb6-1131"><a href="#cb6-1131" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$illuvial_signature$notes</span></span>
+<span id="cb6-1132"><a href="#cb6-1132" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1133"><a href="#cb6-1133" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1134"><a href="#cb6-1134" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1135"><a href="#cb6-1135" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$thickness</span></span>
+<span id="cb6-1136"><a href="#cb6-1136" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$thickness$passed</span></span>
+<span id="cb6-1137"><a href="#cb6-1137" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
 <span id="cb6-1138"><a href="#cb6-1138" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1139"><a href="#cb6-1139" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$thickness$missing</span></span>
-<span id="cb6-1140"><a href="#cb6-1140" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
+<span id="cb6-1139"><a href="#cb6-1139" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$thickness$layers</span></span>
+<span id="cb6-1140"><a href="#cb6-1140" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
 <span id="cb6-1141"><a href="#cb6-1141" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1142"><a href="#cb6-1142" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$thickness$details</span></span>
-<span id="cb6-1143"><a href="#cb6-1143" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-1142"><a href="#cb6-1142" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$thickness$missing</span></span>
+<span id="cb6-1143"><a href="#cb6-1143" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
 <span id="cb6-1144"><a href="#cb6-1144" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1145"><a href="#cb6-1145" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$thickness$notes</span></span>
-<span id="cb6-1146"><a href="#cb6-1146" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1145"><a href="#cb6-1145" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$thickness$details</span></span>
+<span id="cb6-1146"><a href="#cb6-1146" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
 <span id="cb6-1147"><a href="#cb6-1147" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1148"><a href="#cb6-1148" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1149"><a href="#cb6-1149" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1150"><a href="#cb6-1150" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$reference</span></span>
-<span id="cb6-1151"><a href="#cb6-1151" tabindex="-1"></a><span class="co">#&gt; [1] &quot;IUSS Working Group WRB (2022), Chapter 3, Spodic horizon&quot;</span></span>
+<span id="cb6-1148"><a href="#cb6-1148" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$evidence$thickness$notes</span></span>
+<span id="cb6-1149"><a href="#cb6-1149" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1150"><a href="#cb6-1150" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1151"><a href="#cb6-1151" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-1152"><a href="#cb6-1152" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1153"><a href="#cb6-1153" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$notes</span></span>
-<span id="cb6-1154"><a href="#cb6-1154" tabindex="-1"></a><span class="co">#&gt; [1] &quot;v0.9.19: + morphological inference path when Al/Fe oxalate missing&quot;</span></span>
+<span id="cb6-1153"><a href="#cb6-1153" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$reference</span></span>
+<span id="cb6-1154"><a href="#cb6-1154" tabindex="-1"></a><span class="co">#&gt; [1] &quot;IUSS Working Group WRB (2022), Chapter 3, Spodic horizon&quot;</span></span>
 <span id="cb6-1155"><a href="#cb6-1155" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1156"><a href="#cb6-1156" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1157"><a href="#cb6-1157" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1158"><a href="#cb6-1158" tabindex="-1"></a><span class="co">#&gt; $PZ$missing</span></span>
-<span id="cb6-1159"><a href="#cb6-1159" tabindex="-1"></a><span class="co">#&gt; [1] &quot;al_ox_pct&quot; &quot;fe_ox_pct&quot;</span></span>
+<span id="cb6-1156"><a href="#cb6-1156" tabindex="-1"></a><span class="co">#&gt; $PZ$evidence[[1]]$notes</span></span>
+<span id="cb6-1157"><a href="#cb6-1157" tabindex="-1"></a><span class="co">#&gt; [1] &quot;v0.9.19: + morphological inference path when Al/Fe oxalate missing&quot;</span></span>
+<span id="cb6-1158"><a href="#cb6-1158" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1159"><a href="#cb6-1159" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-1160"><a href="#cb6-1160" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1161"><a href="#cb6-1161" tabindex="-1"></a><span class="co">#&gt; $PZ$notes</span></span>
-<span id="cb6-1162"><a href="#cb6-1162" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-1161"><a href="#cb6-1161" tabindex="-1"></a><span class="co">#&gt; $PZ$missing</span></span>
+<span id="cb6-1162"><a href="#cb6-1162" tabindex="-1"></a><span class="co">#&gt; [1] &quot;al_ox_pct&quot; &quot;fe_ox_pct&quot;</span></span>
 <span id="cb6-1163"><a href="#cb6-1163" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1164"><a href="#cb6-1164" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1165"><a href="#cb6-1165" tabindex="-1"></a><span class="co">#&gt; $PT</span></span>
-<span id="cb6-1166"><a href="#cb6-1166" tabindex="-1"></a><span class="co">#&gt; $PT$code</span></span>
-<span id="cb6-1167"><a href="#cb6-1167" tabindex="-1"></a><span class="co">#&gt; [1] &quot;PT&quot;</span></span>
-<span id="cb6-1168"><a href="#cb6-1168" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1169"><a href="#cb6-1169" tabindex="-1"></a><span class="co">#&gt; $PT$name</span></span>
-<span id="cb6-1170"><a href="#cb6-1170" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Plinthosols&quot;</span></span>
+<span id="cb6-1164"><a href="#cb6-1164" tabindex="-1"></a><span class="co">#&gt; $PZ$notes</span></span>
+<span id="cb6-1165"><a href="#cb6-1165" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-1166"><a href="#cb6-1166" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1167"><a href="#cb6-1167" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1168"><a href="#cb6-1168" tabindex="-1"></a><span class="co">#&gt; $PT</span></span>
+<span id="cb6-1169"><a href="#cb6-1169" tabindex="-1"></a><span class="co">#&gt; $PT$code</span></span>
+<span id="cb6-1170"><a href="#cb6-1170" tabindex="-1"></a><span class="co">#&gt; [1] &quot;PT&quot;</span></span>
 <span id="cb6-1171"><a href="#cb6-1171" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1172"><a href="#cb6-1172" tabindex="-1"></a><span class="co">#&gt; $PT$passed</span></span>
-<span id="cb6-1173"><a href="#cb6-1173" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1172"><a href="#cb6-1172" tabindex="-1"></a><span class="co">#&gt; $PT$name</span></span>
+<span id="cb6-1173"><a href="#cb6-1173" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Plinthosols&quot;</span></span>
 <span id="cb6-1174"><a href="#cb6-1174" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1175"><a href="#cb6-1175" tabindex="-1"></a><span class="co">#&gt; $PT$evidence</span></span>
-<span id="cb6-1176"><a href="#cb6-1176" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]</span></span>
-<span id="cb6-1177"><a href="#cb6-1177" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$test_name</span></span>
-<span id="cb6-1178"><a href="#cb6-1178" tabindex="-1"></a><span class="co">#&gt; [1] &quot;plinthic&quot;</span></span>
-<span id="cb6-1179"><a href="#cb6-1179" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1180"><a href="#cb6-1180" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$passed</span></span>
-<span id="cb6-1181"><a href="#cb6-1181" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1175"><a href="#cb6-1175" tabindex="-1"></a><span class="co">#&gt; $PT$passed</span></span>
+<span id="cb6-1176"><a href="#cb6-1176" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1177"><a href="#cb6-1177" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1178"><a href="#cb6-1178" tabindex="-1"></a><span class="co">#&gt; $PT$evidence</span></span>
+<span id="cb6-1179"><a href="#cb6-1179" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]</span></span>
+<span id="cb6-1180"><a href="#cb6-1180" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$test_name</span></span>
+<span id="cb6-1181"><a href="#cb6-1181" tabindex="-1"></a><span class="co">#&gt; [1] &quot;plinthic&quot;</span></span>
 <span id="cb6-1182"><a href="#cb6-1182" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1183"><a href="#cb6-1183" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$layers</span></span>
-<span id="cb6-1184"><a href="#cb6-1184" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb6-1183"><a href="#cb6-1183" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$passed</span></span>
+<span id="cb6-1184"><a href="#cb6-1184" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
 <span id="cb6-1185"><a href="#cb6-1185" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1186"><a href="#cb6-1186" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$missing</span></span>
-<span id="cb6-1187"><a href="#cb6-1187" tabindex="-1"></a><span class="co">#&gt; [1] &quot;plinthite_pct&quot;</span></span>
+<span id="cb6-1186"><a href="#cb6-1186" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$layers</span></span>
+<span id="cb6-1187"><a href="#cb6-1187" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
 <span id="cb6-1188"><a href="#cb6-1188" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1189"><a href="#cb6-1189" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence</span></span>
-<span id="cb6-1190"><a href="#cb6-1190" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$plinthite</span></span>
-<span id="cb6-1191"><a href="#cb6-1191" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$plinthite$passed</span></span>
-<span id="cb6-1192"><a href="#cb6-1192" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
-<span id="cb6-1193"><a href="#cb6-1193" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1194"><a href="#cb6-1194" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$plinthite$layers</span></span>
-<span id="cb6-1195"><a href="#cb6-1195" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb6-1189"><a href="#cb6-1189" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$missing</span></span>
+<span id="cb6-1190"><a href="#cb6-1190" tabindex="-1"></a><span class="co">#&gt; [1] &quot;plinthite_pct&quot;</span></span>
+<span id="cb6-1191"><a href="#cb6-1191" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1192"><a href="#cb6-1192" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence</span></span>
+<span id="cb6-1193"><a href="#cb6-1193" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$plinthite</span></span>
+<span id="cb6-1194"><a href="#cb6-1194" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$plinthite$passed</span></span>
+<span id="cb6-1195"><a href="#cb6-1195" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
 <span id="cb6-1196"><a href="#cb6-1196" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1197"><a href="#cb6-1197" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$plinthite$missing</span></span>
-<span id="cb6-1198"><a href="#cb6-1198" tabindex="-1"></a><span class="co">#&gt; [1] &quot;plinthite_pct&quot;</span></span>
+<span id="cb6-1197"><a href="#cb6-1197" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$plinthite$layers</span></span>
+<span id="cb6-1198"><a href="#cb6-1198" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
 <span id="cb6-1199"><a href="#cb6-1199" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1200"><a href="#cb6-1200" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$plinthite$details</span></span>
-<span id="cb6-1201"><a href="#cb6-1201" tabindex="-1"></a><span class="co">#&gt; list()</span></span>
+<span id="cb6-1200"><a href="#cb6-1200" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$plinthite$missing</span></span>
+<span id="cb6-1201"><a href="#cb6-1201" tabindex="-1"></a><span class="co">#&gt; [1] &quot;plinthite_pct&quot;</span></span>
 <span id="cb6-1202"><a href="#cb6-1202" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1203"><a href="#cb6-1203" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$plinthite$notes</span></span>
-<span id="cb6-1204"><a href="#cb6-1204" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1203"><a href="#cb6-1203" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$plinthite$details</span></span>
+<span id="cb6-1204"><a href="#cb6-1204" tabindex="-1"></a><span class="co">#&gt; list()</span></span>
 <span id="cb6-1205"><a href="#cb6-1205" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1206"><a href="#cb6-1206" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1207"><a href="#cb6-1207" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$thickness</span></span>
-<span id="cb6-1208"><a href="#cb6-1208" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$thickness$passed</span></span>
-<span id="cb6-1209"><a href="#cb6-1209" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
-<span id="cb6-1210"><a href="#cb6-1210" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1211"><a href="#cb6-1211" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$thickness$layers</span></span>
-<span id="cb6-1212"><a href="#cb6-1212" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb6-1206"><a href="#cb6-1206" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$plinthite$notes</span></span>
+<span id="cb6-1207"><a href="#cb6-1207" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1208"><a href="#cb6-1208" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1209"><a href="#cb6-1209" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1210"><a href="#cb6-1210" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$thickness</span></span>
+<span id="cb6-1211"><a href="#cb6-1211" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$thickness$passed</span></span>
+<span id="cb6-1212"><a href="#cb6-1212" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
 <span id="cb6-1213"><a href="#cb6-1213" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1214"><a href="#cb6-1214" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$thickness$missing</span></span>
-<span id="cb6-1215"><a href="#cb6-1215" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
+<span id="cb6-1214"><a href="#cb6-1214" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$thickness$layers</span></span>
+<span id="cb6-1215"><a href="#cb6-1215" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
 <span id="cb6-1216"><a href="#cb6-1216" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1217"><a href="#cb6-1217" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$thickness$details</span></span>
-<span id="cb6-1218"><a href="#cb6-1218" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-1217"><a href="#cb6-1217" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$thickness$missing</span></span>
+<span id="cb6-1218"><a href="#cb6-1218" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
 <span id="cb6-1219"><a href="#cb6-1219" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1220"><a href="#cb6-1220" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$thickness$notes</span></span>
-<span id="cb6-1221"><a href="#cb6-1221" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1220"><a href="#cb6-1220" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$thickness$details</span></span>
+<span id="cb6-1221"><a href="#cb6-1221" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
 <span id="cb6-1222"><a href="#cb6-1222" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1223"><a href="#cb6-1223" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1224"><a href="#cb6-1224" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$designation_inference</span></span>
-<span id="cb6-1225"><a href="#cb6-1225" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$designation_inference$passed</span></span>
-<span id="cb6-1226"><a href="#cb6-1226" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
-<span id="cb6-1227"><a href="#cb6-1227" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1228"><a href="#cb6-1228" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$designation_inference$layers</span></span>
-<span id="cb6-1229"><a href="#cb6-1229" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb6-1223"><a href="#cb6-1223" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$thickness$notes</span></span>
+<span id="cb6-1224"><a href="#cb6-1224" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1225"><a href="#cb6-1225" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1226"><a href="#cb6-1226" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1227"><a href="#cb6-1227" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$designation_inference</span></span>
+<span id="cb6-1228"><a href="#cb6-1228" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$designation_inference$passed</span></span>
+<span id="cb6-1229"><a href="#cb6-1229" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
 <span id="cb6-1230"><a href="#cb6-1230" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1231"><a href="#cb6-1231" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$designation_inference$source</span></span>
-<span id="cb6-1232"><a href="#cb6-1232" tabindex="-1"></a><span class="co">#&gt; [1] &quot;off&quot;</span></span>
+<span id="cb6-1231"><a href="#cb6-1231" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$designation_inference$layers</span></span>
+<span id="cb6-1232"><a href="#cb6-1232" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
 <span id="cb6-1233"><a href="#cb6-1233" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1234"><a href="#cb6-1234" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1235"><a href="#cb6-1235" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1236"><a href="#cb6-1236" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$reference</span></span>
-<span id="cb6-1237"><a href="#cb6-1237" tabindex="-1"></a><span class="co">#&gt; [1] &quot;IUSS Working Group WRB (2022), Chapter 3, Plinthic horizon &quot;</span></span>
+<span id="cb6-1234"><a href="#cb6-1234" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$evidence$designation_inference$source</span></span>
+<span id="cb6-1235"><a href="#cb6-1235" tabindex="-1"></a><span class="co">#&gt; [1] &quot;off&quot;</span></span>
+<span id="cb6-1236"><a href="#cb6-1236" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1237"><a href="#cb6-1237" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-1238"><a href="#cb6-1238" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1239"><a href="#cb6-1239" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$notes</span></span>
-<span id="cb6-1240"><a href="#cb6-1240" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1239"><a href="#cb6-1239" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$reference</span></span>
+<span id="cb6-1240"><a href="#cb6-1240" tabindex="-1"></a><span class="co">#&gt; [1] &quot;IUSS Working Group WRB (2022), Chapter 3, Plinthic horizon &quot;</span></span>
 <span id="cb6-1241"><a href="#cb6-1241" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1242"><a href="#cb6-1242" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1243"><a href="#cb6-1243" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1244"><a href="#cb6-1244" tabindex="-1"></a><span class="co">#&gt; $PT$missing</span></span>
-<span id="cb6-1245"><a href="#cb6-1245" tabindex="-1"></a><span class="co">#&gt; [1] &quot;plinthite_pct&quot;</span></span>
+<span id="cb6-1242"><a href="#cb6-1242" tabindex="-1"></a><span class="co">#&gt; $PT$evidence[[1]]$notes</span></span>
+<span id="cb6-1243"><a href="#cb6-1243" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1244"><a href="#cb6-1244" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1245"><a href="#cb6-1245" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-1246"><a href="#cb6-1246" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1247"><a href="#cb6-1247" tabindex="-1"></a><span class="co">#&gt; $PT$notes</span></span>
-<span id="cb6-1248"><a href="#cb6-1248" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-1247"><a href="#cb6-1247" tabindex="-1"></a><span class="co">#&gt; $PT$missing</span></span>
+<span id="cb6-1248"><a href="#cb6-1248" tabindex="-1"></a><span class="co">#&gt; [1] &quot;plinthite_pct&quot;</span></span>
 <span id="cb6-1249"><a href="#cb6-1249" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1250"><a href="#cb6-1250" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1251"><a href="#cb6-1251" tabindex="-1"></a><span class="co">#&gt; $PL</span></span>
-<span id="cb6-1252"><a href="#cb6-1252" tabindex="-1"></a><span class="co">#&gt; $PL$code</span></span>
-<span id="cb6-1253"><a href="#cb6-1253" tabindex="-1"></a><span class="co">#&gt; [1] &quot;PL&quot;</span></span>
-<span id="cb6-1254"><a href="#cb6-1254" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1255"><a href="#cb6-1255" tabindex="-1"></a><span class="co">#&gt; $PL$name</span></span>
-<span id="cb6-1256"><a href="#cb6-1256" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Planosols&quot;</span></span>
+<span id="cb6-1250"><a href="#cb6-1250" tabindex="-1"></a><span class="co">#&gt; $PT$notes</span></span>
+<span id="cb6-1251"><a href="#cb6-1251" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-1252"><a href="#cb6-1252" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1253"><a href="#cb6-1253" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1254"><a href="#cb6-1254" tabindex="-1"></a><span class="co">#&gt; $PL</span></span>
+<span id="cb6-1255"><a href="#cb6-1255" tabindex="-1"></a><span class="co">#&gt; $PL$code</span></span>
+<span id="cb6-1256"><a href="#cb6-1256" tabindex="-1"></a><span class="co">#&gt; [1] &quot;PL&quot;</span></span>
 <span id="cb6-1257"><a href="#cb6-1257" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1258"><a href="#cb6-1258" tabindex="-1"></a><span class="co">#&gt; $PL$passed</span></span>
-<span id="cb6-1259"><a href="#cb6-1259" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb6-1258"><a href="#cb6-1258" tabindex="-1"></a><span class="co">#&gt; $PL$name</span></span>
+<span id="cb6-1259"><a href="#cb6-1259" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Planosols&quot;</span></span>
 <span id="cb6-1260"><a href="#cb6-1260" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1261"><a href="#cb6-1261" tabindex="-1"></a><span class="co">#&gt; $PL$evidence</span></span>
-<span id="cb6-1262"><a href="#cb6-1262" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]</span></span>
-<span id="cb6-1263"><a href="#cb6-1263" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]$test_name</span></span>
-<span id="cb6-1264"><a href="#cb6-1264" tabindex="-1"></a><span class="co">#&gt; [1] &quot;planosol&quot;</span></span>
-<span id="cb6-1265"><a href="#cb6-1265" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1266"><a href="#cb6-1266" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]$passed</span></span>
-<span id="cb6-1267"><a href="#cb6-1267" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb6-1261"><a href="#cb6-1261" tabindex="-1"></a><span class="co">#&gt; $PL$passed</span></span>
+<span id="cb6-1262"><a href="#cb6-1262" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb6-1263"><a href="#cb6-1263" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1264"><a href="#cb6-1264" tabindex="-1"></a><span class="co">#&gt; $PL$evidence</span></span>
+<span id="cb6-1265"><a href="#cb6-1265" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]</span></span>
+<span id="cb6-1266"><a href="#cb6-1266" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]$test_name</span></span>
+<span id="cb6-1267"><a href="#cb6-1267" tabindex="-1"></a><span class="co">#&gt; [1] &quot;planosol&quot;</span></span>
 <span id="cb6-1268"><a href="#cb6-1268" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1269"><a href="#cb6-1269" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]$layers</span></span>
-<span id="cb6-1270"><a href="#cb6-1270" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb6-1269"><a href="#cb6-1269" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]$passed</span></span>
+<span id="cb6-1270"><a href="#cb6-1270" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
 <span id="cb6-1271"><a href="#cb6-1271" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1272"><a href="#cb6-1272" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]$missing</span></span>
-<span id="cb6-1273"><a href="#cb6-1273" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
+<span id="cb6-1272"><a href="#cb6-1272" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]$layers</span></span>
+<span id="cb6-1273"><a href="#cb6-1273" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
 <span id="cb6-1274"><a href="#cb6-1274" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1275"><a href="#cb6-1275" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]$evidence</span></span>
-<span id="cb6-1276"><a href="#cb6-1276" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]$evidence$abrupt_textural_difference</span></span>
+<span id="cb6-1275"><a href="#cb6-1275" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]$missing</span></span>
+<span id="cb6-1276"><a href="#cb6-1276" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
 <span id="cb6-1277"><a href="#cb6-1277" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1278"><a href="#cb6-1278" tabindex="-1"></a><span class="co">#&gt; ── DiagnosticResult: abrupt_textural_difference</span></span>
-<span id="cb6-1279"><a href="#cb6-1279" tabindex="-1"></a><span class="co">#&gt; Status: failed</span></span>
-<span id="cb6-1280"><a href="#cb6-1280" tabindex="-1"></a><span class="co">#&gt; Sub-tests:</span></span>
-<span id="cb6-1281"><a href="#cb6-1281" tabindex="-1"></a><span class="co">#&gt; Reference: IUSS Working Group WRB (2022), Chapter 3.2.1</span></span>
-<span id="cb6-1282"><a href="#cb6-1282" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1283"><a href="#cb6-1283" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1284"><a href="#cb6-1284" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]$reference</span></span>
-<span id="cb6-1285"><a href="#cb6-1285" tabindex="-1"></a><span class="co">#&gt; [1] &quot;IUSS Working Group WRB (2022), Chapter 4, Planosols (p. 107)&quot;</span></span>
+<span id="cb6-1278"><a href="#cb6-1278" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]$evidence</span></span>
+<span id="cb6-1279"><a href="#cb6-1279" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]$evidence$abrupt_textural_difference</span></span>
+<span id="cb6-1280"><a href="#cb6-1280" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1281"><a href="#cb6-1281" tabindex="-1"></a><span class="co">#&gt; ── DiagnosticResult: abrupt_textural_difference</span></span>
+<span id="cb6-1282"><a href="#cb6-1282" tabindex="-1"></a><span class="co">#&gt; Status: failed</span></span>
+<span id="cb6-1283"><a href="#cb6-1283" tabindex="-1"></a><span class="co">#&gt; Sub-tests:</span></span>
+<span id="cb6-1284"><a href="#cb6-1284" tabindex="-1"></a><span class="co">#&gt; Reference: IUSS Working Group WRB (2022), Chapter 3.2.1</span></span>
+<span id="cb6-1285"><a href="#cb6-1285" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-1286"><a href="#cb6-1286" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1287"><a href="#cb6-1287" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]$notes</span></span>
-<span id="cb6-1288"><a href="#cb6-1288" tabindex="-1"></a><span class="co">#&gt; [1] &quot;No abrupt textural difference within profile&quot;</span></span>
+<span id="cb6-1287"><a href="#cb6-1287" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]$reference</span></span>
+<span id="cb6-1288"><a href="#cb6-1288" tabindex="-1"></a><span class="co">#&gt; [1] &quot;IUSS Working Group WRB (2022), Chapter 4, Planosols (p. 107)&quot;</span></span>
 <span id="cb6-1289"><a href="#cb6-1289" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1290"><a href="#cb6-1290" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1291"><a href="#cb6-1291" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1292"><a href="#cb6-1292" tabindex="-1"></a><span class="co">#&gt; $PL$missing</span></span>
-<span id="cb6-1293"><a href="#cb6-1293" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
+<span id="cb6-1290"><a href="#cb6-1290" tabindex="-1"></a><span class="co">#&gt; $PL$evidence[[1]]$notes</span></span>
+<span id="cb6-1291"><a href="#cb6-1291" tabindex="-1"></a><span class="co">#&gt; [1] &quot;No abrupt textural difference within profile&quot;</span></span>
+<span id="cb6-1292"><a href="#cb6-1292" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1293"><a href="#cb6-1293" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-1294"><a href="#cb6-1294" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1295"><a href="#cb6-1295" tabindex="-1"></a><span class="co">#&gt; $PL$notes</span></span>
-<span id="cb6-1296"><a href="#cb6-1296" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-1295"><a href="#cb6-1295" tabindex="-1"></a><span class="co">#&gt; $PL$missing</span></span>
+<span id="cb6-1296"><a href="#cb6-1296" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
 <span id="cb6-1297"><a href="#cb6-1297" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1298"><a href="#cb6-1298" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1299"><a href="#cb6-1299" tabindex="-1"></a><span class="co">#&gt; $ST</span></span>
-<span id="cb6-1300"><a href="#cb6-1300" tabindex="-1"></a><span class="co">#&gt; $ST$code</span></span>
-<span id="cb6-1301"><a href="#cb6-1301" tabindex="-1"></a><span class="co">#&gt; [1] &quot;ST&quot;</span></span>
-<span id="cb6-1302"><a href="#cb6-1302" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1303"><a href="#cb6-1303" tabindex="-1"></a><span class="co">#&gt; $ST$name</span></span>
-<span id="cb6-1304"><a href="#cb6-1304" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Stagnosols&quot;</span></span>
+<span id="cb6-1298"><a href="#cb6-1298" tabindex="-1"></a><span class="co">#&gt; $PL$notes</span></span>
+<span id="cb6-1299"><a href="#cb6-1299" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-1300"><a href="#cb6-1300" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1301"><a href="#cb6-1301" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1302"><a href="#cb6-1302" tabindex="-1"></a><span class="co">#&gt; $ST</span></span>
+<span id="cb6-1303"><a href="#cb6-1303" tabindex="-1"></a><span class="co">#&gt; $ST$code</span></span>
+<span id="cb6-1304"><a href="#cb6-1304" tabindex="-1"></a><span class="co">#&gt; [1] &quot;ST&quot;</span></span>
 <span id="cb6-1305"><a href="#cb6-1305" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1306"><a href="#cb6-1306" tabindex="-1"></a><span class="co">#&gt; $ST$passed</span></span>
-<span id="cb6-1307"><a href="#cb6-1307" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1306"><a href="#cb6-1306" tabindex="-1"></a><span class="co">#&gt; $ST$name</span></span>
+<span id="cb6-1307"><a href="#cb6-1307" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Stagnosols&quot;</span></span>
 <span id="cb6-1308"><a href="#cb6-1308" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1309"><a href="#cb6-1309" tabindex="-1"></a><span class="co">#&gt; $ST$evidence</span></span>
-<span id="cb6-1310"><a href="#cb6-1310" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]</span></span>
-<span id="cb6-1311"><a href="#cb6-1311" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$test_name</span></span>
-<span id="cb6-1312"><a href="#cb6-1312" tabindex="-1"></a><span class="co">#&gt; [1] &quot;stagnic_properties&quot;</span></span>
-<span id="cb6-1313"><a href="#cb6-1313" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1314"><a href="#cb6-1314" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$passed</span></span>
-<span id="cb6-1315"><a href="#cb6-1315" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1309"><a href="#cb6-1309" tabindex="-1"></a><span class="co">#&gt; $ST$passed</span></span>
+<span id="cb6-1310"><a href="#cb6-1310" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1311"><a href="#cb6-1311" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1312"><a href="#cb6-1312" tabindex="-1"></a><span class="co">#&gt; $ST$evidence</span></span>
+<span id="cb6-1313"><a href="#cb6-1313" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]</span></span>
+<span id="cb6-1314"><a href="#cb6-1314" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$test_name</span></span>
+<span id="cb6-1315"><a href="#cb6-1315" tabindex="-1"></a><span class="co">#&gt; [1] &quot;stagnic_properties&quot;</span></span>
 <span id="cb6-1316"><a href="#cb6-1316" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1317"><a href="#cb6-1317" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$layers</span></span>
-<span id="cb6-1318"><a href="#cb6-1318" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb6-1317"><a href="#cb6-1317" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$passed</span></span>
+<span id="cb6-1318"><a href="#cb6-1318" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
 <span id="cb6-1319"><a href="#cb6-1319" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1320"><a href="#cb6-1320" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$missing</span></span>
-<span id="cb6-1321"><a href="#cb6-1321" tabindex="-1"></a><span class="co">#&gt; [1] &quot;redoximorphic_features_pct&quot;</span></span>
+<span id="cb6-1320"><a href="#cb6-1320" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$layers</span></span>
+<span id="cb6-1321"><a href="#cb6-1321" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
 <span id="cb6-1322"><a href="#cb6-1322" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1323"><a href="#cb6-1323" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$evidence</span></span>
-<span id="cb6-1324"><a href="#cb6-1324" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$evidence$stagnic_pattern</span></span>
-<span id="cb6-1325"><a href="#cb6-1325" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$evidence$stagnic_pattern$passed</span></span>
-<span id="cb6-1326"><a href="#cb6-1326" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
-<span id="cb6-1327"><a href="#cb6-1327" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1328"><a href="#cb6-1328" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$evidence$stagnic_pattern$layers</span></span>
-<span id="cb6-1329"><a href="#cb6-1329" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb6-1323"><a href="#cb6-1323" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$missing</span></span>
+<span id="cb6-1324"><a href="#cb6-1324" tabindex="-1"></a><span class="co">#&gt; [1] &quot;redoximorphic_features_pct&quot;</span></span>
+<span id="cb6-1325"><a href="#cb6-1325" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1326"><a href="#cb6-1326" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$evidence</span></span>
+<span id="cb6-1327"><a href="#cb6-1327" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$evidence$stagnic_pattern</span></span>
+<span id="cb6-1328"><a href="#cb6-1328" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$evidence$stagnic_pattern$passed</span></span>
+<span id="cb6-1329"><a href="#cb6-1329" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
 <span id="cb6-1330"><a href="#cb6-1330" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1331"><a href="#cb6-1331" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$evidence$stagnic_pattern$missing</span></span>
-<span id="cb6-1332"><a href="#cb6-1332" tabindex="-1"></a><span class="co">#&gt; [1] &quot;redoximorphic_features_pct&quot;</span></span>
+<span id="cb6-1331"><a href="#cb6-1331" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$evidence$stagnic_pattern$layers</span></span>
+<span id="cb6-1332"><a href="#cb6-1332" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
 <span id="cb6-1333"><a href="#cb6-1333" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1334"><a href="#cb6-1334" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$evidence$stagnic_pattern$details</span></span>
-<span id="cb6-1335"><a href="#cb6-1335" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-1334"><a href="#cb6-1334" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$evidence$stagnic_pattern$missing</span></span>
+<span id="cb6-1335"><a href="#cb6-1335" tabindex="-1"></a><span class="co">#&gt; [1] &quot;redoximorphic_features_pct&quot;</span></span>
 <span id="cb6-1336"><a href="#cb6-1336" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1337"><a href="#cb6-1337" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$evidence$stagnic_pattern$notes</span></span>
-<span id="cb6-1338"><a href="#cb6-1338" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1337"><a href="#cb6-1337" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$evidence$stagnic_pattern$details</span></span>
+<span id="cb6-1338"><a href="#cb6-1338" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
 <span id="cb6-1339"><a href="#cb6-1339" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1340"><a href="#cb6-1340" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1341"><a href="#cb6-1341" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1342"><a href="#cb6-1342" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$reference</span></span>
-<span id="cb6-1343"><a href="#cb6-1343" tabindex="-1"></a><span class="co">#&gt; [1] &quot;IUSS Working Group WRB (2022), Chapter 3, Stagnic properties&quot;</span></span>
+<span id="cb6-1340"><a href="#cb6-1340" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$evidence$stagnic_pattern$notes</span></span>
+<span id="cb6-1341"><a href="#cb6-1341" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1342"><a href="#cb6-1342" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1343"><a href="#cb6-1343" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-1344"><a href="#cb6-1344" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1345"><a href="#cb6-1345" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$notes</span></span>
-<span id="cb6-1346"><a href="#cb6-1346" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1345"><a href="#cb6-1345" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$reference</span></span>
+<span id="cb6-1346"><a href="#cb6-1346" tabindex="-1"></a><span class="co">#&gt; [1] &quot;IUSS Working Group WRB (2022), Chapter 3, Stagnic properties&quot;</span></span>
 <span id="cb6-1347"><a href="#cb6-1347" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1348"><a href="#cb6-1348" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1349"><a href="#cb6-1349" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1350"><a href="#cb6-1350" tabindex="-1"></a><span class="co">#&gt; $ST$missing</span></span>
-<span id="cb6-1351"><a href="#cb6-1351" tabindex="-1"></a><span class="co">#&gt; [1] &quot;redoximorphic_features_pct&quot;</span></span>
+<span id="cb6-1348"><a href="#cb6-1348" tabindex="-1"></a><span class="co">#&gt; $ST$evidence[[1]]$notes</span></span>
+<span id="cb6-1349"><a href="#cb6-1349" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1350"><a href="#cb6-1350" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1351"><a href="#cb6-1351" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-1352"><a href="#cb6-1352" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1353"><a href="#cb6-1353" tabindex="-1"></a><span class="co">#&gt; $ST$notes</span></span>
-<span id="cb6-1354"><a href="#cb6-1354" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-1353"><a href="#cb6-1353" tabindex="-1"></a><span class="co">#&gt; $ST$missing</span></span>
+<span id="cb6-1354"><a href="#cb6-1354" tabindex="-1"></a><span class="co">#&gt; [1] &quot;redoximorphic_features_pct&quot;</span></span>
 <span id="cb6-1355"><a href="#cb6-1355" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1356"><a href="#cb6-1356" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1357"><a href="#cb6-1357" tabindex="-1"></a><span class="co">#&gt; $NT</span></span>
-<span id="cb6-1358"><a href="#cb6-1358" tabindex="-1"></a><span class="co">#&gt; $NT$code</span></span>
-<span id="cb6-1359"><a href="#cb6-1359" tabindex="-1"></a><span class="co">#&gt; [1] &quot;NT&quot;</span></span>
-<span id="cb6-1360"><a href="#cb6-1360" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1361"><a href="#cb6-1361" tabindex="-1"></a><span class="co">#&gt; $NT$name</span></span>
-<span id="cb6-1362"><a href="#cb6-1362" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Nitisols&quot;</span></span>
+<span id="cb6-1356"><a href="#cb6-1356" tabindex="-1"></a><span class="co">#&gt; $ST$notes</span></span>
+<span id="cb6-1357"><a href="#cb6-1357" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-1358"><a href="#cb6-1358" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1359"><a href="#cb6-1359" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1360"><a href="#cb6-1360" tabindex="-1"></a><span class="co">#&gt; $NT</span></span>
+<span id="cb6-1361"><a href="#cb6-1361" tabindex="-1"></a><span class="co">#&gt; $NT$code</span></span>
+<span id="cb6-1362"><a href="#cb6-1362" tabindex="-1"></a><span class="co">#&gt; [1] &quot;NT&quot;</span></span>
 <span id="cb6-1363"><a href="#cb6-1363" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1364"><a href="#cb6-1364" tabindex="-1"></a><span class="co">#&gt; $NT$passed</span></span>
-<span id="cb6-1365"><a href="#cb6-1365" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb6-1364"><a href="#cb6-1364" tabindex="-1"></a><span class="co">#&gt; $NT$name</span></span>
+<span id="cb6-1365"><a href="#cb6-1365" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Nitisols&quot;</span></span>
 <span id="cb6-1366"><a href="#cb6-1366" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1367"><a href="#cb6-1367" tabindex="-1"></a><span class="co">#&gt; $NT$evidence</span></span>
-<span id="cb6-1368"><a href="#cb6-1368" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]</span></span>
-<span id="cb6-1369"><a href="#cb6-1369" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]$test_name</span></span>
-<span id="cb6-1370"><a href="#cb6-1370" tabindex="-1"></a><span class="co">#&gt; [1] &quot;nitic_horizon&quot;</span></span>
-<span id="cb6-1371"><a href="#cb6-1371" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1372"><a href="#cb6-1372" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]$passed</span></span>
-<span id="cb6-1373"><a href="#cb6-1373" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb6-1367"><a href="#cb6-1367" tabindex="-1"></a><span class="co">#&gt; $NT$passed</span></span>
+<span id="cb6-1368"><a href="#cb6-1368" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb6-1369"><a href="#cb6-1369" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1370"><a href="#cb6-1370" tabindex="-1"></a><span class="co">#&gt; $NT$evidence</span></span>
+<span id="cb6-1371"><a href="#cb6-1371" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]</span></span>
+<span id="cb6-1372"><a href="#cb6-1372" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]$test_name</span></span>
+<span id="cb6-1373"><a href="#cb6-1373" tabindex="-1"></a><span class="co">#&gt; [1] &quot;nitic_horizon&quot;</span></span>
 <span id="cb6-1374"><a href="#cb6-1374" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1375"><a href="#cb6-1375" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]$layers</span></span>
-<span id="cb6-1376"><a href="#cb6-1376" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb6-1375"><a href="#cb6-1375" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]$passed</span></span>
+<span id="cb6-1376"><a href="#cb6-1376" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
 <span id="cb6-1377"><a href="#cb6-1377" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1378"><a href="#cb6-1378" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]$missing</span></span>
-<span id="cb6-1379"><a href="#cb6-1379" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
+<span id="cb6-1378"><a href="#cb6-1378" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]$layers</span></span>
+<span id="cb6-1379"><a href="#cb6-1379" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
 <span id="cb6-1380"><a href="#cb6-1380" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1381"><a href="#cb6-1381" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]$evidence</span></span>
-<span id="cb6-1382"><a href="#cb6-1382" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]$evidence$ferralic</span></span>
+<span id="cb6-1381"><a href="#cb6-1381" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]$missing</span></span>
+<span id="cb6-1382"><a href="#cb6-1382" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
 <span id="cb6-1383"><a href="#cb6-1383" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1384"><a href="#cb6-1384" tabindex="-1"></a><span class="co">#&gt; ── DiagnosticResult: ferralic</span></span>
-<span id="cb6-1385"><a href="#cb6-1385" tabindex="-1"></a><span class="co">#&gt; Status: PASSED</span></span>
-<span id="cb6-1386"><a href="#cb6-1386" tabindex="-1"></a><span class="co">#&gt; Layers satisfying: 2, 3, 4</span></span>
-<span id="cb6-1387"><a href="#cb6-1387" tabindex="-1"></a><span class="co">#&gt; Sub-tests:</span></span>
-<span id="cb6-1388"><a href="#cb6-1388" tabindex="-1"></a><span class="co">#&gt; [PASS] texture</span></span>
-<span id="cb6-1389"><a href="#cb6-1389" tabindex="-1"></a><span class="co">#&gt; [PASS] cec_per_clay</span></span>
-<span id="cb6-1390"><a href="#cb6-1390" tabindex="-1"></a><span class="co">#&gt; [PASS] thickness</span></span>
-<span id="cb6-1391"><a href="#cb6-1391" tabindex="-1"></a><span class="co">#&gt; Reference: IUSS Working Group WRB (2022), Chapter 3.1.10, Ferralic horizon (p.</span></span>
-<span id="cb6-1392"><a href="#cb6-1392" tabindex="-1"></a><span class="co">#&gt; 44)</span></span>
-<span id="cb6-1393"><a href="#cb6-1393" tabindex="-1"></a><span class="co">#&gt; Notes: v0.3.1: ECEC/clay &lt;= 12 test removed; not part of WRB 2022 ferralic.</span></span>
-<span id="cb6-1394"><a href="#cb6-1394" tabindex="-1"></a><span class="co">#&gt; v0.9.67 engine=soilkey threshold = 16 cmol_c/kg clay.</span></span>
-<span id="cb6-1395"><a href="#cb6-1395" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1396"><a href="#cb6-1396" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1397"><a href="#cb6-1397" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]$reference</span></span>
-<span id="cb6-1398"><a href="#cb6-1398" tabindex="-1"></a><span class="co">#&gt; [1] &quot;IUSS Working Group WRB (2022), Chapter 3, Nitic horizon&quot;</span></span>
+<span id="cb6-1384"><a href="#cb6-1384" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]$evidence</span></span>
+<span id="cb6-1385"><a href="#cb6-1385" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]$evidence$ferralic</span></span>
+<span id="cb6-1386"><a href="#cb6-1386" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1387"><a href="#cb6-1387" tabindex="-1"></a><span class="co">#&gt; ── DiagnosticResult: ferralic</span></span>
+<span id="cb6-1388"><a href="#cb6-1388" tabindex="-1"></a><span class="co">#&gt; Status: PASSED</span></span>
+<span id="cb6-1389"><a href="#cb6-1389" tabindex="-1"></a><span class="co">#&gt; Layers satisfying: 2, 3, 4</span></span>
+<span id="cb6-1390"><a href="#cb6-1390" tabindex="-1"></a><span class="co">#&gt; Sub-tests:</span></span>
+<span id="cb6-1391"><a href="#cb6-1391" tabindex="-1"></a><span class="co">#&gt; [PASS] texture</span></span>
+<span id="cb6-1392"><a href="#cb6-1392" tabindex="-1"></a><span class="co">#&gt; [PASS] cec_per_clay</span></span>
+<span id="cb6-1393"><a href="#cb6-1393" tabindex="-1"></a><span class="co">#&gt; [PASS] thickness</span></span>
+<span id="cb6-1394"><a href="#cb6-1394" tabindex="-1"></a><span class="co">#&gt; Reference: IUSS Working Group WRB (2022), Chapter 3.1.10, Ferralic horizon (p.</span></span>
+<span id="cb6-1395"><a href="#cb6-1395" tabindex="-1"></a><span class="co">#&gt; 44)</span></span>
+<span id="cb6-1396"><a href="#cb6-1396" tabindex="-1"></a><span class="co">#&gt; Notes: v0.3.1: ECEC/clay &lt;= 12 test removed; not part of WRB 2022 ferralic.</span></span>
+<span id="cb6-1397"><a href="#cb6-1397" tabindex="-1"></a><span class="co">#&gt; v0.9.67 engine=soilkey threshold = 16 cmol_c/kg clay.</span></span>
+<span id="cb6-1398"><a href="#cb6-1398" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-1399"><a href="#cb6-1399" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1400"><a href="#cb6-1400" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]$notes</span></span>
-<span id="cb6-1401"><a href="#cb6-1401" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Excluded -- profile has a ferralic horizon (Ferralsol path)&quot;</span></span>
+<span id="cb6-1400"><a href="#cb6-1400" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]$reference</span></span>
+<span id="cb6-1401"><a href="#cb6-1401" tabindex="-1"></a><span class="co">#&gt; [1] &quot;IUSS Working Group WRB (2022), Chapter 3, Nitic horizon&quot;</span></span>
 <span id="cb6-1402"><a href="#cb6-1402" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1403"><a href="#cb6-1403" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1404"><a href="#cb6-1404" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1405"><a href="#cb6-1405" tabindex="-1"></a><span class="co">#&gt; $NT$missing</span></span>
-<span id="cb6-1406"><a href="#cb6-1406" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
+<span id="cb6-1403"><a href="#cb6-1403" tabindex="-1"></a><span class="co">#&gt; $NT$evidence[[1]]$notes</span></span>
+<span id="cb6-1404"><a href="#cb6-1404" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Excluded -- profile has a ferralic horizon (Ferralsol path)&quot;</span></span>
+<span id="cb6-1405"><a href="#cb6-1405" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1406"><a href="#cb6-1406" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-1407"><a href="#cb6-1407" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1408"><a href="#cb6-1408" tabindex="-1"></a><span class="co">#&gt; $NT$notes</span></span>
-<span id="cb6-1409"><a href="#cb6-1409" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-1408"><a href="#cb6-1408" tabindex="-1"></a><span class="co">#&gt; $NT$missing</span></span>
+<span id="cb6-1409"><a href="#cb6-1409" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
 <span id="cb6-1410"><a href="#cb6-1410" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1411"><a href="#cb6-1411" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1412"><a href="#cb6-1412" tabindex="-1"></a><span class="co">#&gt; $FR</span></span>
-<span id="cb6-1413"><a href="#cb6-1413" tabindex="-1"></a><span class="co">#&gt; $FR$code</span></span>
-<span id="cb6-1414"><a href="#cb6-1414" tabindex="-1"></a><span class="co">#&gt; [1] &quot;FR&quot;</span></span>
-<span id="cb6-1415"><a href="#cb6-1415" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1416"><a href="#cb6-1416" tabindex="-1"></a><span class="co">#&gt; $FR$name</span></span>
-<span id="cb6-1417"><a href="#cb6-1417" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Ferralsols&quot;</span></span>
+<span id="cb6-1411"><a href="#cb6-1411" tabindex="-1"></a><span class="co">#&gt; $NT$notes</span></span>
+<span id="cb6-1412"><a href="#cb6-1412" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-1413"><a href="#cb6-1413" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1414"><a href="#cb6-1414" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1415"><a href="#cb6-1415" tabindex="-1"></a><span class="co">#&gt; $FR</span></span>
+<span id="cb6-1416"><a href="#cb6-1416" tabindex="-1"></a><span class="co">#&gt; $FR$code</span></span>
+<span id="cb6-1417"><a href="#cb6-1417" tabindex="-1"></a><span class="co">#&gt; [1] &quot;FR&quot;</span></span>
 <span id="cb6-1418"><a href="#cb6-1418" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1419"><a href="#cb6-1419" tabindex="-1"></a><span class="co">#&gt; $FR$passed</span></span>
-<span id="cb6-1420"><a href="#cb6-1420" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb6-1419"><a href="#cb6-1419" tabindex="-1"></a><span class="co">#&gt; $FR$name</span></span>
+<span id="cb6-1420"><a href="#cb6-1420" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Ferralsols&quot;</span></span>
 <span id="cb6-1421"><a href="#cb6-1421" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1422"><a href="#cb6-1422" tabindex="-1"></a><span class="co">#&gt; $FR$evidence</span></span>
-<span id="cb6-1423"><a href="#cb6-1423" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]</span></span>
-<span id="cb6-1424"><a href="#cb6-1424" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$test_name</span></span>
-<span id="cb6-1425"><a href="#cb6-1425" tabindex="-1"></a><span class="co">#&gt; [1] &quot;ferralsol&quot;</span></span>
-<span id="cb6-1426"><a href="#cb6-1426" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1427"><a href="#cb6-1427" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$passed</span></span>
-<span id="cb6-1428"><a href="#cb6-1428" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb6-1422"><a href="#cb6-1422" tabindex="-1"></a><span class="co">#&gt; $FR$passed</span></span>
+<span id="cb6-1423"><a href="#cb6-1423" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb6-1424"><a href="#cb6-1424" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1425"><a href="#cb6-1425" tabindex="-1"></a><span class="co">#&gt; $FR$evidence</span></span>
+<span id="cb6-1426"><a href="#cb6-1426" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]</span></span>
+<span id="cb6-1427"><a href="#cb6-1427" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$test_name</span></span>
+<span id="cb6-1428"><a href="#cb6-1428" tabindex="-1"></a><span class="co">#&gt; [1] &quot;ferralsol&quot;</span></span>
 <span id="cb6-1429"><a href="#cb6-1429" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1430"><a href="#cb6-1430" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$layers</span></span>
-<span id="cb6-1431"><a href="#cb6-1431" tabindex="-1"></a><span class="co">#&gt; [1] 2 3 4</span></span>
+<span id="cb6-1430"><a href="#cb6-1430" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$passed</span></span>
+<span id="cb6-1431"><a href="#cb6-1431" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
 <span id="cb6-1432"><a href="#cb6-1432" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1433"><a href="#cb6-1433" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$missing</span></span>
-<span id="cb6-1434"><a href="#cb6-1434" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
+<span id="cb6-1433"><a href="#cb6-1433" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$layers</span></span>
+<span id="cb6-1434"><a href="#cb6-1434" tabindex="-1"></a><span class="co">#&gt; [1] 2 3 4</span></span>
 <span id="cb6-1435"><a href="#cb6-1435" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1436"><a href="#cb6-1436" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$evidence</span></span>
-<span id="cb6-1437"><a href="#cb6-1437" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$evidence$ferralic</span></span>
+<span id="cb6-1436"><a href="#cb6-1436" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$missing</span></span>
+<span id="cb6-1437"><a href="#cb6-1437" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
 <span id="cb6-1438"><a href="#cb6-1438" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1439"><a href="#cb6-1439" tabindex="-1"></a><span class="co">#&gt; ── DiagnosticResult: ferralic</span></span>
-<span id="cb6-1440"><a href="#cb6-1440" tabindex="-1"></a><span class="co">#&gt; Status: PASSED</span></span>
-<span id="cb6-1441"><a href="#cb6-1441" tabindex="-1"></a><span class="co">#&gt; Layers satisfying: 2, 3, 4</span></span>
-<span id="cb6-1442"><a href="#cb6-1442" tabindex="-1"></a><span class="co">#&gt; Sub-tests:</span></span>
-<span id="cb6-1443"><a href="#cb6-1443" tabindex="-1"></a><span class="co">#&gt; [PASS] texture</span></span>
-<span id="cb6-1444"><a href="#cb6-1444" tabindex="-1"></a><span class="co">#&gt; [PASS] cec_per_clay</span></span>
-<span id="cb6-1445"><a href="#cb6-1445" tabindex="-1"></a><span class="co">#&gt; [PASS] thickness</span></span>
-<span id="cb6-1446"><a href="#cb6-1446" tabindex="-1"></a><span class="co">#&gt; Reference: IUSS Working Group WRB (2022), Chapter 3.1.10, Ferralic horizon (p.</span></span>
-<span id="cb6-1447"><a href="#cb6-1447" tabindex="-1"></a><span class="co">#&gt; 44)</span></span>
-<span id="cb6-1448"><a href="#cb6-1448" tabindex="-1"></a><span class="co">#&gt; Notes: v0.3.1: ECEC/clay &lt;= 12 test removed; not part of WRB 2022 ferralic.</span></span>
-<span id="cb6-1449"><a href="#cb6-1449" tabindex="-1"></a><span class="co">#&gt; v0.9.67 engine=soilkey threshold = 16 cmol_c/kg clay.</span></span>
-<span id="cb6-1450"><a href="#cb6-1450" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1451"><a href="#cb6-1451" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$evidence$argic</span></span>
-<span id="cb6-1452"><a href="#cb6-1452" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1453"><a href="#cb6-1453" tabindex="-1"></a><span class="co">#&gt; ── DiagnosticResult: argic</span></span>
-<span id="cb6-1454"><a href="#cb6-1454" tabindex="-1"></a><span class="co">#&gt; Status: failed</span></span>
-<span id="cb6-1455"><a href="#cb6-1455" tabindex="-1"></a><span class="co">#&gt; Sub-tests:</span></span>
-<span id="cb6-1456"><a href="#cb6-1456" tabindex="-1"></a><span class="co">#&gt; [fail] clay_increase</span></span>
-<span id="cb6-1457"><a href="#cb6-1457" tabindex="-1"></a><span class="co">#&gt; [fail] thickness</span></span>
-<span id="cb6-1458"><a href="#cb6-1458" tabindex="-1"></a><span class="co">#&gt; [fail] texture</span></span>
-<span id="cb6-1459"><a href="#cb6-1459" tabindex="-1"></a><span class="co">#&gt; [PASS] not_albeluvic</span></span>
-<span id="cb6-1460"><a href="#cb6-1460" tabindex="-1"></a><span class="co">#&gt; Reference: IUSS Working Group WRB (2022), Chapter 3, Argic horizon</span></span>
-<span id="cb6-1461"><a href="#cb6-1461" tabindex="-1"></a><span class="co">#&gt; Notes: No layer satisfied the clay-increase precondition</span></span>
-<span id="cb6-1462"><a href="#cb6-1462" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1463"><a href="#cb6-1463" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1464"><a href="#cb6-1464" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$reference</span></span>
-<span id="cb6-1465"><a href="#cb6-1465" tabindex="-1"></a><span class="co">#&gt; [1] &quot;IUSS Working Group WRB (2022), Chapter 4, Ferralsols (p. 110)&quot;</span></span>
-<span id="cb6-1466"><a href="#cb6-1466" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1467"><a href="#cb6-1467" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$notes</span></span>
-<span id="cb6-1468"><a href="#cb6-1468" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1439"><a href="#cb6-1439" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$evidence</span></span>
+<span id="cb6-1440"><a href="#cb6-1440" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$evidence$ferralic</span></span>
+<span id="cb6-1441"><a href="#cb6-1441" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1442"><a href="#cb6-1442" tabindex="-1"></a><span class="co">#&gt; ── DiagnosticResult: ferralic</span></span>
+<span id="cb6-1443"><a href="#cb6-1443" tabindex="-1"></a><span class="co">#&gt; Status: PASSED</span></span>
+<span id="cb6-1444"><a href="#cb6-1444" tabindex="-1"></a><span class="co">#&gt; Layers satisfying: 2, 3, 4</span></span>
+<span id="cb6-1445"><a href="#cb6-1445" tabindex="-1"></a><span class="co">#&gt; Sub-tests:</span></span>
+<span id="cb6-1446"><a href="#cb6-1446" tabindex="-1"></a><span class="co">#&gt; [PASS] texture</span></span>
+<span id="cb6-1447"><a href="#cb6-1447" tabindex="-1"></a><span class="co">#&gt; [PASS] cec_per_clay</span></span>
+<span id="cb6-1448"><a href="#cb6-1448" tabindex="-1"></a><span class="co">#&gt; [PASS] thickness</span></span>
+<span id="cb6-1449"><a href="#cb6-1449" tabindex="-1"></a><span class="co">#&gt; Reference: IUSS Working Group WRB (2022), Chapter 3.1.10, Ferralic horizon (p.</span></span>
+<span id="cb6-1450"><a href="#cb6-1450" tabindex="-1"></a><span class="co">#&gt; 44)</span></span>
+<span id="cb6-1451"><a href="#cb6-1451" tabindex="-1"></a><span class="co">#&gt; Notes: v0.3.1: ECEC/clay &lt;= 12 test removed; not part of WRB 2022 ferralic.</span></span>
+<span id="cb6-1452"><a href="#cb6-1452" tabindex="-1"></a><span class="co">#&gt; v0.9.67 engine=soilkey threshold = 16 cmol_c/kg clay.</span></span>
+<span id="cb6-1453"><a href="#cb6-1453" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1454"><a href="#cb6-1454" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$evidence$argic</span></span>
+<span id="cb6-1455"><a href="#cb6-1455" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1456"><a href="#cb6-1456" tabindex="-1"></a><span class="co">#&gt; ── DiagnosticResult: argic</span></span>
+<span id="cb6-1457"><a href="#cb6-1457" tabindex="-1"></a><span class="co">#&gt; Status: failed</span></span>
+<span id="cb6-1458"><a href="#cb6-1458" tabindex="-1"></a><span class="co">#&gt; Sub-tests:</span></span>
+<span id="cb6-1459"><a href="#cb6-1459" tabindex="-1"></a><span class="co">#&gt; [fail] clay_increase</span></span>
+<span id="cb6-1460"><a href="#cb6-1460" tabindex="-1"></a><span class="co">#&gt; [fail] thickness</span></span>
+<span id="cb6-1461"><a href="#cb6-1461" tabindex="-1"></a><span class="co">#&gt; [fail] texture</span></span>
+<span id="cb6-1462"><a href="#cb6-1462" tabindex="-1"></a><span class="co">#&gt; [PASS] not_albeluvic</span></span>
+<span id="cb6-1463"><a href="#cb6-1463" tabindex="-1"></a><span class="co">#&gt; Reference: IUSS Working Group WRB (2022), Chapter 3, Argic horizon</span></span>
+<span id="cb6-1464"><a href="#cb6-1464" tabindex="-1"></a><span class="co">#&gt; Notes: No layer satisfied the clay-increase precondition</span></span>
+<span id="cb6-1465"><a href="#cb6-1465" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1466"><a href="#cb6-1466" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$evidence$strict_mode</span></span>
+<span id="cb6-1467"><a href="#cb6-1467" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb6-1468"><a href="#cb6-1468" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-1469"><a href="#cb6-1469" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1470"><a href="#cb6-1470" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1471"><a href="#cb6-1471" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1472"><a href="#cb6-1472" tabindex="-1"></a><span class="co">#&gt; $FR$missing</span></span>
-<span id="cb6-1473"><a href="#cb6-1473" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
-<span id="cb6-1474"><a href="#cb6-1474" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-1475"><a href="#cb6-1475" tabindex="-1"></a><span class="co">#&gt; $FR$notes</span></span>
-<span id="cb6-1476"><a href="#cb6-1476" tabindex="-1"></a><span class="co">#&gt; NULL</span></span></code></pre></div>
+<span id="cb6-1470"><a href="#cb6-1470" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$reference</span></span>
+<span id="cb6-1471"><a href="#cb6-1471" tabindex="-1"></a><span class="co">#&gt; [1] &quot;IUSS Working Group WRB (2022), Chapter 4, Ferralsols (p. 110)&quot;</span></span>
+<span id="cb6-1472"><a href="#cb6-1472" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1473"><a href="#cb6-1473" tabindex="-1"></a><span class="co">#&gt; $FR$evidence[[1]]$notes</span></span>
+<span id="cb6-1474"><a href="#cb6-1474" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb6-1475"><a href="#cb6-1475" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1476"><a href="#cb6-1476" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1477"><a href="#cb6-1477" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1478"><a href="#cb6-1478" tabindex="-1"></a><span class="co">#&gt; $FR$missing</span></span>
+<span id="cb6-1479"><a href="#cb6-1479" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
+<span id="cb6-1480"><a href="#cb6-1480" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-1481"><a href="#cb6-1481" tabindex="-1"></a><span class="co">#&gt; $FR$notes</span></span>
+<span id="cb6-1482"><a href="#cb6-1482" tabindex="-1"></a><span class="co">#&gt; NULL</span></span></code></pre></div>
 <p>Isso é a feature distintiva do soilKey vs. um classificador
 “caixa-preta” baseado em LLM: cada classificação carrega o motivo. Se
 você discorda do resultado, o trace mostra exatamente em qual
@@ -2002,7 +2008,7 @@ seja idêntico</strong>.</p>
 <span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">Nome    =</span> <span class="fu">c</span>(todos<span class="sc">$</span>wrb<span class="sc">$</span>name, todos<span class="sc">$</span>sibcs<span class="sc">$</span>name, todos<span class="sc">$</span>usda<span class="sc">$</span>name)</span>
 <span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>)</span>
 <span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;        Sistema                                                         Nome</span></span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; 1     WRB 2022           Chromic Ferralsol (Clayic, Dystric, Ochric, Rubic)</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; 1     WRB 2022                    Chromic Ferralsol (Clayic, Ochric, Rubic)</span></span>
 <span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; 2 SiBCS 5ª ed. Latossolos Vermelhos Distroficos tipicos, argilosa, moderado</span></span>
 <span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; 3   USDA ST 13                                               Typic Hapludox</span></span></code></pre></div>
 <p>Para um Latossolo Vermelho típico do Cerrado / Mata Atlântica
@@ -2090,7 +2096,8 @@ completa</a>.</li>
 <h1>Referências canônicas</h1>
 <ul>
 <li>IUSS Working Group WRB (2022). <em>World Reference Base for Soil
-Resources</em>, 4ª ed. International Union of Soil Sciences, Vienna. <a href="https://openknowledge.fao.org/server/api/core/bitstreams/bcdecec7-f45f-4dc5-beb1-97022d29fab4/content">PDF</a></li>
+Resources</em>, 4ª ed. International Union of Soil Sciences, Vienna. PDF
+(<code>https://openknowledge.fao.org/server/api/core/bitstreams/bcdecec7-f45f-4dc5-beb1-97022d29fab4/content</code>)</li>
 <li>Soil Survey Staff (2022). <em>Keys to Soil Taxonomy</em>, 13ª
 ed. USDA-NRCS, Washington, DC.</li>
 <li>Santos, H.G. <em>et al.</em> (2018). <em>Sistema Brasileiro de

@@ -95,21 +95,17 @@ Classifier errors are caught per-pedon and recorded in
 }
 
 \examples{
-\donttest{
-# Requires a user-provided BDsolos CSV; guarded so the example
-# no-ops on CRAN when the file is absent.
-csv_path <- "RJ.csv"
-if (file.exists(csv_path)) {
-  peds <- load_bdsolos_csv(csv_path)
-  bench <- benchmark_bdsolos(peds, systems = c("sibcs", "wrb2022", "usda"))
-  bench$coverage      # how many pedons had each reference label
-  bench$per_system$sibcs$accuracy
-  bench$per_system$sibcs$confusion
+\dontrun{
+# Single UF -- typical SiBCS-dense slice
+peds <- load_bdsolos_csv("RJ.csv")
+bench <- benchmark_bdsolos(peds, systems = c("sibcs", "wrb2022", "usda"))
+bench$coverage      # how many pedons had each reference label
+bench$per_system$sibcs$accuracy
+bench$per_system$sibcs$confusion
 
-  # Subordem level
-  bench2 <- benchmark_bdsolos(peds, systems = "sibcs",
-                                 sibcs_level = "subordem")
-}
+# Subordem level
+bench2 <- benchmark_bdsolos(peds, systems = "sibcs",
+                               sibcs_level = "subordem")
 }
 }
 \seealso{

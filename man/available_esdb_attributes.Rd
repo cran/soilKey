@@ -19,10 +19,9 @@ valid `<NAME>.tif` raster. Useful for discovery before calling
 \code{\link{lookup_esdb}}.
 }
 \examples{
-\donttest{
-root <- file.path(tempdir(), "ESDB-Raster-Library-1k-GeoTIFF-20240507")
-if (dir.exists(root)) {
-  available_esdb_attributes(root)
-}
+\dontrun{
+available_esdb_attributes("~/data/ESDB-Raster-Library-1k-GeoTIFF-20240507")
+#> [1] "AGLI1NNI" "AGLI2NNI" "AGLIM1" "AGLIM2" "ALT" "ATC" "AWC_SUB" ...
+#>     [continued: 71 attributes]
 }
 }

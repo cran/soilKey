@@ -26,7 +26,7 @@
 #'
 #' @details Sub-tests:
 #' \itemize{
-#'   \item \code{\link{test_claric_munsell}} -- Munsell criteria of claric
+#'   \item \code{test_claric_munsell} -- Munsell criteria of claric
 #'         material (Ch 3.3.4).
 #' }
 #' Designation pattern \code{E} or \code{Eg} also serves as positive
@@ -100,6 +100,7 @@ ferric <- function(pedon, min_thickness = 15, min_fe_dith_pct = 5) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_thickness Numeric threshold or option (see Details).
 #' @param min_caco3_pct Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 petrocalcic <- function(pedon, min_thickness = 10, min_caco3_pct = 15) {
   h <- pedon$horizons
@@ -124,6 +125,7 @@ petrocalcic <- function(pedon, min_thickness = 10, min_caco3_pct = 15) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_thickness Numeric threshold or option (see Details).
 #' @param min_duripan_pct Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 petroduric <- function(pedon, min_thickness = 10, min_duripan_pct = 10) {
   h <- pedon$horizons
@@ -145,6 +147,7 @@ petroduric <- function(pedon, min_thickness = 10, min_duripan_pct = 10) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_thickness Numeric threshold or option (see Details).
 #' @param min_gypsum_pct Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 petrogypsic <- function(pedon, min_thickness = 10, min_gypsum_pct = 5) {
   h <- pedon$horizons
@@ -166,6 +169,7 @@ petrogypsic <- function(pedon, min_thickness = 10, min_gypsum_pct = 5) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_thickness Numeric threshold or option (see Details).
 #' @param min_plinthite_pct Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 petroplinthic <- function(pedon, min_thickness = 10, min_plinthite_pct = 15) {
   h <- pedon$horizons
@@ -189,6 +193,7 @@ petroplinthic <- function(pedon, min_thickness = 10, min_plinthite_pct = 15) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_thickness Numeric threshold or option (see Details).
 #' @param min_plinthite_pct Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 pisoplinthic <- function(pedon, min_thickness = 15, min_plinthite_pct = 15) {
   h <- pedon$horizons
@@ -239,20 +244,29 @@ pisoplinthic <- function(pedon, min_thickness = 15, min_plinthite_pct = 15) {
 #'        (default 6, per KST 13ed Ch 16).
 #' @param le_max_depth_cm Depth window (cm) for the COLE-based path
 #'        (default 100).
+#' @param min_crack_width_cm Minimum shrink-swell crack width (cm) for the
+#'        field-crack path. Defaults to 0.5 (WRB/USDA); the SiBCS
+#'        \code{horizonte_vertico} wrapper passes 1.0 per Embrapa
+#'        (2018) Cap 2 p.73.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 vertic_horizon <- function(pedon, min_clay = 30, min_thickness = 25,
-                              min_le_cm = 6, le_max_depth_cm = 100) {
+                              min_le_cm = 6, le_max_depth_cm = 100,
+                              min_crack_width_cm = 0.5) {
   h <- pedon$horizons
 
   # Path 1 (canonical WRB 2022 + KST 13ed): clay >= min_clay +
-  # slickensides "common"+ + cracks >= 0.5 cm + thickness >= min_thickness.
+  # slickensides "common"+ + cracks >= min_crack_width_cm + thickness.
+  # min_crack_width_cm defaults to 0.5 (WRB/USDA); the SiBCS vertico wrapper
+  # (horizonte_vertico) passes 1.0, per Embrapa 2018 Cap 2 p.73 ("fendas ...
+  # com pelo menos 1 cm de largura").
   tests <- list()
   tests$clay         <- test_clay_above(h, min_pct = min_clay)
   tests$slickensides <- test_slickensides_present(h,
                                                      levels = c("common", "many",
                                                                 "continuous"),
                                                      candidate_layers = tests$clay$layers)
-  tests$cracks       <- test_shrink_swell_cracks(h, min_width_cm = 0.5,
+  tests$cracks       <- test_shrink_swell_cracks(h, min_width_cm = min_crack_width_cm,
                                                     candidate_layers = tests$slickensides$layers)
   shared <- intersect(tests$slickensides$layers, tests$cracks$layers)
   tests$thickness    <- test_minimum_thickness(h, min_cm = min_thickness,
@@ -433,6 +447,7 @@ vertic_horizon <- function(pedon, min_clay = 30, min_thickness = 25,
 #' @param min_thickness Numeric threshold or option (see Details).
 #' @param max_pH Numeric threshold or option (see Details).
 #' @param min_sulfidic_s Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 thionic <- function(pedon, min_thickness = 15, max_pH = 4,
                        min_sulfidic_s = 0.01) {
@@ -458,6 +473,7 @@ thionic <- function(pedon, min_thickness = 15, max_pH = 4,
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_thickness Numeric threshold or option (see Details).
 #' @param min_bd Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 fragic <- function(pedon, min_thickness = 15, min_bd = 1.65) {
   h <- pedon$horizons
@@ -494,6 +510,7 @@ fragic <- function(pedon, min_thickness = 15, min_bd = 1.65) {
 #' @param max_bs Numeric threshold or option (see Details).
 #' @param min_top_cm Numeric threshold or option (see Details).
 #' @param min_oc_increase Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 sombric <- function(pedon, min_thickness = 15, min_oc = 0.6,
                        max_bs = 50, min_top_cm = 25,
@@ -563,6 +580,7 @@ sombric <- function(pedon, min_thickness = 15, min_oc = 0.6,
 #' homogenization").
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_worm_pct Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 chernic <- function(pedon, min_worm_pct = 50) {
   m <- mollic(pedon)
@@ -606,6 +624,7 @@ chernic <- function(pedon, min_worm_pct = 50) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_thickness Numeric threshold or option (see Details).
 #' @param max_top_cm Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 anthraquic <- function(pedon, min_thickness = 20, max_top_cm = 50) {
   h <- pedon$horizons
@@ -628,6 +647,7 @@ anthraquic <- function(pedon, min_thickness = 20, max_top_cm = 50) {
 #' an anthraquic-like topsoil.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_thickness Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 hydragric <- function(pedon, min_thickness = 20) {
   h <- pedon$horizons
@@ -650,6 +670,7 @@ hydragric <- function(pedon, min_thickness = 20) {
 #' @param min_thickness Numeric threshold or option (see Details).
 #' @param min_oc Numeric threshold or option (see Details).
 #' @param min_p_mehlich3 Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 hortic <- function(pedon, min_thickness = 20, min_oc = 1.0,
                       min_p_mehlich3 = 100) {
@@ -680,6 +701,7 @@ hortic <- function(pedon, min_thickness = 20, min_oc = 1.0,
 #' designation \code{Apk|Apg|Au}.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_thickness Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 irragric <- function(pedon, min_thickness = 20) {
   h <- pedon$horizons
@@ -720,9 +742,12 @@ irragric <- function(pedon, min_thickness = 20) {
 #' @param max_bd Numeric threshold or option (see Details).
 #' @param min_oc Numeric threshold or option (see Details).
 #' @param min_p_mehlich3 Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 plaggic <- function(pedon, min_thickness = 20, max_bd = 1.5,
-                       min_oc = 0.6, min_p_mehlich3 = 50) {
+                       min_oc = 0.6, min_p_mehlich3 = 100) {
+  # WRB 2022 Ch 3.1.29 criterion 2b: >= 100 mg/kg P (Mehlich-3) in the upper
+  # 20 cm (corrected from 50).
   h <- pedon$horizons
   tests <- list()
   tests$oc          <- test_oc_above(h, min_pct = min_oc)
@@ -783,6 +808,7 @@ plaggic <- function(pedon, min_thickness = 20, max_bd = 1.5,
 #' @param min_thickness Numeric threshold or option (see Details).
 #' @param min_oc Numeric threshold or option (see Details).
 #' @param min_p_mehlich3 Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 pretic <- function(pedon, min_thickness = 20, min_oc = 1.5,
                       min_p_mehlich3 = 30) {
@@ -811,6 +837,7 @@ pretic <- function(pedon, min_thickness = 20, min_oc = 1.5,
 #' 20 cm + designation Au / Apc.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_thickness Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 terric <- function(pedon, min_thickness = 20) {
   h <- pedon$horizons
@@ -848,6 +875,7 @@ terric <- function(pedon, min_thickness = 20) {
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_thickness Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 tsitelic <- function(pedon, min_thickness = 10) {
   h <- pedon$horizons
@@ -910,6 +938,7 @@ tsitelic <- function(pedon, min_thickness = 10) {
 #' designation (e.g. \code{Ahb}, \code{Bwb}).
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 panpaic <- function(pedon) {
   h <- pedon$horizons
@@ -944,6 +973,7 @@ panpaic <- function(pedon) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_thickness Numeric threshold or option (see Details).
 #' @param min_redox_pct Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 limonic <- function(pedon, min_thickness = 5, min_redox_pct = 5) {
   h <- pedon$horizons
@@ -984,6 +1014,7 @@ limonic <- function(pedon, min_thickness = 5, min_redox_pct = 5) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_clay Numeric threshold or option (see Details).
 #' @param min_thickness Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 protovertic <- function(pedon, min_clay = 30, min_thickness = 15) {
   h <- pedon$horizons

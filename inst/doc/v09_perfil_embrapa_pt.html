@@ -408,7 +408,7 @@ sedimentos argilosos do Terciario.</p>
 <span id="cb1-36"><a href="#cb1-36" tabindex="-1"></a><span class="co">#&gt;  $ ph_h2o     : num  5.5 5.3 5 5 5.1</span></span>
 <span id="cb1-37"><a href="#cb1-37" tabindex="-1"></a><span class="co">#&gt;  $ clay_pct   : num  18 28 45 42 38</span></span>
 <span id="cb1-38"><a href="#cb1-38" tabindex="-1"></a><span class="co">#&gt;  $ bs_pct     : num  35 25 20 18 20</span></span>
-<span id="cb1-39"><a href="#cb1-39" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;.internal.selfref&quot;)=&lt;pointer: 0x105e256b0&gt;</span></span></code></pre></div>
+<span id="cb1-39"><a href="#cb1-39" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;.internal.selfref&quot;)=&lt;pointer: 0xbacc0bee0&gt;</span></span></code></pre></div>
 <p>Construindo o <code>PedonRecord</code> (R6 com <code>site</code> +
 <code>horizons</code>):</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>perfil <span class="ot">&lt;-</span> PedonRecord<span class="sc">$</span><span class="fu">new</span>(</span>
@@ -451,7 +451,7 @@ antes de aplicar a chave:</p>
 <span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; B_textural (SiBCS): TRUE   argic (WRB): TRUE</span></span>
 <span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a></span>
 <span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co"># Atividade da argila (SiBCS Cap 5)</span></span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>ta <span class="ot">&lt;-</span> soilKey<span class="sc">::</span><span class="fu">atividade_argila_alta</span>(perfil)</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>ta <span class="ot">&lt;-</span> soilKey<span class="sc">:::</span><span class="fu">atividade_argila_alta</span>(perfil)</span>
 <span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;atividade_argila_alta:&quot;</span>, ta<span class="sc">$</span>passed, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
 <span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; atividade_argila_alta: FALSE</span></span>
 <span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a></span>
@@ -514,19 +514,19 @@ Subordem <strong>Vermelho-Amarelo</strong></li>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; ── ClassificationResult (WRB 2022) ──</span></span>
 <span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; Name: Ferralic Cutanic Acrisol (Loamic, Dystric, Ochric, Profondic, Rhodic,</span></span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; Rubic, Chromic)</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; Name: Ferralic Cutanic Acrisol (Clayic, Loamic, Eutric, Ochric, Profondic,</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; Rhodic, Rubic)</span></span>
 <span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; RSG/Order: Acrisols</span></span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; Qualifiers: Ferralic, Cutanic, Loamic, Dystric, Ochric, Profondic, Rhodic,</span></span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; Rubic, Chromic, FALSE, FALSE, FALSE, FALSE, top_cm, bottom_cm, FALSE, top_cm,</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; Qualifiers: Ferralic, Cutanic, Clayic, Loamic, Eutric, Ochric, Profondic,</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; Rhodic, Rubic, FALSE, FALSE, FALSE, FALSE, top_cm, bottom_cm, FALSE, top_cm,</span></span>
 <span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; bottom_cm, FALSE, FALSE, FALSE, FALSE, plinthite_pct, FALSE, plinthite_pct,</span></span>
 <span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; FALSE, plinthite_pct, TRUE, FALSE, redoximorphic_features_pct, FALSE,</span></span>
 <span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; redoximorphic_features_pct, FALSE, al_ox_pct, fe_ox_pct,</span></span>
 <span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; phosphate_retention_pct, volcanic_glass_pct, FALSE, volcanic_glass_pct, FALSE,</span></span>
 <span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; slickensides, TRUE, FALSE, FALSE, coarse_fragments_pct, FALSE, FALSE,</span></span>
 <span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; p_mehlich3_mg_kg, FALSE, p_mehlich3_mg_kg, FALSE, FALSE, FALSE, FALSE, TRUE,</span></span>
-<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, FALSE,</span></span>
-<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; coarse_fragments_pct, TRUE</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE,</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; FALSE, coarse_fragments_pct, FALSE</span></span>
 <span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; Evidence grade: A</span></span>
 <span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; ── Ambiguities</span></span>
@@ -588,7 +588,7 @@ presenca de revestimentos argilosos).</p>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; ── ClassificationResult (USDA Soil Taxonomy) ──</span></span>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; Name: Typic Kandiudults</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; Name: Rhodic Kandiudults</span></span>
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; RSG/Order: Ultisols</span></span>
 <span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; Evidence grade: A</span></span>
 <span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
@@ -597,14 +597,14 @@ presenca de revestimentos argilosos).</p>
 <span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; site$soil_moisture_regime</span></span>
 <span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; ── Key trace</span></span>
-<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; (7 RSGs tested before assignment)</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; (9 RSGs tested before assignment)</span></span>
 <span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; 1. ??  -- NA</span></span>
 <span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; 2. ??  -- NA</span></span>
 <span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; 3. HC Udults -- NA</span></span>
 <span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; 4. ??  -- NA</span></span>
 <span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt; 5. HCC Kandiudults -- NA</span></span>
 <span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; 6. ??  -- NA</span></span>
-<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; 7. HCCD Typic Kandiudults -- NA</span></span></code></pre></div>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; 7. HCCP Rhodic Kandiudults -- NA</span></span></code></pre></div>
 <p>USDA-ST devolve a ordem (ate o nivel atualmente disponivel):
 <strong>Ultisol</strong> (B argilico + saturacao por bases baixa em todo
 o solum).</p>
@@ -623,10 +623,10 @@ o solum).</p>
 <span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; 1    SiBCS 5a</span></span>
 <span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; 2    WRB 2022</span></span>
 <span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; 3 USDA-ST 13a</span></span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt;                                                                                  Classe</span></span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; 1                    Argissolos Vermelhos Distroficos tipicos, argilosa, moderado, Tmob</span></span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; 2 Ferralic Cutanic Acrisol (Loamic, Dystric, Ochric, Profondic, Rhodic, Rubic, Chromic)</span></span>
-<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; 3                                                                     Typic Kandiudults</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt;                                                                                Classe</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; 1                  Argissolos Vermelhos Distroficos tipicos, argilosa, moderado, Tmob</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; 2 Ferralic Cutanic Acrisol (Clayic, Loamic, Eutric, Ochric, Profondic, Rhodic, Rubic)</span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; 3                                                                  Rhodic Kandiudults</span></span>
 <span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt;   EvidGrade</span></span>
 <span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co">#&gt; 1         A</span></span>
 <span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt; 2         A</span></span>

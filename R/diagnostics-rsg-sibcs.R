@@ -16,7 +16,7 @@
 #' nos 80 cm superficiais, OR \\>= 60 cm se \\>= 75\% volume tecido
 #' vegetal.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 organossolo <- function(pedon) {
   res <- horizonte_histico(pedon)
   DiagnosticResult$new(
@@ -37,7 +37,7 @@ organossolo <- function(pedon) {
 #' imediatamente abaixo de A, (d) A chernozemico conjugado com
 #' carbonatico ou cálcico.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 neossolo <- function(pedon) {
   # v0.9.10: when `carater_fluvico` is TRUE, the apparent B-textural
   # pattern is depositional / allochthonous (Neossolos Fluvicos), not a
@@ -104,7 +104,7 @@ neossolo <- function(pedon) {
 #' superficiais + fendas verticais + ausencia de contato litico /
 #' petrocalcico / duripa nos 30 cm + COLE \\>= 0.06.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 vertissolo <- function(pedon) {
   v <- horizonte_vertico(pedon)
   if (!isTRUE(v$passed)) {
@@ -126,13 +126,19 @@ vertissolo <- function(pedon) {
                          any(!is.na(h$cementation_class[shallow_30]) &
                                 h$cementation_class[shallow_30] %in%
                                   c("strongly", "indurated"))
-  passed <- starts_in_100 && surface_clay_ok && !has_lithic_petric
+  # v0.9.107: a vertic profile with an abrupt textural change (B planico) is a
+  # Planossolo vertissolico, not a Vertissolo (Planossolos key in SiBCS Cap 4).
+  # V precedes S in the order cascade, so without this guard a `Btv` Planossolo
+  # would flip to Vertissolo once vertic morphology is inferred from the suffix.
+  no_b_planico <- !isTRUE(B_planico(pedon)$passed)
+  passed <- starts_in_100 && surface_clay_ok && !has_lithic_petric && no_b_planico
   DiagnosticResult$new(
     name = "vertissolo", passed = passed, layers = v$layers,
     evidence = list(
       vertico = v, vert_top_cm = vert_top,
       surface_clay_pct = surface_clay,
-      no_lithic_petric_in_30 = !has_lithic_petric
+      no_lithic_petric_in_30 = !has_lithic_petric,
+      no_b_planico = no_b_planico
     ),
     missing = v$missing,
     reference = "Embrapa (2018), SiBCS 5a ed., Cap 4, p. 112"
@@ -148,7 +154,7 @@ vertissolo <- function(pedon) {
 #' dentro de 200 cm (ou 400 cm se A+E ou histico+E ultrapassam 200).
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param max_top_cm Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 espodossolo <- function(pedon, max_top_cm = 200) {
   res <- B_espodico(pedon)
   if (!isTRUE(res$passed)) {
@@ -179,7 +185,7 @@ espodossolo <- function(pedon, max_top_cm = 200) {
 #' Horizonte B planico nao coincidente com plintico (sem carater
 #' sodico), imediatamente abaixo de A ou E.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 planossolo <- function(pedon) {
   bp <- B_planico(pedon)
   pl <- horizonte_plintico(pedon)
@@ -216,7 +222,7 @@ planossolo <- function(pedon) {
 #' Organossolo), sem horizonte plintico/concrecionario/litoplintico
 #' dentro de 200 cm.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 gleissolo <- function(pedon) {
   g <- horizonte_glei(pedon)
   if (!isTRUE(g$passed)) {
@@ -261,7 +267,7 @@ gleissolo <- function(pedon) {
 #' (exceto histico), dentro de 200 cm (ou 300 se A > 150 cm).
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param max_top_cm Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 latossolo <- function(pedon, max_top_cm = 200) {
   res <- B_latossolico(pedon)
   if (!isTRUE(res$passed)) {
@@ -295,7 +301,7 @@ latossolo <- function(pedon, max_top_cm = 200) {
 #' (c) Calcico OR carater carbonatico no A, seguido de contato
 #'     litico / fragmentario.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 chernossolo <- function(pedon) {
   ch <- horizonte_A_chernozemico(pedon)
   if (!isTRUE(ch$passed)) {
@@ -342,7 +348,7 @@ chernossolo <- function(pedon) {
 #' com plintita/petroplintita (se presente) que NAO satisfaca aos
 #' requisitos para Plintossolos.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 cambissolo <- function(pedon) {
   bi <- B_incipiente(pedon)
   if (!isTRUE(bi$passed)) {
@@ -380,7 +386,7 @@ cambissolo <- function(pedon) {
 #' dentro de 200 cm precedido de glei OR A/E OR horizonte com cores
 #' palidas / variegadas / mosqueados.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 plintossolo <- function(pedon) {
   pl <- horizonte_plintico(pedon)
   co <- horizonte_concrecionario(pedon)
@@ -431,7 +437,7 @@ plintossolo <- function(pedon) {
 #' alta (V \\>= 50\%) na maior parte dos primeiros 100 cm do B
 #' (incl. BA), abaixo de A ou E.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 luvissolo <- function(pedon) {
   bt <- B_textural(pedon)
   if (!isTRUE(bt$passed)) {
@@ -462,7 +468,7 @@ luvissolo <- function(pedon) {
 #' do A, com argila ativ baixa OR ativ alta + carater alumínico, na
 #' maior parte dos primeiros 100 cm do B (incl. BA).
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 nitossolo <- function(pedon) {
   bn <- B_nitico(pedon)
   if (!isTRUE(bn$passed)) {
@@ -498,7 +504,7 @@ nitossolo <- function(pedon) {
 #' textural + (argila ativ baixa OR ativ alta + V baixa OR carater
 #' alumínico).
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 argissolo <- function(pedon) {
   bt <- B_textural(pedon)
   if (!isTRUE(bt$passed)) {

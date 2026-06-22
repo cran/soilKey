@@ -34,12 +34,11 @@
 #'
 #' @return A list as described above.
 #' @examples
-#' \donttest{
-#' sample <- try(load_wosis_sample(), silent = TRUE)
-#' if (!inherits(sample, "try-error")) {
-#'   length(sample$pedons)
-#'   classify_wrb2022(sample$pedons[[1]])$rsg_or_order
-#' }
+#' \dontrun{
+#' sample <- load_wosis_sample()
+#' length(sample$pedons)
+#' #> 40
+#' classify_wrb2022(sample$pedons[[1]])$rsg_or_order
 #' }
 #' @export
 load_wosis_sample <- function() {
@@ -114,12 +113,12 @@ load_wosis_sample <- function() {
 #'   299-320. \doi{10.5194/essd-12-299-2020}.
 #'
 #' @examples
-#' \donttest{
-#' s <- try(load_wosis_stratified_sample(), silent = TRUE)
-#' if (!inherits(s, "try-error")) {
-#'   length(s$pedons)
-#'   table(vapply(s$pedons, function(p) p$site$wosis_rsg, character(1)))
-#' }
+#' \dontrun{
+#' s <- load_wosis_stratified_sample()
+#' length(s$pedons)
+#' #> 130
+#' table(vapply(s$pedons, function(p) p$site$wosis_rsg, character(1)))
+#' #> 5 of each: Acrisol, Andosol, ... Vertisol
 #' }
 #'
 #' @export
@@ -185,16 +184,15 @@ load_wosis_stratified_sample <- function() {
 #' @section Reference:
 #' Beaudette, D., Skovlin, J., Roecker, S., Brown, A. (2024). aqp:
 #' Algorithms for Quantitative Pedology. R package version 2.x.
-#' \url{https://github.com/ncss-tech/aqp}.
+#' \code{https://github.com/ncss-tech/aqp}.
 #'
 #' @examples
-#' \donttest{
-#' s <- try(load_kssl_sample(), silent = TRUE)
-#' if (!inherits(s, "try-error")) {
-#'   length(s$pedons)
-#'   table(vapply(s$pedons, function(p) p$site$reference_wrb_from_usda,
-#'                character(1)))
-#' }
+#' \dontrun{
+#' s <- load_kssl_sample()
+#' length(s$pedons)
+#' #> 100
+#' table(vapply(s$pedons, function(p) p$site$reference_wrb_from_usda,
+#'              character(1)))
 #' }
 #'
 #' @export
@@ -219,7 +217,7 @@ load_kssl_sample <- function() {
 #' \code{reference_wrb_from_usda} cross-walk slot. Only sets the
 #' field when it is currently NULL, so explicit annotations are
 #' preserved.
-#' @keywords internal
+#' @noRd
 .kssl_alias_reference_wrb <- function(pedons) {
   if (!is.list(pedons) || length(pedons) == 0L) return(pedons)
   lapply(pedons, function(p) {
@@ -283,18 +281,18 @@ load_kssl_sample <- function() {
 #' @section Reference:
 #' Beaudette, D., Skovlin, J., Roecker, S., Brown, A. (2024). aqp:
 #' Algorithms for Quantitative Pedology. R package version 2.x.
-#' \url{https://github.com/ncss-tech/aqp}.
+#' \code{https://github.com/ncss-tech/aqp}.
 #'
 #' @examples
-#' \donttest{
-#' s <- try(load_kssl_nasis_sample(), silent = TRUE)
-#' if (!inherits(s, "try-error")) {
-#'   length(s$pedons)
-#'   # Munsell now populated (KSSL-only sample had 0%):
-#'   mean(vapply(s$pedons,
-#'               function(p) any(!is.na(p$horizons$munsell_hue_moist)),
-#'               logical(1)))
-#' }
+#' \dontrun{
+#' s <- load_kssl_nasis_sample()
+#' length(s$pedons)
+#' #> 99
+#' # Munsell now populated (KSSL-only sample had 0%):
+#' mean(vapply(s$pedons,
+#'             function(p) any(!is.na(p$horizons$munsell_hue_moist)),
+#'             logical(1)))
+#' #> 0.99
 #' }
 #'
 #' @export

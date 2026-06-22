@@ -9,6 +9,9 @@ classify_all(
   systems = "all",
   on_missing = c("warn", "silent", "error"),
   include_familia = TRUE,
+  include_family = FALSE,
+  specifiers = FALSE,
+  gapfill = FALSE,
   ...
 )
 }
@@ -24,6 +27,19 @@ every system.}
 
 \item{include_familia}{Forwarded to \code{\link{classify_sibcs}} (default
 \code{TRUE}). Has no effect on the other systems.}
+
+\item{include_family}{Forwarded to \code{\link{classify_usda}} (default
+\code{FALSE}) to derive the USDA 5th-level family. No effect on the
+other systems.}
+
+\item{specifiers}{Forwarded to \code{\link{classify_wrb2022}} (default
+\code{FALSE}) to auto-attach WRB depth specifiers. No effect on the
+other systems.}
+
+\item{gapfill}{Forwarded to all three classifiers (default \code{FALSE} =>
+byte-identical). Opt-in within-pedon depth gap-fill; see
+\code{\link{gapfill_within_pedon}}. Applied independently per system
+on a deep copy, so the caller's pedon is never mutated.}
 
 \item{...}{Additional named arguments are silently ignored.}
 }
@@ -77,14 +93,12 @@ attach any side-channel state.
 }
 
 \examples{
-\donttest{
 pr <- make_ferralsol_canonical()
 all_three <- classify_all(pr)
 all_three$summary
 
 # WRB + USDA only (skip SiBCS):
 classify_all(pr, systems = c("wrb2022", "usda"))$summary
-}
 }
 \seealso{
 \code{\link{classify_wrb2022}}, \code{\link{classify_sibcs}},

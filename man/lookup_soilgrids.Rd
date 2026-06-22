@@ -48,7 +48,7 @@ Numeric vector of length \code{nrow(coords)}. \code{NA}
 \description{
 Reads ISRIC SoilGrids 250m (Hengl et al. 2017, 2021) directly
 from the ISRIC Cloud-Optimized GeoTIFF (COG) endpoint at
-\url{https://files.isric.org/soilgrids/latest/data/} -- no
+\code{https://files.isric.org/soilgrids/latest/data/} -- no
 download required, only the pixel under each query coordinate is
 transferred over HTTPS.
 }
@@ -58,19 +58,17 @@ applies the canonical conversion factor so the returned value is
 in conventional soil units (\%, pH, g/kg, cmol(c)/kg, g/cm^3).
 }
 \examples{
-\donttest{
-if (requireNamespace("terra", quietly = TRUE)) {
-  # Single point (needs internet -- guarded via try())
-  try(lookup_soilgrids(c(-43.0, -22.0),
-                        property = "phh2o",
-                        depth = "0-5cm",
-                        quantile = "mean"), silent = TRUE)
+\dontrun{
+# Single point
+lookup_soilgrids(c(-43.0, -22.0),
+                  property = "phh2o",
+                  depth = "0-5cm",
+                  quantile = "mean")
 
-  # Vector + multiple properties
-  coords <- rbind(c(-43.0, -22.0), c( -9.14, 38.72))
-  try(lookup_soilgrids(coords, "clay",  "0-5cm", "mean"), silent = TRUE)
-  try(lookup_soilgrids(coords, "phh2o", "0-5cm", "mean"), silent = TRUE)
-}
+# Vector + multiple properties
+coords <- rbind(c(-43.0, -22.0), c( -9.14, 38.72))
+lookup_soilgrids(coords, "clay",  "0-5cm", "mean")
+lookup_soilgrids(coords, "phh2o", "0-5cm", "mean")
 }
 }
 \seealso{

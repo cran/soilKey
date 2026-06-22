@@ -486,7 +486,7 @@ canonical YAML rules over the populated <code>PedonRecord</code>.</p>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>cls_usda  <span class="ot">&lt;-</span> <span class="fu">classify_usda</span>(pedon)</span>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a></span>
 <span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>cls_wrb<span class="sc">$</span>name</span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Geric Ferric Rhodic Chromic Ferralsol (Clayic, Humic, Dystric, Ochric, Rubic)&quot;</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Geric Ferric Rhodic Ferralsol (Clayic, Humic, Eutric, Ochric, Rubic)&quot;</span></span>
 <span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>cls_sibcs<span class="sc">$</span>name</span>
 <span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Latossolos Vermelhos Distroficos tipicos, argilosa, moderado&quot;</span></span>
 <span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>cls_usda<span class="sc">$</span>name</span>
@@ -506,8 +506,7 @@ cross-system summary, full key trace, evidence grade, qualifiers,
 ambiguities, missing-data hints, the horizons table, and the per-source
 provenance summary.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">wrb =</span> cls_wrb, <span class="at">sibcs =</span> cls_sibcs, <span class="at">usda =</span> cls_usda)</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">report</span>(results, <span class="at">file =</span> <span class="fu">file.path</span>(<span class="fu">tempdir</span>(), <span class="st">&quot;perfil_042.html&quot;</span>),</span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>       <span class="at">pedon =</span> pedon)</span></code></pre></div>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">report</span>(results, <span class="at">file =</span> <span class="st">&quot;perfil_042.html&quot;</span>, <span class="at">pedon =</span> pedon)</span></code></pre></div>
 <p>The output is a single HTML file with inline CSS – no external
 network requests, suitable for emailing to a colleague or attaching to a
 laudo.</p>
@@ -520,8 +519,8 @@ laudo.</p>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">report_to_qgis</span>(</span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="at">pedon           =</span> pedon,</span>
 <span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">classifications =</span> results,</span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="at">file            =</span> <span class="fu">file.path</span>(<span class="fu">tempdir</span>(), <span class="st">&quot;perfil_042.gpkg&quot;</span>),</span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="at">report_html     =</span> <span class="fu">file.path</span>(<span class="fu">tempdir</span>(), <span class="st">&quot;perfil_042.html&quot;</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="at">file            =</span> <span class="st">&quot;perfil_042.gpkg&quot;</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="at">report_html     =</span> <span class="st">&quot;perfil_042.html&quot;</span></span>
 <span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>)</span></code></pre></div>
 <p>The GeoPackage carries three layers:</p>
 <ul>

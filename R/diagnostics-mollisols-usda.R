@@ -11,7 +11,7 @@
 #' Mollisol Order qualifier (USDA, KST 13ed, Ch 12)
 #' Pass when mollic_epipedon AND BS (NH4OAc) >= 50\% in upper 100 cm.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 mollisol_qualifying_usda <- function(pedon) {
   mo <- mollic_epipedon_usda(pedon)
   if (!isTRUE(mo$passed)) {
@@ -41,7 +41,7 @@ mollisol_qualifying_usda <- function(pedon) {
 
 #' Albolls qualifier: mollic + albic + argillic.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 alboll_qualifying_usda <- function(pedon) {
   al <- albic(pedon)
   arg <- argillic_within_usda(pedon, max_top_cm = 200)
@@ -59,7 +59,7 @@ alboll_qualifying_usda <- function(pedon) {
 
 #' Aquolls qualifier (aquic conditions in mollic).
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 aquoll_qualifying_usda <- function(pedon) {
   res <- aquic_conditions_usda(pedon, max_top_cm = 50)
   res$name <- "aquoll_qualifying_usda"
@@ -71,14 +71,16 @@ aquoll_qualifying_usda <- function(pedon) {
 #' Pass when CaCO3 >= 40\% in subsurface AND profile depth < 100 cm
 #' to a contact.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 rendoll_qualifying_usda <- function(pedon) {
   h <- pedon$horizons
   cand <- which(!is.na(h$top_cm) & h$top_cm < 100)
   cas <- h$caco3_pct[cand]
   miss <- if (all(is.na(cas))) "caco3_pct" else character(0)
   has_carbonate <- any(!is.na(cas) & cas >= 40)
-  has_lithic <- isTRUE(lithic_contact_usda(pedon, max_top_cm = 100)$passed)
+  # KST 13ed Ch. 12: Rendolls have a lithic or paralithic contact WITHIN 50 cm
+  # of the mineral soil surface (corrected from 100 cm).
+  has_lithic <- isTRUE(lithic_contact_usda(pedon, max_top_cm = 50)$passed)
   passed <- has_carbonate && has_lithic
   DiagnosticResult$new(
     name = "rendoll_qualifying_usda", passed = passed,
@@ -95,7 +97,7 @@ rendoll_qualifying_usda <- function(pedon) {
 #' Pass when worm_holes_pct >= 50\% in some horizon (KST 13ed worm
 #' burrow criterion).
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 vermic_subgroup_usda <- function(pedon) {
   h <- pedon$horizons
   wh <- h$worm_holes_pct
@@ -113,7 +115,7 @@ vermic_subgroup_usda <- function(pedon) {
 
 #' Argic Mollisol Suborder helper -- delegates argillic_within_usda.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 argic_mollisol_usda <- function(pedon) {
   res <- argillic_within_usda(pedon, max_top_cm = 200)
   res$name <- "argic_mollisol_usda"

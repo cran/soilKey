@@ -8,7 +8,8 @@ classify_sibcs(
   pedon,
   rules = NULL,
   on_missing = c("warn", "silent", "error"),
-  include_familia = FALSE
+  include_familia = FALSE,
+  gapfill = FALSE
 )
 }
 \arguments{
@@ -24,6 +25,16 @@ adiciona o 5o nivel categorico (Familia) via
 \code{\link{classify_sibcs_familia}}. O label textual da
 Familia aparece em \code{$trace$familia_label}, e a lista
 de \code{\link{FamilyAttribute}}s em \code{$trace$familia}.}
+
+\item{gapfill}{Preenchimento opcional de lacunas por interpolacao
+intra-perfil, default \code{FALSE} (no-op; classificacao
+byte-identica). \code{TRUE} preenche celulas \code{NA} interiores
+dos atributos continuos por profundidade; um vetor de caracteres
+restringe aos atributos citados; uma lista nomeada e repassada a
+\code{\link{gapfill_within_pedon}}. Celulas preenchidas recebem
+proveniencia \code{inferred_prior}, baixando o grau de evidencia
+para \code{"C"}. Opera sobre copia profunda -- o pedon do chamador
+nunca e modificado.}
 }
 \value{
 Um \code{\link{ClassificationResult}} cujo \code{name} eh o
@@ -41,4 +52,9 @@ progressivamente wiradas em
 Organossolos primeiro). Quando a subordem ainda nao tem bloco de
 Grandes Grupos, ou quando nenhum Grande Grupo passa (e nao ha
 catch-all default), a classificacao para no 2o nivel.
+}
+\examples{
+pedon <- make_latossolo_canonical()
+res <- classify_sibcs(pedon)
+res$name
 }

@@ -10,6 +10,7 @@ classification_robustness(
   level = c("order", "name"),
   n = 50L,
   perturbations = NULL,
+  provenance_aware = FALSE,
   seed = 42L
 )
 }
@@ -25,15 +26,18 @@ or \code{"name"} (compare full classification name).}
 
 \item{perturbations}{Named list. Each name is a horizon column;
 each element is a function taking the original value and
-returning a perturbed value. NA-tolerant.}
+returning a perturbed value. NA-tolerant. Ignored when
+\code{provenance_aware = TRUE}.}
 
-\item{seed}{Integer applied through \code{\link[withr]{with_seed}}
-so the Monte-Carlo draws are reproducible \emph{without}
-mutating the caller's global RNG state. Pass \code{NULL} to
-leave the RNG stream untouched. Default \code{42L} preserves
-the bit-for-bit-identical output earlier soilKey releases
-produced (CRAN policy: never call \code{set.seed()} on the
-caller's RNG).}
+\item{provenance_aware}{If \code{FALSE} (default) every cell is
+perturbed by the fixed \code{perturbations} panel -- the exact
+v0.9.42 behaviour. If \code{TRUE}, each \code{(horizon,
+attribute)} cell is perturbed by an amount scaled to its
+provenance evidence grade, and \code{perturbations} is
+ignored. See \code{\link{classify_with_uncertainty}} for the
+full provenance-weighted posterior.}
+
+\item{seed}{Random seed for reproducibility.}
 }
 \value{
 A list with elements \code{baseline} (the unperturbed
@@ -60,7 +64,7 @@ Default perturbation panel:
 }
 }
 \examples{
-\donttest{
+\dontrun{
 p <- make_ferralsol_canonical()
 classification_robustness(p, system = "wrb2022", n = 50)
 #> $baseline    : "Ferralsols"

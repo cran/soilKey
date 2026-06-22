@@ -23,6 +23,7 @@
 #' deferred (the canonical horizon schema does not carry a "transitional"
 #' marker; it can be added later via boundary_distinctness inspection).
 #' @param pedon A \code{\link{PedonRecord}}.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 abrupt_textural_difference <- function(pedon) {
   h <- pedon$horizons
@@ -81,6 +82,7 @@ abrupt_textural_difference <- function(pedon) {
 #' horizon. v0.3.3 detects via designation pattern \code{glossic|albeluvic}
 #' on a layer that overlies an argic-horizon-passing layer.
 #' @param pedon A \code{\link{PedonRecord}}.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 albeluvic_glossae <- function(pedon) {
   h <- pedon$horizons
@@ -112,6 +114,7 @@ albeluvic_glossae <- function(pedon) {
 #' Consolidated material below the soil. v0.3.3: detects via designation
 #' \code{R} or \code{Cr} on the lowermost (or any) layer.
 #' @param pedon A \code{\link{PedonRecord}}.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 continuous_rock <- function(pedon) {
   h <- pedon$horizons
@@ -134,6 +137,7 @@ continuous_rock <- function(pedon) {
 #' coarse_fragments_pct (>= 10pp absolute jump) OR rock_origin difference
 #' between consecutive layers.
 #' @param pedon A \code{\link{PedonRecord}}.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 lithic_discontinuity <- function(pedon) {
   h <- pedon$horizons
@@ -192,6 +196,7 @@ lithic_discontinuity <- function(pedon) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_caco3_pct Numeric threshold or option (see Details).
 #' @param max_caco3_pct Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 protocalcic_properties <- function(pedon, min_caco3_pct = 0.5,
                                       max_caco3_pct = 15) {
@@ -230,6 +235,7 @@ protocalcic_properties <- function(pedon, min_caco3_pct = 0.5,
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_caso4_pct Numeric threshold or option (see Details).
 #' @param max_caso4_pct Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 protogypsic_properties <- function(pedon, min_caso4_pct = 1.0,
                                       max_caso4_pct = 5.0) {
@@ -264,9 +270,10 @@ protogypsic_properties <- function(pedon, min_caso4_pct = 1.0,
 
 
 #' Reducing conditions (WRB 2022 Ch 3.2.10) -- per-pedon test wrapping
-#' \code{\link{test_reducing_conditions}}.
+#' \code{test_reducing_conditions}.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_redox_pct Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 reducing_conditions <- function(pedon, min_redox_pct = 5) {
   h <- pedon$horizons
@@ -283,9 +290,10 @@ reducing_conditions <- function(pedon, min_redox_pct = 5) {
 
 
 #' Shrink-swell cracks (WRB 2022 Ch 3.2.12) -- per-pedon test wrapping
-#' \code{\link{test_shrink_swell_cracks}}.
+#' \code{test_shrink_swell_cracks}.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_width_cm Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 shrink_swell_cracks <- function(pedon, min_width_cm = 0.5) {
   h <- pedon$horizons
@@ -303,12 +311,22 @@ shrink_swell_cracks <- function(pedon, min_width_cm = 0.5) {
 
 #' Sideralic properties (WRB 2022 Ch 3.2.13)
 #'
-#' Mineral material with low CEC: clay >= 8\% AND CEC/clay < 24, OR
-#' bulk CEC < 2 cmol_c/kg soil. Plus evidence of soil formation
-#' (cambic-style criterion 3).
+#' Mineral material with a relatively low CEC. WRB 2022 (3.2.13) requires
+#' BOTH:
+#' \enumerate{
+#'   \item one or both of: clay >= 8\% AND CEC/clay < 24 cmol_c/kg clay; OR
+#'         bulk CEC < 2 cmol_c/kg soil;
+#'   \item evidence of soil formation as defined in criterion 3 of the cambic
+#'         horizon (\code{test_cambic_soil_formation}).
+#' }
+#' Both must be met by the SAME layer. Criterion 2 was added in v0.9.127
+#' (previously only criterion 1 was enforced); where the soil-formation
+#' evidence cannot be assessed (no Munsell/clay/Fe/carbonate adjacency data)
+#' the result is \code{NA} rather than a false positive.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param max_cec_per_clay Numeric threshold or option (see Details).
 #' @param max_bulk_cec Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 sideralic_properties <- function(pedon, max_cec_per_clay = 24,
                                     max_bulk_cec = 2) {
@@ -334,25 +352,38 @@ sideralic_properties <- function(pedon, max_cec_per_clay = 24,
              else FALSE,
     layers = bulk, missing = missing, details = details
   )
-  shared <- union(tests$cec_per_clay$layers, tests$bulk_cec_alt$layers)
+  # Criterion 1: low-CEC layers (either path).
+  crit1 <- union(tests$cec_per_clay$layers, tests$bulk_cec_alt$layers)
+  crit1_na <- is.na(tests$cec_per_clay$passed) ||
+                is.na(tests$bulk_cec_alt$passed)
+
+  # Criterion 2: evidence of soil formation (cambic criterion 3) on the
+  # SAME layers. Only assessed where criterion 1 holds.
+  tests$soil_formation <- test_cambic_soil_formation(h,
+                                                       candidate_layers = crit1)
+  shared <- intersect(crit1, tests$soil_formation$layers)
+
   passed <- if (length(shared) > 0L) TRUE
-            else if (is.na(tests$cec_per_clay$passed) ||
-                     is.na(tests$bulk_cec_alt$passed)) NA
+            else if (length(crit1) == 0L) {
+              if (crit1_na) NA else FALSE
+            } else if (is.na(tests$soil_formation$passed)) NA
             else FALSE
   DiagnosticResult$new(
     name = "sideralic_properties",
     passed = passed, layers = shared,
     evidence = tests,
     missing = unique(c(tests$cec_per_clay$missing,
-                         tests$bulk_cec_alt$missing)),
+                         tests$bulk_cec_alt$missing,
+                         tests$soil_formation$missing)),
     reference = "IUSS Working Group WRB (2022), Chapter 3.2.13"
   )
 }
 
 
 #' Takyric properties (WRB 2022 Ch 3.2.15) -- per-pedon test wrapping
-#' \code{\link{test_takyric_surface}}.
+#' \code{test_takyric_surface}.
 #' @param pedon A \code{\link{PedonRecord}}.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 takyric_properties <- function(pedon) {
   h <- pedon$horizons
@@ -376,6 +407,7 @@ takyric_properties <- function(pedon) {
 #' @param min_glass_pct Numeric threshold or option (see Details).
 #' @param min_alfe Numeric threshold or option (see Details).
 #' @param min_p_retention Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 vitric_properties <- function(pedon, min_glass_pct = 5,
                                  min_alfe = 0.4,
@@ -400,8 +432,9 @@ vitric_properties <- function(pedon, min_glass_pct = 5,
 
 
 #' Yermic properties (WRB 2022 Ch 3.2.17) -- per-pedon test wrapping
-#' \code{\link{test_yermic_surface}}.
+#' \code{test_yermic_surface}.
 #' @param pedon A \code{\link{PedonRecord}}.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 yermic_properties <- function(pedon) {
   h <- pedon$horizons

@@ -30,7 +30,7 @@
 #' base diagnostic fires AND has any of its passing layers in the
 #' given depth window.
 #'
-#' @keywords internal
+#' @noRd
 .q_within_depth <- function(name, base_diag,
                                 pedon, top_cm, bottom_cm) {
   if (!isTRUE(base_diag$passed)) {
@@ -60,7 +60,7 @@
 
 
 #' Volume-weighted mean of a horizon attribute over a depth window
-#' @keywords internal
+#' @noRd
 .q_weighted_mean <- function(values, top, bottom,
                                 window_top = 0, window_bottom = 100) {
   ok <- !is.na(values) & !is.na(top) & !is.na(bottom) & bottom > top
@@ -90,7 +90,7 @@
 #' the upper 100 cm; passes if \\>= 70 (or NA if no measurements).
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_coarsic <- function(pedon) {
   h <- pedon$horizons
   cf <- h$coarse_fragments_pct
@@ -128,7 +128,7 @@ qual_coarsic <- function(pedon) {
 #' \code{cracks_depth_cm} on any layer with top <= 100 cm.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_fractic <- function(pedon) {
   h <- pedon$horizons
   upper <- which(!is.na(h$top_cm) & h$top_cm <= 100)
@@ -167,7 +167,7 @@ qual_fractic <- function(pedon) {
 #' (slight over-estimate, since not all crystalline Al is gibbsite).
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_gibbsic <- function(pedon) {
   h <- pedon$horizons
   al2o3 <- h$al2o3_sulfuric_pct
@@ -206,7 +206,7 @@ qual_gibbsic <- function(pedon) {
 #' the upper 100 cm.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_ferritic <- function(pedon) {
   h <- pedon$horizons
   fe <- h$fe_dcb_pct
@@ -245,7 +245,7 @@ qual_ferritic <- function(pedon) {
 #' \code{munsell_chroma_moist <= 2}, thickness <= 10 cm).
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_greyzemic <- function(pedon) {
   h <- pedon$horizons
   mol <- mollic(pedon)
@@ -290,7 +290,7 @@ qual_greyzemic <- function(pedon) {
 #' from the soil surface down to 100 cm."
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_profundihumic <- function(pedon) {
   h <- pedon$horizons
   oc <- h$oc_pct
@@ -326,7 +326,7 @@ qual_profundihumic <- function(pedon) {
 #' Implementation: \code{caco3_pct} >= 80 in any layer with top <= 100.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_wapnic <- function(pedon) {
   h <- pedon$horizons
   cc <- h$caco3_pct
@@ -362,7 +362,7 @@ qual_wapnic <- function(pedon) {
 #' specific test is over-permissive without explicit moss flag).
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_mawic <- function(pedon) {
   h <- pedon$horizons
   fiber <- h$fiber_content_unrubbed_pct
@@ -394,7 +394,7 @@ qual_mawic <- function(pedon) {
 #' fibres in organic material >= 40 cm thick within 100 cm."
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_muusic <- function(pedon) {
   h <- pedon$horizons
   fiber_r <- h$fiber_content_rubbed_pct
@@ -424,7 +424,7 @@ qual_muusic <- function(pedon) {
 #' cm." Proxy via low rubbed fibre + von Post (when present).
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_murshic <- function(pedon) {
   h <- pedon$horizons
   fiber_r <- h$fiber_content_rubbed_pct
@@ -462,7 +462,7 @@ qual_murshic <- function(pedon) {
 #' \code{\link{leptic_features}} (max_depth = 25) AND coarse-frag check.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_rockic <- function(pedon) {
   lep <- leptic_features(pedon, max_depth = 25)
   h <- pedon$horizons
@@ -491,7 +491,7 @@ qual_rockic <- function(pedon) {
 #' organic-rich (oc_pct >= 5\%).
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_thyric <- function(pedon) {
   h <- pedon$horizons
   art <- h$artefacts_industrial_pct
@@ -525,7 +525,7 @@ qual_thyric <- function(pedon) {
 #' overlying-spodic check.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_anthromollic <- function(pedon) {
   ant <- tryCatch(anthric_horizons(pedon),
                     error = function(e) NULL)
@@ -565,7 +565,7 @@ qual_anthromollic <- function(pedon) {
 #' \code{\link{calcaric_material}}.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_endocalcaric <- function(pedon) {
   base <- calcaric_material(pedon)
   .q_within_depth("Endocalcaric", base, pedon,
@@ -580,7 +580,7 @@ qual_endocalcaric <- function(pedon) {
 #' \code{\link{dolomitic_material}}.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_endodolomitic <- function(pedon) {
   base <- dolomitic_material(pedon)
   .q_within_depth("Endodolomitic", base, pedon,
@@ -595,7 +595,7 @@ qual_endodolomitic <- function(pedon) {
 #' \code{\link{fluvic_material}}.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_anofluvic <- function(pedon) {
   base <- fluvic_material(pedon)
   .q_within_depth("Anofluvic", base, pedon, 50, 200)
@@ -608,7 +608,7 @@ qual_anofluvic <- function(pedon) {
 #' soil surface to >= 100 cm depth."
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_pantofluvic <- function(pedon) {
   base <- fluvic_material(pedon)
   if (!isTRUE(base$passed)) {
@@ -641,7 +641,7 @@ qual_pantofluvic <- function(pedon) {
 #' when neither Ano- nor Panto- applies.)
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_orthofluvic <- function(pedon) {
   base <- fluvic_material(pedon)
   .q_within_depth("Orthofluvic", base, pedon, 50, 100)
@@ -658,7 +658,7 @@ qual_orthofluvic <- function(pedon) {
 #' redoximorphic features WITHOUT gleyic-hue reduction.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_oxyaquic <- function(pedon) {
   h <- pedon$horizons
   redox <- h$redoximorphic_features_pct
@@ -690,7 +690,7 @@ qual_oxyaquic <- function(pedon) {
 #' fires AND redoximorphic_features_pct >= 10 in upper 50 cm.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_oxygleyic <- function(pedon) {
   gl <- gleyic_properties(pedon)
   if (!isTRUE(gl$passed)) {
@@ -722,7 +722,7 @@ qual_oxygleyic <- function(pedon) {
 #' (chroma <= 1, low value) at >= 50 cm depth."
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_reductaquic <- function(pedon) {
   h <- pedon$horizons
   chroma <- h$munsell_chroma_moist
@@ -750,7 +750,7 @@ qual_reductaquic <- function(pedon) {
 #' (gleyic-hue layers occupying \\>= 50\% of the upper 50 cm)."
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_reductigleyic <- function(pedon) {
   gl <- gleyic_properties(pedon)
   if (!isTRUE(gl$passed)) {
@@ -788,7 +788,7 @@ qual_reductigleyic <- function(pedon) {
 #' \code{transport|fill|spoil|dredge|aterro|antropico}.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_transportic <- function(pedon) {
   h <- pedon$horizons
   origin <- h$layer_origin
@@ -818,11 +818,11 @@ qual_transportic <- function(pedon) {
 #'
 #' WRB 2022 Ch 5: "Soil material that has been relocated within the
 #' same site (cut-and-fill, terracing) covering >= 100 cm of the
-#' upper soil." Implementation parallels \code{\link{qual_transportic}}
+#' upper soil." Implementation parallels \code{qual_transportic}
 #' but matches \code{relocat|terraced|cut.fill}.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_relocatic <- function(pedon) {
   h <- pedon$horizons
   origin <- h$layer_origin
@@ -856,7 +856,7 @@ qual_relocatic <- function(pedon) {
 #' between 5 and 50\%.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_isolatic <- function(pedon) {
   h <- pedon$horizons
   art <- pmax(h$artefacts_urbic_pct %||% rep(NA_real_, nrow(h)),
@@ -903,45 +903,44 @@ qual_isolatic <- function(pedon) {
 #'
 #' WRB 2022 Ch 5: "Distric (BS < 50\%) at >= 50 cm depth."
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_endodystric <- function(pedon) {
-  base <- distrofico(pedon)
-  .q_within_depth("Endodystric", base, pedon, 50, 200)
+  # WRB 2022 Dystric (exch. Al > bases) evaluated only in the lower part
+  # (50-100 cm); the WRB Al-vs-bases criterion, not SiBCS base saturation.
+  .wrb_base_status_result(pedon, "Endodystric", "dystric", 50, 100)
 }
 
 
-#' Epidystric supplementary qualifier (epd): dystric only in upper 50 cm
+#' Epidystric supplementary qualifier (epd): dystric only in the upper part
 #'
-#' WRB 2022 Ch 5: "Dystric (BS < 50\%) in upper 50 cm and eutric below."
+#' WRB 2022 Ch 5: exchangeable Al > bases in 20-50 cm (Dystric restricted to
+#' the upper part).
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_epidystric <- function(pedon) {
-  base <- distrofico(pedon)
-  .q_within_depth("Epidystric", base, pedon, 0, 50)
+  .wrb_base_status_result(pedon, "Epidystric", "dystric", 20, 50)
 }
 
 
-#' Endoeutric supplementary qualifier (eee): eutric only at depth
+#' Endoeutric supplementary qualifier (eee): eutric only at depth (50-100 cm)
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_endoeutric <- function(pedon) {
-  base <- eutrofico(pedon)
-  .q_within_depth("Endoeutric", base, pedon, 50, 200)
+  .wrb_base_status_result(pedon, "Endoeutric", "eutric", 50, 100)
 }
 
 
-#' Epieutric supplementary qualifier (eee): eutric only in upper 50 cm
+#' Epieutric supplementary qualifier (eee): eutric only in the upper part
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_epieutric <- function(pedon) {
-  base <- eutrofico(pedon)
-  .q_within_depth("Epieutric", base, pedon, 0, 50)
+  .wrb_base_status_result(pedon, "Epieutric", "eutric", 20, 50)
 }
 
 
 #' Endoabruptic supplementary qualifier (eea): abrupt textural change deep
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_endoabruptic <- function(pedon) {
   base <- tryCatch(abrupt_textural_difference(pedon),
                      error = function(e) NULL)
@@ -959,7 +958,7 @@ qual_endoabruptic <- function(pedon) {
 
 #' Endoleptic supplementary qualifier (lle): rock contact 50-100 cm
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_endoleptic <- function(pedon) {
   # leptic_features tests for rock <= 25 cm (max_depth=25 default).
   # Endoleptic redefines depth window to 50-100 cm.
@@ -989,7 +988,7 @@ qual_endoleptic <- function(pedon) {
 
 #' Endothionic supplementary qualifier (etn): thionic at depth >= 50 cm
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_endothionic <- function(pedon) {
   base <- tryCatch(carater_tionico(pedon),
                      error = function(e) NULL)
@@ -1009,7 +1008,7 @@ qual_endothionic <- function(pedon) {
 #'
 #' WRB 2022 Ch 5: "Sodic with exchangeable sodium percentage >= 70\%."
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_hypernatric <- function(pedon) {
   h <- pedon$horizons
   na <- h$na_cmol; cec <- h$cec_cmol
@@ -1037,7 +1036,7 @@ qual_hypernatric <- function(pedon) {
 #' Sulfatic supplementary qualifier (su): high sulfate content
 #' WRB 2022 Ch 5: "Containing >= 25\% gypsum or >= 5\% sulfate by mass."
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_sulfatic <- function(pedon) {
   h <- pedon$horizons
   # Try sulfate / sulphate horizon column (oxidising regime; not always present)
@@ -1063,7 +1062,7 @@ qual_sulfatic <- function(pedon) {
 
 #' Carbonic supplementary qualifier (cb): high SOC content (>= 6\%)
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_carbonic <- function(pedon) {
   h <- pedon$horizons
   oc <- h$oc_pct
@@ -1075,7 +1074,10 @@ qual_carbonic <- function(pedon) {
       reference = "WRB (2022) Ch 5, Carbonic"
     ))
   }
-  qualifying <- which(!is.na(oc) & oc >= 6 & h$top_cm < 100)
+  # WRB 2022 Ch 5 Carbonic: layer >= 10 cm thick, <= 100 cm, with >= 5% organic
+  # carbon (was >= 6% and no thickness gate).
+  qualifying <- which(!is.na(oc) & oc >= 5 & h$top_cm < 100 &
+                        (h$bottom_cm - h$top_cm) >= 10)
   passed <- length(qualifying) > 0L
   DiagnosticResult$new(
     name = "Carbonic", passed = passed, layers = qualifying,
@@ -1088,7 +1090,7 @@ qual_carbonic <- function(pedon) {
 
 #' Carbonatic supplementary qualifier (cn): >= 50\% carbonates
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_carbonatic <- function(pedon) {
   h <- pedon$horizons
   cc <- h$caco3_pct
@@ -1121,7 +1123,7 @@ qual_carbonatic <- function(pedon) {
 #' field if the loader supplies it.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_hydrophobic <- function(pedon) {
   h <- pedon$horizons
   flag <- h$vesicular_pores %||% rep(NA_character_, nrow(h))
@@ -1151,7 +1153,7 @@ qual_hydrophobic <- function(pedon) {
 #' material (visual or chemical evidence)."
 #' Implementation: \code{layer_origin} or designation matching fire-related text.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_pyric <- function(pedon) {
   h <- pedon$horizons
   origin <- h$layer_origin %||% rep(NA_character_, nrow(h))
@@ -1183,7 +1185,7 @@ qual_pyric <- function(pedon) {
 #' volume or weight) in organic material."
 #' Implementation: \code{woody_fragments_pct} or layer_origin matching wood.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_lignic <- function(pedon) {
   h <- pedon$horizons
   wf <- h$woody_fragments_pct %||% rep(NA_real_, nrow(h))
@@ -1213,7 +1215,7 @@ qual_lignic <- function(pedon) {
 
 #' Bathyspodic supplementary qualifier (bs): spodic at 100-200 cm depth
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_bathyspodic <- function(pedon) {
   base <- spodic(pedon)
   .q_within_depth("Bathyspodic", base, pedon, 100, 200)
@@ -1226,7 +1228,7 @@ qual_bathyspodic <- function(pedon) {
 #' \code{consistence_dry} ("extremely hard") OR
 #' \code{consistence_moist} ("very firm"), within 100 cm.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_cohesic <- function(pedon) {
   h <- pedon$horizons
   cd <- h$consistence_dry  %||% rep(NA_character_, nrow(h))
@@ -1262,7 +1264,7 @@ qual_cohesic <- function(pedon) {
 #' Implementation: site$slope_pct (when populated) >= 10 OR
 #' parent_material / forma_relevo flagging steep terrain.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_inclinic <- function(pedon) {
   slope <- pedon$site$slope_pct %||% NA_real_
   relief <- pedon$site$forma_relevo %||% pedon$site$drainage %||% ""
@@ -1294,7 +1296,7 @@ qual_inclinic <- function(pedon) {
 #' WRB 2022 Ch 5: "Permafrost within 200 cm of the soil surface OR
 #' gelic materials." Modifier of cryic_conditions for non-Cryosols.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_gelic <- function(pedon) {
   base <- tryCatch(cryic_conditions(pedon), error = function(e) NULL)
   if (is.null(base)) {

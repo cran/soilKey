@@ -199,9 +199,10 @@ classify_sibcs(pr_lat, on_missing = "silent")$rsg_or_order
 
 ## ----sibcs-atributos----------------------------------------------------------
 # Atividade da fração argila (Ta vs Tb) per Cap 1, p 30
-atividade_argila_alta(make_luvissolo_canonical())$passed   # TRUE  -> Ta
-atividade_argila_alta(make_nitossolo_canonical())$passed   # FALSE -> Tb
+# (the per-attribute predicates are internal engine helpers -> soilKey:::)
+soilKey:::atividade_argila_alta(make_luvissolo_canonical())$passed   # TRUE  -> Ta
+soilKey:::atividade_argila_alta(make_nitossolo_canonical())$passed   # FALSE -> Tb
 
 # Caráter alítico (Cap 1, p 32): Al >= 4 cmol_c/kg + sat Al >= 50% + V < 50%
-carater_alitico(make_argissolo_canonical())$passed
+soilKey:::carater_alitico(make_argissolo_canonical())$passed
 

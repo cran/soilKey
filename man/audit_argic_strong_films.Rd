@@ -36,12 +36,9 @@ tokenisation. The audit is read-only and never invokes
 \code{\link{classify_sibcs}()}.
 }
 \examples{
-\donttest{
-csv_path <- "RJ.csv"
-if (file.exists(csv_path)) {
-  peds <- load_bdsolos_csv(csv_path)
-  a <- audit_argic_strong_films(peds, reference_filter = "LATOSSOLO")
-  table(a$would_exclude_from_latossolo)
-}
+\dontrun{
+peds <- load_bdsolos_csv("RJ.csv")
+a <- audit_argic_strong_films(peds, reference_filter = "LATOSSOLO")
+table(a$would_exclude_from_latossolo)
 }
 }

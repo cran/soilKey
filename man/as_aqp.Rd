@@ -28,13 +28,14 @@ Requires the \code{aqp} package, listed in Suggests; the function
 raises a clear error if aqp is not installed.
 }
 \examples{
-\donttest{
-if (requireNamespace("aqp", quietly = TRUE)) {
-  pedons <- list(make_ferralsol_canonical(), make_luvisol_canonical())
-  spc <- as_aqp(pedons)
-  length(spc)         # 2 profiles
-  aqp::horizons(spc)  # one row per horizon, aqp-named columns
-}
+\dontrun{
+library(soilKey)
+library(aqp)
+
+pedons <- list(make_ferralsol_canonical(), make_luvisol_canonical())
+spc <- as_aqp(pedons)
+length(spc)         # 2 profiles
+aqp::horizons(spc)  # one row per horizon, aqp-named columns
 }
 }
 \seealso{

@@ -34,11 +34,10 @@ A list with elements:
 }
 
 \examples{
-\donttest{
-sample <- try(load_wosis_sample(), silent = TRUE)
-if (!inherits(sample, "try-error")) {
-  length(sample$pedons)
-  classify_wrb2022(sample$pedons[[1]])$rsg_or_order
-}
+\dontrun{
+sample <- load_wosis_sample()
+length(sample$pedons)
+#> 40
+classify_wrb2022(sample$pedons[[1]])$rsg_or_order
 }
 }

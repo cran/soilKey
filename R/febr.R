@@ -41,7 +41,7 @@
 #' Returns \code{c(hue = NA_character_, value = NA_real_, chroma =
 #' NA_real_)} when the input is empty / unparseable.
 #'
-#' @keywords internal
+#' @noRd
 .parse_febr_munsell <- function(s) {
   if (is.null(s) || length(s) == 0L || is.na(s) || !nzchar(trimws(s))) {
     return(list(hue = NA_character_, value = NA_real_, chroma = NA_real_))
@@ -70,7 +70,7 @@
 #'
 #' Returns a data.frame with columns hue / value / chroma, one row per
 #' input string.
-#' @keywords internal
+#' @noRd
 .parse_febr_munsell_vec <- function(x) {
   if (length(x) == 0L) {
     return(data.frame(hue = character(0), value = numeric(0),
@@ -115,7 +115,7 @@
 #'
 #' Same patterns apply for "seca" (dry).
 #'
-#' @keywords internal
+#' @noRd
 .detect_febr_munsell_columns <- function(cols) {
   pick <- function(patterns) {
     for (p in patterns) {
@@ -159,7 +159,7 @@
 #'
 #' The FEBR \code{camada} (layer) table uses standardised variable
 #' codes documented in the FEBR data dictionary (see
-#' \url{https://www.pedometria.org/febr/} for the project home;
+#' \code{https://www.pedometria.org/febr/} for the project home;
 #' the dictionary path moved during 2024 -- the codes themselves
 #' are stable). This internal table records the regex patterns that
 #' map the most useful FEBR codes onto the soilKey horizon schema.
@@ -230,22 +230,15 @@
 #'         row.
 #'
 #' @examples
-#' \donttest{
-#' # 'febr' is not on CRAN; we resolve the name through a variable so
-#' # R CMD check does not flag a missing Suggests entry. The example
-#' # no-ops on CRAN's machines and runs locally once the user has
-#' # installed it from GitHub (febr-team/febr-package).
-#' febr_pkg <- "febr"
-#' if (requireNamespace(febr_pkg, quietly = TRUE)) {
-#'   # Single dataset (35 perfis, 100% Munsell coverage)
-#'   pedons <- try(read_febr_pedons("ctb0039"), silent = TRUE)
+#' \dontrun{
+#' # Single dataset (35 perfis, 100% Munsell coverage)
+#' pedons <- read_febr_pedons("ctb0039")
 #'
-#'   # Multiple datasets
-#'   # pedons <- read_febr_pedons(c("ctb0032", "ctb0562", "ctb0568"))
+#' # Multiple datasets
+#' pedons <- read_febr_pedons(c("ctb0032", "ctb0562", "ctb0568"))
 #'
-#'   # All Munsell-bearing datasets (slow; 200 datasets, ~36k horizons)
-#'   # all_pedons <- read_febr_pedons("all")
-#' }
+#' # All Munsell-bearing datasets (slow; 200 datasets, ~36k horizons)
+#' all_pedons <- read_febr_pedons("all")
 #' }
 #' @seealso \code{\link{febr_index_munsell}},
 #'          \code{\link{load_bdsolos_csv}}.
@@ -328,7 +321,7 @@ read_febr_pedons <- function(dataset_codes      = c("ctb0039"),
 
 
 #' Map FEBR layer-table columns to soilKey horizon column names
-#' @keywords internal
+#' @noRd
 .febr_match_layer_columns <- function(cols) {
   out <- list()
   for (sk in names(.FEBR_TO_HORIZON_MAP)) {
@@ -341,7 +334,7 @@ read_febr_pedons <- function(dataset_codes      = c("ctb0039"),
 
 
 #' Build a soilKey horizons table from a subset of FEBR camada rows
-#' @keywords internal
+#' @noRd
 .febr_rows_to_horizons <- function(rows, sk_map, mcols) {
   spec <- horizon_column_spec()
   hz <- list()
@@ -412,7 +405,7 @@ read_febr_pedons <- function(dataset_codes      = c("ctb0039"),
 
 
 #' Build a single PedonRecord from FEBR rows
-#' @keywords internal
+#' @noRd
 .febr_pedon_from_rows <- function(oid, camada_rows, ob_row, ident, hz, ds) {
   taxon <- if (!is.null(ob_row)) {
     grep_cols <- grep("^taxon|sibcs|classifica",

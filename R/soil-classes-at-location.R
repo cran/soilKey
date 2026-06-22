@@ -40,7 +40,7 @@
 #' @section Data source:
 #' For real use, point \code{source_url} at a regional SoilGrids
 #' "MostProbable WRB" GeoTIFF / COG (one of the cuts at
-#' \url{https://files.isric.org/soilgrids/latest/data/wrb/}). For
+#' \code{https://files.isric.org/soilgrids/latest/data/wrb/}). For
 #' tests, \code{options(soilKey.test_raster = "/tmp/syn.tif")} is
 #' honoured. When no source is given, the function emits a
 #' \code{cli_alert_warning()} and returns an empty result -- it does
@@ -73,21 +73,16 @@
 #' @return A list as described under \strong{Output}.
 #'
 #' @examples
-#' \donttest{
-#' if (requireNamespace("terra", quietly = TRUE)) {
-#'   # Mata Atlantica, Rio de Janeiro state (needs internet -- try() guards it).
-#'   res <- try(soil_classes_at_location(
-#'     lat        = -22.7,
-#'     lon        = -43.7,
-#'     system     = "wrb2022",
-#'     source_url = paste0("https://files.isric.org/soilgrids/latest/",
-#'                           "data/wrb/MostProbable.vrt")
-#'   ), silent = TRUE)
-#'   if (!inherits(res, "try-error")) {
-#'     res$distribution         # ranked list of likely RSGs
-#'     res$typical_attributes   # canonical thresholds per RSG to confirm
-#'   }
-#' }
+#' \dontrun{
+#' # Mata Atlântica, Rio de Janeiro state.
+#' res <- soil_classes_at_location(
+#'   lat        = -22.7,
+#'   lon        = -43.7,
+#'   system     = "wrb2022",
+#'   source_url = "https://files.isric.org/soilgrids/latest/data/wrb/MostProbable.vrt"
+#' )
+#' res$distribution         # ranked list of likely RSGs
+#' res$typical_attributes   # canonical thresholds per RSG to confirm
 #' }
 #' @seealso \code{\link{spatial_prior_soilgrids}} for the
 #'          post-classification consistency check.
@@ -204,7 +199,7 @@ soil_classes_at_location <- function(lat,
 
 #' Map an RSG code to a human-readable class name in the requested
 #' classification system.
-#' @keywords internal
+#' @noRd
 .rsg_name_for_system <- function(code, system) {
   if (system == "wrb2022") {
     .wrb_rsg_full_names()[[code]] %||% code
@@ -215,7 +210,7 @@ soil_classes_at_location <- function(lat,
   }
 }
 
-#' @keywords internal
+#' @noRd
 .wrb_rsg_full_names <- function() {
   c(HS = "Histosols",  AT = "Anthrosols", TC = "Technosols",
     CR = "Cryosols",   LP = "Leptosols",  SN = "Solonetz",
@@ -230,7 +225,7 @@ soil_classes_at_location <- function(lat,
     FL = "Fluvisols",  RG = "Regosols")
 }
 
-#' @keywords internal
+#' @noRd
 .sibcs_ordem_full_names <- function() {
   c(O = "Organossolos",  R = "Neossolos",   V = "Vertissolos",
     E = "Espodossolos",  S = "Planossolos", G = "Gleissolos",
@@ -239,7 +234,7 @@ soil_classes_at_location <- function(lat,
     P = "Argissolos")
 }
 
-#' @keywords internal
+#' @noRd
 .usda_order_full_names <- function() {
   c(GE = "Gelisols",   HI = "Histosols",   SP = "Spodosols",
     AD = "Andisols",   OX = "Oxisols",     VE = "Vertisols",
@@ -253,7 +248,7 @@ soil_classes_at_location <- function(lat,
 #' Many-to-many: a single WRB RSG may map to multiple SiBCS ordens
 #' (we split the probability evenly).
 #'
-#' @keywords internal
+#' @noRd
 .wrb_to_sibcs_distribution <- function(dist) {
   map <- list(
     HS = "O", AT = c("P", "C"), TC = "C", CR = "C", LP = "R",
@@ -289,7 +284,7 @@ soil_classes_at_location <- function(lat,
 
 #' Canonical attribute ranges per class, used as the
 #' "what-to-confirm" appendix.
-#' @keywords internal
+#' @noRd
 .typical_attribute_table <- function(system, codes) {
   if (length(codes) == 0L)
     return(data.table::data.table(rsg_code = character(0),

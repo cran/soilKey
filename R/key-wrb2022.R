@@ -60,15 +60,60 @@ run_wrb_key <- function(pedon, rules = NULL) {
 #'        \code{"error"}. Behaviour when the trace reports missing
 #'        attributes.
 #' @param rules Optional pre-loaded rule set.
+#' @param strict Logical or \code{NULL}. Controls WRB Tier-3 strict
+#'        mode for the per-RSG numerical gates (Vertisols, Andosols,
+#'        Gleysols, Planosols, Ferralsols, Chernozems, Kastanozems).
+#'        When \code{NULL} (default) the gates follow
+#'        \code{getOption("soilKey.rsg_strict", FALSE)}. Passing
+#'        \code{TRUE} or \code{FALSE} forces strict mode on or off for
+#'        the duration of this call; see the individual RSG-gate help
+#'        pages (e.g. \code{\link{ferralsol}}) for the strengthened
+#'        thresholds.
+#' @param specifiers Logical. When \code{TRUE}, auto-attach WRB 2022
+#'        Ch 5 depth specifiers (Epi-/Endo-/Bathy-/Amphi-/Panto-/Kato-)
+#'        to depth-anchored qualifiers based on the diagnostic feature's
+#'        actual depth -- e.g. a gleyic feature confined to 50--100 cm
+#'        yields \code{Endogleyic} instead of \code{Gleyic}. Default
+#'        \code{FALSE} keeps the canonical names byte-identical. Surface
+#'        / epipedon qualifiers are excluded (their depth is definitional).
+#' @param gapfill Opt-in within-pedon depth gap-fill, default \code{FALSE}
+#'        (no-op, classification stays byte-identical). \code{TRUE} fills
+#'        interior \code{NA} cells of the continuous depth-trending attributes
+#'        by linear interpolation from the profile's own measured horizons; a
+#'        character vector restricts it to those attributes; a named list is
+#'        passed to \code{\link{gapfill_within_pedon}}. Filled cells carry
+#'        \code{inferred_prior} provenance, so the evidence grade drops to
+#'        \code{"C"}. Runs on a deep copy -- the caller's pedon is never mutated.
 #' @return A \code{\link{ClassificationResult}}.
+#' @examples
+#' pedon <- make_ferralsol_canonical()
+#' res <- classify_wrb2022(pedon)
+#' res$name
 #' @export
 classify_wrb2022 <- function(pedon,
                                prior           = NULL,
                                prior_threshold = 0.01,
                                on_missing      = c("warn", "silent", "error"),
-                               rules           = NULL) {
+                               rules           = NULL,
+                               strict          = NULL,
+                               specifiers      = FALSE,
+                               gapfill         = FALSE) {
   on_missing <- match.arg(on_missing)
   rules      <- rules %||% load_rules("wrb2022")
+
+  # Opt-in within-pedon gap-fill (default off => byte-identical). Operates on a
+  # deep copy, so the caller's pedon is never mutated; interpolated cells carry
+  # "inferred_prior" provenance and drop the evidence grade to "C".
+  pedon <- .classify_apply_gapfill(pedon, gapfill)
+
+  # Tier-3 strict mode: when the caller passes an explicit value, force
+  # the package option for the duration of this call so the YAML-
+  # dispatched RSG gates pick it up, then restore it on exit.
+  if (!is.null(strict)) {
+    old_strict <- getOption("soilKey.rsg_strict")
+    options(soilKey.rsg_strict = isTRUE(strict))
+    on.exit(options(soilKey.rsg_strict = old_strict), add = TRUE)
+  }
 
   # Pre-compute the implemented diagnostics so we can report which ones
   # passed even when the corresponding RSG test path is not yet wired up.
@@ -139,7 +184,7 @@ classify_wrb2022 <- function(pedon,
   # tags per WRB 2022 Ch 6 -- e.g. "Rhodic Ferralsol (Clayic, Humic,
   # Dystric)").
   qual_result <- tryCatch(
-    resolve_wrb_qualifiers(pedon, rsg$code, rules),
+    resolve_wrb_qualifiers(pedon, rsg$code, rules, specifiers = specifiers),
     error = function(e) list(principal = character(0),
                               supplementary = character(0),
                               trace = list())
@@ -178,7 +223,7 @@ classify_wrb2022 <- function(pedon,
 #' diagnostic still passed, the name reflects that the true RSG is
 #' identifiable in principle but not yet wired to the key.
 #'
-#' @keywords internal
+#' @noRd
 compute_v01_classification_name <- function(rsg, diags, is_default) {
 
   if (!is_default) {
@@ -210,12 +255,18 @@ compute_v01_classification_name <- function(rsg, diags, is_default) {
 
 #' Compute the provenance-aware evidence grade
 #'
-#' v0.1 rule: A if every recorded provenance is \code{"measured"}, B if
+#' Returns the weakest grade present across the pedon's provenance
+#' ledger: A if every recorded provenance is \code{"measured"}, B if
 #' any \code{"predicted_spectra"}, C if any \code{"inferred_prior"}, D
-#' if any \code{"extracted_vlm"} or \code{"user_assumed"}. If no
+#' if any \code{"extracted_vlm"}, E if any \code{"user_assumed"}. If no
 #' provenance is recorded, defaults to A (assume measured).
 #'
-#' @keywords internal
+#' Grade E was split out from D in v0.9.99 so that a wholly assumed
+#' value is distinguishable from a VLM-extracted one; see
+#' \code{\link{compute_per_attribute_evidence_grade}} for the
+#' cell-by-cell breakdown.
+#'
+#' @noRd
 #' @param pedon A \code{\link{PedonRecord}}.
 compute_evidence_grade <- function(pedon, trace) {
   prov <- pedon$provenance
@@ -223,7 +274,7 @@ compute_evidence_grade <- function(pedon, trace) {
     return("A")
   }
   sources <- unique(prov$source)
-  if ("user_assumed"      %in% sources) return("D")
+  if ("user_assumed"      %in% sources) return("E")
   if ("extracted_vlm"     %in% sources) return("D")
   if ("inferred_prior"    %in% sources) return("C")
   if ("predicted_spectra" %in% sources) return("B")
@@ -236,7 +287,7 @@ compute_evidence_grade <- function(pedon, trace) {
 #' v0.1 rule: an entry is ambiguous if its result is NA and at least one
 #' attribute (not just a stubbed diagnostic) was reported missing.
 #'
-#' @keywords internal
+#' @noRd
 find_ambiguities <- function(trace, current, diags = NULL) {
   ambiguities <- list()
   for (entry in trace) {
@@ -267,7 +318,7 @@ find_ambiguities <- function(trace, current, diags = NULL) {
 #' tests; the user can already see those in the trace and the
 #' classification name.
 #'
-#' @keywords internal
+#' @noRd
 collect_missing_attributes <- function(trace) {
   all_missing <- unique(unlist(lapply(trace,
                                        function(e) e$missing %||% character(0))))

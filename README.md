@@ -2,15 +2,15 @@
 
 # soilKey <img src="man/figures/logo.png" align="right" height="160" alt="soilKey hex sticker — a key over a stratified soil profile, with a sapling emerging from the top and a decision-tree circuit on the right" />
 
-[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg?style=flat-square)](https://lifecycle.r-lib.org/articles/stages.html)
-![v0.9.96](https://img.shields.io/badge/version-0.9.96-FF6B35?style=flat-square)
+[![Lifecycle: maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg?style=flat-square)](https://lifecycle.r-lib.org/articles/stages.html)
+![v0.9.119](https://img.shields.io/badge/version-0.9.119-FF6B35?style=flat-square)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://github.com/HugoMachadoRodrigues/soilKey/blob/main/LICENSE.md)
 [![CRAN status](https://img.shields.io/badge/CRAN-pending-yellow.svg?style=flat-square)](https://CRAN.R-project.org/package=soilKey)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19930112.svg)](https://doi.org/10.5281/zenodo.19930112)
 [![R-CMD-check](https://github.com/HugoMachadoRodrigues/soilKey/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/HugoMachadoRodrigues/soilKey/actions/workflows/R-CMD-check.yaml)
 [![WRB 2022](https://img.shields.io/badge/WRB%202022-32%2F32%20RSGs-blue.svg?style=flat-square)](#-coverage)
 [![SiBCS 5](https://img.shields.io/badge/SiBCS%205-13%20Orders%20%C2%B7%20938%20Subgroups-blue.svg?style=flat-square)](#-coverage)
-[![USDA ST 13](https://img.shields.io/badge/USDA%20ST%2013-12%20Orders%20%C2%B7%201288%20Subgroups-blue.svg?style=flat-square)](#-coverage)
+[![USDA ST 13](https://img.shields.io/badge/USDA%20ST%2013-12%20Orders%20%C2%B7%202003%2F2715%20Subgroups-blue.svg?style=flat-square)](#-coverage)
 <br/>
 [![X / Twitter](https://img.shields.io/badge/X-%40Hugo__MRodrigues-000000.svg?style=flat-square&logo=x&logoColor=white)](https://x.com/Hugo_MRodrigues)
 [![ORCID](https://img.shields.io/badge/ORCID-0000--0002--8070--8126-A6CE39.svg?style=flat-square&logo=orcid&logoColor=white)](https://orcid.org/0000-0002-8070-8126)
@@ -28,29 +28,39 @@
 | **WRB 2022 — diagnostic properties**| ✅ shipped (17 / 17) | Chapter 3.2 complete.                                                                              |
 | **WRB 2022 — diagnostic materials** | ✅ shipped (16 / 16) | Chapter 3.3 complete.                                                                              |
 | **WRB 2022 — RSG key**              | ✅ shipped (32 / 32) | All Reference Soil Groups in canonical Chapter 4 order.                                            |
-| **WRB 2022 — qualifiers**           | ✅ shipped           | All principal + supplementary qualifiers from Chapter 6 wired with canonical ordering.            |
+| **WRB 2022 — qualifiers**           | ✅ shipped (229/234) | 229 of 234 canonical qualifiers deliverable (217 implemented + 12 specifier-derived); 5 honest gaps, all schema-blocked (Claric/Panpaic/Sideralic/Novic/"etrosalic"). `coverage_report("wrb_qualifiers")` counts genuine implementations only, following one level of delegation (Fibric/Hemic/Sapric delegate to a real decomposition helper). |
 | **SiBCS 5 — Order**                 | ✅ shipped (13 / 13) | All 13 SiBCS Orders.                                                                               |
 | **SiBCS 5 — Suborder**              | ✅ shipped (44 / 44) | All 44 Suborders.                                                                                  |
 | **SiBCS 5 — Great Group**           | ✅ shipped (192 / 192)| All 192 Great Groups.                                                                              |
 | **SiBCS 5 — Subgroup**              | ✅ shipped (938 / 938)| All 938 Subgroups; full leaf-level resolution.                                                     |
 | **SiBCS 5 — Family (5th level)**    | ✅ shipped           | Up to 15 orthogonal adjectival dimensions.                                                         |
-| **USDA Soil Taxonomy 13 — Path C**  | ✅ shipped           | Order → Suborder → Great Group → Subgroup (12 / 68 / 339 / 1288).                                  |
+| **USDA Soil Taxonomy 13 — Path C**  | ✅ shipped (v0.9.113) | Order → Suborder → Great Group → Subgroup (12 / 68 / 339 / **2003 of 2715** canonical subgroups, 73.8% — by-name `coverage_report()`; +829 in v0.9.113, +57 colour/contact in v0.9.121, +25 intergrades in v0.9.123). |
+| **USDA Soil Taxonomy 13 — Family**  | ✅ shipped (v0.9.104) | 5th-level family modifiers (particle-size, mineralogy, CEC-activity, reaction, temperature, depth), prepended to the subgroup via `classify_usda(include_family = TRUE)`. Series (6th) needs the NRCS database — out of scope. |
 | **Multimodal extraction (VLM)**     | ✅ shipped           | Local-first via `ellmer` + Gemma 4 (Ollama). Schema-validated; LLM never touches the key.          |
 | **OSSL spectral gap-fill**          | ✅ shipped           | Vis-NIR / SWIR / MIR via `prospectr` + `resemble` (MBL / PLSR-local / pretrained backbones).      |
+| **Within-pedon gap-fill**           | ✅ shipped (v0.9.120) | `gapfill_within_pedon()` / `classify_*(gapfill = TRUE)`: interpolates *interior* missing horizon values from the profile's own measured layers (never extrapolates). Opt-in, byte-identical when off, tagged `inferred_prior` (grade C). |
 | **Spatial priors**                  | ✅ shipped           | SoilGrids WCS + national soil maps; consistency check, never overrides the key.                    |
 | **Provenance ledger**               | ✅ shipped           | Per-attribute tags: `measured`, `predicted_spectra`, `extracted_vlm`, `inferred_prior`, `user_assumed`. |
-| **Evidence grade (A–D)**            | ✅ shipped           | Computed from the trace; surfaces robustness without hiding it.                                    |
+| **Evidence grade (A–E)**            | ✅ shipped           | Computed from the trace; surfaces robustness without hiding it. Five-grade scale since v0.9.99.    |
 | **Cross-system correlation**        | ✅ shipped           | WRB ↔ USDA ↔ SiBCS via IUSS WRB 2022 Annex 6; full benchmark drivers.                             |
 | **External-data benchmarks**        | ✅ shipped           | KSSL+NASIS, AfSP, WoSIS stratified, BDsolos (RJ), Redape (Vaz et al. 2023), LUCAS 2018.           |
+| **Reproducible benchmark suite**    | ✅ shipped (v0.9.106) | `run_all_benchmarks()` — one call auto-detects local datasets, runs each (Redape now pooled into `benchmark_unified`), and writes a consolidated report. Latest (n≤200, order level): FEBR SiBCS 38%, BDsolos SiBCS 33%, KSSL USDA 40%, LUCAS WRB 0% (honest topsoil baseline). |
+| **SiBCS accuracy uplift**           | ✅ shipped (v0.9.107) | Benchmark-guided recovery of four zero-recall SiBCS orders on the Redape gold standard (Gleissolos/Plintossolos/Vertissolos to full recall, Chernossolos partial), via Redape-scoped morphology-suffix promotion + a stacked chernic-A fix. **Redape order accuracy 45.7% → 59.6% (+13 profiles)**; 44 canonical fixtures unchanged. |
 | **SmartSolos Expert API bridge**    | ✅ shipped           | `classify_via_smartsolos_api()` cross-validates against Embrapa's authoritative reference.        |
 | **Lazy-fetch benchmark caches**     | ✅ shipped (v0.9.94) | Four large `.rds` samples downloaded on demand from a versioned GitHub Release.                   |
-| **CRAN release**                    | 🟡 pending           | First submission post v0.9.95; auto-check pre-test passing.                                        |
-| **WRB Tier-3 RSG-gate strict mode** | 🟡 in progress       | Per-RSG numerical-threshold gate strengthening; tracked in NEWS per release.                       |
-| **Field-photo-only classification** | 🔵 idea / roadmap    | Photo + GPS → schema-validated extraction → multi-system classification, no lab data required.    |
-| **Pedometric uncertainty quantif.** | 🔵 idea / roadmap    | Probabilistic class output via Monte Carlo perturbation of the provenance ledger.                  |
-| **R Shiny web app**                 | 🔵 idea / roadmap    | Interactive profile builder + classification visualiser.                                           |
+| **CRAN release**                    | 🟡 in queue          | v0.9.96 submitted to CRAN on 2026-05-19; auto-check pre-test passing.                              |
+| **R Shiny web app**                 | ✅ shipped (v0.9.97) | `run_classify_app()` — nine-tab `bslib` interface: interactive pedon builder, tri-system classify, VLM photo, OSSL spectra, SoilGrids prior, interactive `leaflet` map, MC uncertainty, HTML/PDF report. |
+| **Pro app polish**                  | ✅ shipped (v0.9.108) | Soil-palette theme + `www/soilkey.css`, a global pedon ribbon, a "Getting started" modal with a one-click **Load example & classify**, Vis-NIR spectrum + photo previews, lat/lon validation, USDA-family / WRB-specifier toggles in the Classify sidebar, and a `report()` that honours both depth-level options (additive, default-off). |
+| **Bilingual Pro app (i18n)**        | ✅ shipped (v0.9.114) | English + Brazilian Portuguese, dependency-free: a 352-string catalogue (`inst/i18n/translations.yaml`) + an `i18n()` helper + a navbar EN/PT selector; `run_classify_app(lang = "pt")`. English is the default and holds the strings verbatim, so the app is byte-identical by default. |
+| **Accessible + responsive app**     | ✅ shipped (v0.9.115) | Document `lang` follows the UI language, navbar selector `aria-label`, `aria-live` notifications, WCAG-AA contrast, `prefers-reduced-motion`; CSS breakpoints (768/480px) make the app usable down to a ~375px phone. Markup/CSS only. |
+| **WRB Tier-3 RSG-gate strict mode** | ✅ shipped (v0.9.98) | `classify_wrb2022(strict = TRUE)` strengthens seven RSG gates (Vertisol clay 30→35 %, Chernozem BS 50→80 %, etc.); backward-compatible.                                       |
+| **Field-photo-only classification** | ✅ shipped (v0.9.99) | `classify_from_photos()` — photo + GPS → VLM Munsell + SoilGrids depth prior → multi-system classification; evidence grade D / C, never A.                                    |
+| **Pedometric uncertainty quantif.** | ✅ shipped (v0.9.100) | `classify_with_uncertainty()` — provenance-weighted Monte-Carlo posterior over classes; per-grade perturbation magnitudes (A ±3 % … E ±30 %), attribute sensitivity ranking.  |
+| **Interactive map tab**             | ✅ shipped (v0.9.101) | New "Map" tab in the Pro app: click a `leaflet` map to place a point and query the SoilGrids class prior there (`soil_classes_at_location()`); buffer + class distribution + typical attributes. Phase 1 of the mapping roadmap (point prior). |
+| **Batch soil map**                  | ✅ shipped (v0.9.102) | "Batch classify" sub-tab: classify many profiles at once (demo fixtures or an uploaded long-format CSV) and map them by class (WRB / SiBCS / USDA), with a legend, per-point popups and GeoPackage export. Phase 2 of the mapping roadmap. |
+| **Gridded prediction (DSM)**        | ✅ shipped (v0.9.103) | "Grid prediction" sub-tab: a raster class map over a bbox via three methods — SoilGrids covariates run through the deterministic key, nearest-neighbour interpolation of classified points, or the SoilGrids MostProbable overlay — with a class summary and GeoTIFF export. Phase 3 completes the mapping roadmap. |
 
-Legend: ✅ shipped · 🟡 in progress · 🔵 idea / roadmap
+Legend: ✅ shipped · 🟡 in queue · 🔵 idea / roadmap
 
 ---
 
@@ -71,18 +81,78 @@ classify_wrb2022(pedon)$name
 classify_sibcs(pedon, include_familia = TRUE)$name
 #> [1] "Latossolos Vermelhos Distroficos tipicos, argilosa, moderado"
 
-# USDA Soil Taxonomy 13 — Order -> Suborder -> Great Group -> Subgroup
-classify_usda(pedon)$name
-#> [1] "Rhodic Hapludox"
+# USDA Soil Taxonomy 13 — Order -> Suborder -> Great Group -> Subgroup -> Family
+classify_usda(pedon, include_family = TRUE)$name
+#> [1] "fine, kaolinitic, isohyperthermic Rhodic Hapludox"
 ```
 
-* WRB delivers the **complete Chapter 6 name** — four principal qualifiers + five supplementary qualifiers in canonical order.
+* WRB delivers the **complete Chapter 6 name** — four principal qualifiers + five supplementary qualifiers in canonical order, with optional **depth specifiers** (Epi-/Endo-/Bathy-/…, via `classify_wrb2022(specifiers = TRUE)`).
 * SiBCS descends through **all four hierarchical levels (Order → Suborder → Great Group → Subgroup)** plus a **5th-level Family** with up to 15 orthogonal adjectival dimensions.
-* USDA Soil Taxonomy walks the **complete Path C** (Order → Suborder → Great Group → Subgroup) per *Keys to Soil Taxonomy 13th ed.*
+* USDA Soil Taxonomy walks the **complete Path C** (Order → Suborder → Great Group → Subgroup) per *Keys to Soil Taxonomy 13th ed.*, plus the **5th-level family** modifiers (`include_family = TRUE`).
 
 All three keys are deterministic R code driven from versioned YAML rules.
 
 ---
+
+## ✦ What's new in v0.9.109 (2026-06-11)
+
+* **v0.9.109 — CRAN release hardening.** A readiness audit found a full
+  `R CMD check` was clean only because CI didn't pass `--as-cran`; under
+  `--as-cran`, 545 exported topics lacked a `\value` section (a likely CRAN
+  rejection). The ~600 atomic taxonomic-engine predicates (`qual_*`, `*_usda`
+  gates, `carater_*` / `horizonte_*`) are now `@keywords internal` — still
+  exported and callable, but out of the public reference index, trimming the
+  documented API from ~910 to ~195 topics; the remaining ~85 public topics
+  gained `\value`. The package now passes `R CMD check --as-cran` with **0
+  errors / 0 warnings**. Runnable `\examples` were added to the entry points,
+  CI now runs `--as-cran` + `pkgdown::check_pkgdown()`, and the release metadata
+  (cran-comments, CITATION.cff, lifecycle → *maturing*) was refreshed. **No
+  user-visible behaviour changed.**
+
+## ✦ What's new in v0.9.108 (2026-06-11)
+
+* **v0.9.108 — Pro app polish.** The professional Shiny app
+  (`run_classify_app(ui = "pro")`) gets a thorough UX pass — the last of the
+  three follow-up fronts (benchmarks → accuracy → app). A **soil-science theme**
+  (topsoil-brown / terracotta / moss palette over `flatly`, plus a slim
+  `www/soilkey.css`) and a navbar wordmark give it an identity; a global
+  **pedon ribbon** keeps the active profile (id, horizons, coordinates, build
+  status) visible on every tab; a **"Getting started" Help modal** offers a
+  one-click **Load example & classify** that builds the canonical Ferralsol
+  through the real Pedon flow and jumps straight to the results. The **Spectra**
+  tab plots the attached Vis-NIR spectrum (one trace per horizon) and the
+  **Photo** tab previews the uploaded image with the VLM confidence as an
+  evidence badge. Coordinates are **range-validated** before a pedon is built,
+  the **USDA-family** and **WRB-depth-specifier** toggles are surfaced in the
+  Classify sidebar (two-way-synced with Settings), and the **Report** now honours
+  both: `report(pedon, include_family = TRUE, specifiers = TRUE)` forwards the
+  flags to the keys. The two new `report()` arguments default to `FALSE`, so the
+  output stays **byte-identical** unless opted in. No new dependencies.
+
+## ✦ What's new in v0.9.105 (2026-06-10)
+
+* **v0.9.105 — WRB depth specifiers.** `classify_wrb2022(pedon, specifiers = TRUE)` auto-attaches the WRB 2022 Chapter 5 depth specifiers (Epi-/Endo-/Bathy-/Amphi-/Panto-/Kato-) to depth-anchored qualifiers, computed from the diagnostic feature's actual depth — e.g. a gleyic feature confined to 50–100 cm becomes *Endogleyic*. The engine existed since v0.9.2.B but only fired on already-prefixed names; this wires in the automatic computation. Applied to subsurface qualifiers only (epipedons like Mollic/Umbric are excluded — their depth is definitional). Default `specifiers = FALSE` keeps the canonical names **byte-identical** (verified across every canonical fixture). Exposed on `classify_all()` and via a Settings toggle in the Pro app.
+
+## ✦ What's new in v0.9.104 (2026-06-10)
+
+* **v0.9.104 — USDA family (5th level).** USDA Soil Taxonomy now reaches its deepest formal category: `classify_usda(pedon, include_family = TRUE)` prepends the family modifiers to the subgroup, e.g. *"fine, kaolinitic, isohyperthermic Rhodic Hapludox"*. Like the SiBCS `familia`, the family is **computed, not keyed** — six orthogonal dimensions (particle-size, mineralogy via `compute_ki`/`compute_kr`, CEC-activity, reaction, temperature regime, depth), each a `FamilyAttribute` carrying its evidence and missing fields. The soil temperature regime uses `site$soil_temperature_regime` when present, else infers it from latitude/elevation (flagged as inferred). `classify_all(include_family = TRUE)` and a Settings toggle in the Pro app expose it. The default (`include_family = FALSE`) is byte-identical to before. All three systems now classify to their deepest formal level.
+
+## ✦ What's new in v0.9.101 → v0.9.103 (2026-06-10)
+
+The **mapping roadmap**, complete — the Pro Shiny app's three cartographic surfaces.
+
+* **v0.9.101 — Interactive map tab.** The Pro Shiny app gains a ninth tab, **Map**: an interactive `leaflet` surface where you click to place a point and query the SoilGrids class prior at that location via `soil_classes_at_location()`. The tab renders the queried buffer, the ranked class distribution (WRB 2022 / USDA ST 13 / SiBCS 5), and the canonical typical-attribute table — and it works with *or without* a built pedon (a map click and a built pedon's coordinate stay in sync). This is **Phase 1** of the mapping roadmap. Adds `leaflet` to `Suggests`.
+* **v0.9.102 — Batch soil map.** The Map tab gains a **Batch classify** sub-tab: classify *many* profiles at once and map them by class. Point sources are demo fixtures spread across Brazil (zero-data demo) or an uploaded long-format CSV (one row per horizon, grouped by id into one `PedonRecord` each). Every profile runs through `classify_all()`; points are drawn on a `leaflet` map coloured by reference soil group / order with a legend and per-point popups, listed in a summary table, and exportable to a GeoPackage via `sf`. This is **Phase 2** — the genuine pedon-scale soil map, each point backed by a deterministic classification.
+* **v0.9.103 — Gridded prediction (DSM).** The Map tab gains a **Grid prediction** sub-tab that produces a raster class map over a bounding box, via three selectable methods: (a) **SoilGrids covariates + key** — sample SoilGrids covariates per cell, build a pseudo-pedon and run the *deterministic key* (the differentiator: the SoilGrids MostProbable layer predicts the class by ML, this applies the key); (b) **interpolate points** — nearest-neighbour of the Phase-2 classified points; (c) **SoilGrids overlay** — the MostProbable WRB raster for comparison. Each result is summarised by class and exportable as a GeoTIFF (`terra`). This is **Phase 3** — completing the mapping roadmap. Per §14 of `ARCHITECTURE.md`, the covariate method is framed as *complementary to*, not a replacement for, pixel-scale DSM.
+
+## ✦ What's new in v0.9.97 → v0.9.100 (2026-05-19)
+
+Four sequential roadmap releases that turn every previously pending README item into shipped functionality.
+
+* **v0.9.97 — Professional Shiny app.** `run_classify_app()` launches an eight-tab `bslib` interface: interactive pedon builder (44 canonical fixtures, editable horizon table, live `plotly` depth profile), tri-system classification with the full key trace, VLM photo extraction, OSSL spectral gap-fill, SoilGrids spatial prior, Monte-Carlo uncertainty, and a downloadable HTML / PDF report. The interface is bilingual (English / Portuguese) and the report follows the chosen language. The legacy single-page "classic" uploader was retired in v0.9.117 (`ui = "classic"` now warns and launches the Pro app).
+* **v0.9.98 — WRB Tier-3 strict mode.** `classify_wrb2022(strict = TRUE)` strengthens seven Tier-2 RSG gates (Vertisols / Andosols / Gleysols / Planosols / Ferralsols / Chernozems / Kastanozems) toward the canonical WRB 2022 Chapter 4 intent — e.g. the Vertisol overlying-clay floor rises 30 → 35 %, the Chernozem base-saturation floor 50 → 80 %. `strict = FALSE` (the default) is byte-identical to v0.9.97; every canonical fixture classifies the same under both modes.
+* **v0.9.99 — Field-photo-only classification.** `classify_from_photos()` assembles a PedonRecord entirely from VLM extraction of field photographs (Munsell colour per horizon + optional site metadata), back-fills missing attributes from a SoilGrids depth prior, and runs all three keys. Companion exports `apply_soilgrids_depth_prior()` (depth-resolved companion to `spatial_prior_soilgrids()`) and `compute_per_attribute_evidence_grade()` (per-cell A–E breakdown). Evidence grade **E** (user-assumed) was split out from D so a wholly assumed value is distinguishable from a VLM-extracted one.
+* **v0.9.100 — Provenance-weighted uncertainty.** `classify_with_uncertainty()` returns a probabilistic class distribution from a Monte-Carlo perturbation of the provenance ledger — each `(horizon, attribute)` cell is perturbed by an amount scaled to its evidence grade (A measured ±3 %, B spectra ±7 %, C prior ±10 %, D VLM ±17 %, E assumed ±30 %). The result is a `soilkey_uncertainty` object: posterior `P(class)`, Shannon entropy, and a leave-one-attribute-out sensitivity ranking that answers "what should I measure next?". `classification_robustness(provenance_aware = TRUE)` exposes the same weighting on the v0.9.42 API.
 
 ## ✦ What's new in v0.9.81 → v0.9.96 (2026-05-09)
 
@@ -449,12 +519,12 @@ When you use **`benchmark_redape()`** or **`load_redape_pedons()`**:
 
 ## ✦ References (canonical books + datasets)
 
-* **WRB 2022** — IUSS Working Group WRB (2022). *World Reference Base for Soil Resources, 4th edition.* International Union of Soil Sciences, Vienna, Austria. [FAO OpenKnowledge PDF](https://openknowledge.fao.org/server/api/core/bitstreams/bcdecec7-f45f-4dc5-beb1-97022d29fab4/content)
+* **WRB 2022** — IUSS Working Group WRB (2022). *World Reference Base for Soil Resources, 4th edition.* International Union of Soil Sciences, Vienna, Austria. FAO OpenKnowledge PDF (`https://openknowledge.fao.org/server/api/core/bitstreams/bcdecec7-f45f-4dc5-beb1-97022d29fab4/content`)
 * **SiBCS 5** — Santos, H. G. *et al.* (2018). *Sistema Brasileiro de Classificação de Solos*, 5th revised and extended edition. Embrapa, Brasília.
 * **USDA Soil Taxonomy 13** — Soil Survey Staff (2022). *Keys to Soil Taxonomy*, 13th edition. USDA-NRCS, Washington, DC.
 * **OSSL** — Sanderman, J., Savage, K., & Dangal, S. R. S. (2020). *Mid-infrared spectroscopy for prediction of soil health indicators in the United States.* Soil Science Society of America Journal, 84(1), 251–261.
 * **WoSIS** — Batjes, N. H., Ribeiro, E., & van Oostrum, A. (2020). *Standardised soil profile data to support global mapping and modelling (WoSIS snapshot 2019).* Earth System Science Data, 12, 299–320. <https://doi.org/10.5194/essd-12-299-2020>
-* **AfSP** — Leenaars, J. G. B., van Oostrum, A. J. M., & Ruiperez Gonzalez, M. (2014). *Africa Soil Profiles Database, Version 1.2.* ISRIC Report 2014/01. ISRIC — World Soil Information, Wageningen. [Project page](https://isric.org/projects/africa-soil-profiles-database-afsp). The bundled `afsp_sample.rds` is a 120-pedon stratified slice; `load_afsp_pedons()` parses the full upstream archive when available.
+* **AfSP** — Leenaars, J. G. B., van Oostrum, A. J. M., & Ruiperez Gonzalez, M. (2014). *Africa Soil Profiles Database, Version 1.2.* ISRIC Report 2014/01. ISRIC — World Soil Information, Wageningen. Project page (`https://isric.org/projects/africa-soil-profiles-database-afsp`). The bundled `afsp_sample.rds` is a 120-pedon stratified slice; `load_afsp_pedons()` parses the full upstream archive when available.
    *(Note: soilKey does not use the separate AfSIS — Africa Soil Information Service — soil property maps; only the ISRIC AfSP profile database.)*
 * **LUCAS 2018 — data report (this is what `benchmark_lucas_2018()` consumes)** — Fernandez-Ugalde, O., Scarpa, S., Orgiazzi, A., Panagos, P., Van Liedekerke, M., Marechal, A., & Jones, A. (2022). *LUCAS 2018 SOIL Component: sampling intensity, harmonisation and procedures for the collection of soil samples.* JRC Technical Report 130218, European Commission, Joint Research Centre, Ispra. <https://doi.org/10.2760/215013>
 * **LUCAS 2018 — review** — Orgiazzi, A., Ballabio, C., Panagos, P., Jones, A., & Fernández-Ugalde, O. (2018). *LUCAS Soil, the largest expandable soil dataset for Europe: a review.* European Journal of Soil Science, 69(1), 140–153. <https://doi.org/10.1111/ejss.12499>
@@ -481,4 +551,4 @@ The package source is MIT. The bundled benchmark caches retain their respective 
 
 ---
 
-<sub>**Status (v0.9.96, 2026-05-09)**: CRAN-submit-ready. `R CMD check --as-cran` returns 0 errors / 0 warnings / 2 trivial NOTEs. All seven CI matrix runs (macOS, Ubuntu × 3 R versions, Windows, pkgdown, test-coverage) green on every PR merged to `main` since v0.9.65. **All three classification systems wired end-to-end down to the deepest categorical level.** WRB 2022 (32 RSGs + qualifiers + supplementary + specifiers), SiBCS 5 (Order → Suborder → Great Group → Subgroup → Family, ≈1 200 classes), USDA Soil Taxonomy 13 (Order → Suborder → Great Group → Subgroup, ≈1 700 classes). **DOI**: <https://doi.org/10.5281/zenodo.19930112> (resolves to the latest version on Zenodo). Per-release changes in [`NEWS.md`](https://github.com/HugoMachadoRodrigues/soilKey/blob/main/NEWS.md); roadmap in [`ARCHITECTURE.md`](https://github.com/HugoMachadoRodrigues/soilKey/blob/main/ARCHITECTURE.md); CRAN submission instructions in [`inst/cran-submission/HOW_TO_SUBMIT.md`](https://github.com/HugoMachadoRodrigues/soilKey/blob/main/inst/cran-submission/HOW_TO_SUBMIT.md).</sub>
+<sub>**Status (v0.9.96, 2026-05-09)**: CRAN-submit-ready. `R CMD check --as-cran` returns 0 errors / 0 warnings / 2 trivial NOTEs. All seven CI matrix runs (macOS, Ubuntu × 3 R versions, Windows, pkgdown, test-coverage) green on every PR merged to `main` since v0.9.65. **All three classification systems wired end-to-end down to the deepest categorical level.** WRB 2022 (32 RSGs + 229 of 234 canonical qualifiers deliverable, 5 honest gaps), SiBCS 5 (Order → Suborder → Great Group → Subgroup → Family; 13 / 44 / 192 / 938 registered classes), USDA Soil Taxonomy 13 (Order → Suborder → Great Group → Subgroup, 339/339 great groups + 2 003 of 2 715 subgroups = 73.8%; run `coverage_report()` for the live by-name diff at every level). **DOI**: <https://doi.org/10.5281/zenodo.19930112> (resolves to the latest version on Zenodo). Per-release changes in [`NEWS.md`](https://github.com/HugoMachadoRodrigues/soilKey/blob/main/NEWS.md); roadmap in [`ARCHITECTURE.md`](https://github.com/HugoMachadoRodrigues/soilKey/blob/main/ARCHITECTURE.md); CRAN submission instructions in [`inst/cran-submission/HOW_TO_SUBMIT.md`](https://github.com/HugoMachadoRodrigues/soilKey/blob/main/inst/cran-submission/HOW_TO_SUBMIT.md).</sub>

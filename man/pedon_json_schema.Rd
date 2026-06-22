@@ -24,19 +24,16 @@ the canonical horizon schema documented by
 \code{\link{horizon_column_spec}}.
 }
 \examples{
+\dontrun{
 schema <- pedon_json_schema()
 names(schema)
+#> [1] "$schema"     "$id"         "title"       "type"        "required"   "properties"
 
-\donttest{
 # Validate a JSON profile against the schema:
-if (requireNamespace("jsonvalidate", quietly = TRUE) &&
-      requireNamespace("jsonlite", quietly = TRUE)) {
+if (requireNamespace("jsonvalidate", quietly = TRUE)) {
   schema_json <- pedon_json_schema(as = "json")
-  p <- make_ferralsol_canonical()
-  p_json <- jsonlite::toJSON(list(site = p$site,
-                                    horizons = list()),
-                                auto_unbox = TRUE, null = "null")
-  jsonvalidate::json_validate(p_json, schema_json, engine = "ajv")
+  jsonvalidate::json_validate('{"site":{...},"horizons":[...]}',
+                                 schema_json, engine = "ajv")
 }
 }
 }

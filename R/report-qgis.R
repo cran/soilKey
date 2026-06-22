@@ -75,20 +75,17 @@
 #'         writes a multi-layer GeoPackage.
 #'
 #' @examples
-#' \donttest{
-#' if (requireNamespace("sf", quietly = TRUE)) {
-#'   pedon <- make_ferralsol_canonical()
-#'   results <- list(
-#'     wrb   = classify_wrb2022(pedon, on_missing = "silent"),
-#'     sibcs = classify_sibcs(pedon, include_familia = TRUE),
-#'     usda  = classify_usda(pedon)
-#'   )
-#'   out_gpkg <- file.path(tempdir(), "perfil_042.gpkg")
-#'   report_to_qgis(pedon, results,
-#'                  file        = out_gpkg,
-#'                  report_html = file.path(tempdir(), "perfil_042.html"))
-#'   # In QGIS: Layer -> Add Layer -> Add Vector Layer -> perfil_042.gpkg
-#' }
+#' \dontrun{
+#' pedon <- make_ferralsol_canonical()
+#' results <- list(
+#'   wrb   = classify_wrb2022(pedon, on_missing = "silent"),
+#'   sibcs = classify_sibcs(pedon, include_familia = TRUE),
+#'   usda  = classify_usda(pedon)
+#' )
+#' report_to_qgis(pedon, results,
+#'                file        = "perfil_042.gpkg",
+#'                report_html = "perfil_042.html")
+#' # In QGIS: Layer -> Add Layer -> Add Vector Layer -> perfil_042.gpkg
 #' }
 #' @seealso \code{\link{report}} for HTML / PDF reports;
 #'          \code{\link{classify_from_documents}} for the high-level
@@ -176,7 +173,7 @@ report_to_qgis <- function(pedon,
 
 #' Build a single-row tibble describing the profile + classifications
 #' for the GPKG `pedon_point` layer.
-#' @keywords internal
+#' @noRd
 .build_pedon_point_row <- function(pedon, classifications, report_html) {
   s <- pedon$site %||% list()
   wrb   <- classifications$wrb

@@ -1,169 +1,2189 @@
-# soilKey 0.9.97 (2026-05-13)
+# soilKey 0.9.155 (2026-06-21)
 
-The "**CRAN reviewer feedback round 1 -- full compliance pass**"
-release. Address every item raised by CRAN's Benjamin Altmann on
-the v0.9.96 submission so the next resubmission is clean.
-
-## CRAN reviewer items addressed
-
-### 1. Software / API names quoted in Title and Description
-
-CRAN policy: package names, software names, and API names must
-appear in single quotes in `DESCRIPTION`'s `Title` and `Description`
-fields. Cross-reference:
-<https://contributor.r-project.org/cran-cookbook/description_issues.html#formatting-software-names>.
-
-`DESCRIPTION` now quotes every external software / API name:
-\itemize{
-  \item `Title` -- `'WRB'`, `'SiBCS'`, `'USDA'`.
-  \item `Description` -- `'WRB'`, `'SiBCS'`, `'USDA'`, `'SoilGrids'`,
-        `'OSSL'`.
-}
-
-### 2. References added in canonical CRAN format
-
-CRAN policy: references must use the `authors (year) <doi:...>` /
-`<https:...>` / `ISBN:...` form with no space after `doi:` /
-`https:` and angle brackets for auto-linking. Cross-reference:
-<https://contributor.r-project.org/cran-cookbook/description_issues.html#references>.
-
-`Description` now cites the canonical authority for each system /
-dataset:
-\itemize{
-  \item IUSS Working Group WRB (2022). `ISBN:979-8-9862451-1-9`.
-  \item Santos et al. (2018), SiBCS 5th ed. `ISBN:978-85-7035-800-4`.
-  \item Soil Survey Staff (2022), KST 13ed
-        (`<https://www.nrcs.usda.gov/resources/...>`).
-  \item Poggio et al. (2021), SoilGrids 2.0 `<doi:10.5194/soil-7-217-2021>`.
-  \item Safanelli et al. (2025), OSSL `<doi:10.7717/peerj.18908>`.
-}
-
-### 3. All acronyms expanded on first use in `Description`
-
-CRAN policy: every acronym must be expanded on first use.
-Cross-reference:
-<https://contributor.r-project.org/cran-cookbook/description_issues.html#explaining-acronyms>.
-
-Acronyms now expanded in `Description`:
-\itemize{
-  \item WRB -- World Reference Base for Soil Resources.
-  \item SiBCS -- Brazilian System of Soil Classification.
-  \item USDA -- United States Department of Agriculture.
-  \item VLM -- vision-language models.
-  \item LLM -- large language model.
-  \item Vis-NIR -- visible-near-infrared.
-  \item MIR -- mid-infrared (newly expanded; the reviewer's example).
-  \item OSSL -- Open Soil Spectral Library.
-}
-
-### 4. `\dontrun{}` -> `\donttest{}` throughout the package
-
-CRAN policy: `\dontrun{}` should be reserved for examples that
-genuinely cannot run (missing software, missing API keys); examples
-that simply take >5 s should use `\donttest{}` instead.
-Cross-reference:
-<https://contributor.r-project.org/cran-cookbook/general_issues.html#structuring-of-examples>.
+Final check-time trim (the 0.9.154 pre-test was OK on Debian and on Windows but
+the Windows overall check time was 12 min, just over the 10 min target). No
+classification change; 44 canonical fixtures byte-identical.
 
 \itemize{
-  \item Every `\dontrun{}` block in `R/` (37 occurrences across 28
-        files) is now `\donttest{}`.
-  \item Each formerly `\dontrun{}` block has a guard so the example
-        no-ops gracefully on CRAN's machines when its prerequisites
-        are absent: `requireNamespace()` for Suggested packages,
-        `file.exists()` for user-provided CSVs / rasters,
-        `Sys.getenv()` for API keys, `interactive()` for
-        Shiny-app launchers, `try()` for network-dependent calls.
-  \item `man/*.Rd` regenerated via `roxygen2::roxygenise()` to keep
-        the Rd files in sync.
+  \item \strong{External data-server URLs are no longer checked links.} The Rd
+        `\\url{}` entries (USDA, ISRIC, MapBiomas, ESDAC, Embrapa, FEBR, ...) and
+        the README/vignette links to those servers are now plain code spans.
+        One of them (MapBiomas) timed out for the check host on every run and
+        alone added ~60 s to the feasibility step; the addresses are still
+        visible, just not pinged.
+  \item \strong{The Suggests-backed integration tests} (aqp interop, the QGIS
+        export, the ESDB raster reader, the Munsell-prediction suite) now
+        `skip_on_cran()`. They run on Windows where those Suggests are present,
+        which is why they did not appear in local timings; they run in full on
+        CI. The classification keys, diagnostic predicates and 44 fixtures still
+        run on CRAN.
 }
 
-### 5. No more default writes to the user's home filespace
+# soilKey 0.9.154 (2026-06-21)
 
-CRAN policy: functions must not write to `getwd()` / the package
-directory / `~/...` by default; examples / vignettes / tests must
-use `tempdir()`. Cross-reference:
-<https://contributor.r-project.org/cran-cookbook/code_issues.html#writing-files-and-directories-to-the-home-filespace>.
+The "**lean check**" release: a real reduction of the CRAN check footprint
+(the 0.9.153 pre-test passed OK on Windows + Debian but the overall check time
+was still over 10 minutes). No classification behaviour changes -- the 44
+canonical fixtures are byte-identical.
 
 \itemize{
-  \item `.write_pedon_schema_to_disk()` (internal helper) lost its
-        default `path = file.path("inst", "schemas", ...)` and now
-        requires the caller to pass an explicit destination path
-        (it is called only by build scripts, never by users).
-  \item Every example that previously wrote to a relative path
-        (`"perfil_042.html"`, `"perfil_042.gpkg"`, `"RJ.csv"`, ...)
-        now writes via `file.path(tempdir(), ...)`.
-  \item Vignettes `v02_classify_wrb_end_to_end.Rmd` and
-        `v07_end_to_end_pipeline.Rmd` updated to demonstrate the
-        `tempdir()` pattern for `report()` / `report_to_qgis()`.
-  \item Persistent caches still use `tools::R_user_dir("soilKey",
-        which = ...)` (CRAN-approved location) unchanged.
+  \item \strong{The ~600 internal rule-engine predicates are no longer
+        exported.} They were already marked \code{@keywords internal}; they are
+        now truly internal (resolved from the namespace by the rule engine and
+        reachable from tests, but absent from \code{NAMESPACE} and the reference
+        manual). This shrinks the documented surface from 928 to 319 topics and
+        cuts the HTML/PDF manual build substantially. The public API
+        (\code{classify_*}, \code{PedonRecord}, \code{report*},
+        \code{coverage_report}, the benchmark and gap-fill entry points, the
+        documented diagnostics, ...) is unchanged.
+  \item \strong{Performance test fixed, not disabled.} The wall-clock
+        \dQuote{< 5 s/pedon} assertion (the source of the released 0.9.96
+        ATLAS-BLAS WARNING) is removed; the test now runs on CRAN and verifies
+        the benchmark returns well-formed, non-negative timings, leaving the
+        speed-regression guard to CI where the hardware is known.
+  \item \strong{URL NOTE fixed.} The USDA-NRCS NCSS data-mart address (which
+        timed out for the check host) is no longer a checked link.
+  \item Long-running benchmark, simulation, spectral, vision-language, spatial
+        and Shiny-app tests are conditioned off CRAN with \code{skip_on_cran()}
+        (they run in full on CI). The classification keys, diagnostic
+        predicates and 44 canonical fixtures still run on CRAN.
 }
 
-### 6. No `set.seed()` to a literal inside library functions
+# soilKey 0.9.153 (2026-06-20)
 
-CRAN policy: package functions must not mutate the caller's global
-RNG state by calling `set.seed()` with a literal. The recommended
-replacement is `withr::with_seed()` which restores the prior RNG
-stream on exit. Cross-reference:
-<https://contributor.r-project.org/cran-cookbook/code_issues.html#setting-a-specific-seed>.
-
-The reviewer flagged `R/benchmark-loaders.R` explicitly; the audit
-extended to every `set.seed()` in `R/`. Every call site is now
-`withr::with_seed()`, so the caller's RNG stream is restored on
-exit even though defaults remain reproducible:
+The "**CRAN check-time reduction**" release. The 0.9.152 pre-test passed (OK on
+Windows + Debian) but flagged the overall check time (>10 min, dominated by the
+test suite). No code or classification change -- this only moves slow tests off
+CRAN.
 
 \itemize{
-  \item `R/benchmark-loaders.R` -- the bootstrap CI inside
-        `benchmark_run_classification()` used a hardcoded
-        `set.seed(42L)`. Replaced with an opt-in `seed = NULL`
-        argument; when supplied, the bootstrap runs under
-        `withr::with_seed()`.
-  \item `R/sensitivity-analysis.R` -- `classification_robustness()`
-        keeps its `seed = 42L` default (so existing call sites and
-        unit tests remain bit-for-bit reproducible) but applies the
-        seed through `withr::with_seed()` instead of `set.seed()`.
-  \item `R/benchmark-performance.R` -- `benchmark_performance()`
-        same: `seed = 42L` default, applied via `with_seed()`.
-  \item `R/spectra-ossl.R` -- `make_synthetic_pedon_with_spectra()`
-        same: `seed = 1L` default, applied via `with_seed()`.
-  \item `R/spectra-predict.R` -- `.predict_synthetic()` (internal)
-        draws each property under `withr::with_seed()` using a
-        stable per-property offset derived from the input matrix.
+  \item \strong{Heavy integration / simulation / app tests now}
+        \code{skip_on_cran()}: the aqp-engine fallbacks, argic designation
+        inference, the Monte-Carlo uncertainty suite, the benchmark suite, the
+        argic-films audit, the sensitivity / accuracy / edge-case suites, and
+        the Shiny-module \code{testServer} tests. They run in full on CI
+        (\code{NOT_CRAN=true}); on CRAN the test phase drops from ~9 min to
+        ~1.5 min. The fast unit tests, the 44 canonical fixtures and the
+        end-to-end key tests still run on CRAN.
 }
 
-To support this without burdening users with a separate install,
-`withr` moved from `Suggests` to `Imports`.
+# soilKey 0.9.152 (2026-06-20)
 
-Every existing test
-(`test-v0942-sensitivity.R`, `test-v0953-performance.R`,
-`test-spectra-ossl.R`, ...) passes unmodified: `withr::with_seed()`
-yields the same draws as a `set.seed()` / `runif()` pair, only
-without leaking RNG state.
-
-## Backwards compatibility
+The "**CRAN pre-test fixes**" release -- addresses the issues raised by CRAN's
+incoming checks on 0.9.151; no classification change (default path
+byte-identical).
 
 \itemize{
-  \item `benchmark_run_classification()` gained a new `seed = NULL`
-        argument (replacing the hardcoded `set.seed(42L)` the
-        reviewer flagged). Existing call sites are unaffected;
-        callers who need a reproducible bootstrap CI can now pass
-        `seed = 42L` explicitly.
-  \item `classification_robustness()`, `benchmark_performance()`,
-        and `make_synthetic_pedon_with_spectra()` keep their
-        existing seed defaults (`42L`, `42L`, `1L`) and their
-        existing bit-for-bit outputs. Only the underlying
-        implementation changed -- the seed is now applied through
-        `withr::with_seed()` so the caller's RNG stream is restored.
-  \item `withr` moved from `Suggests` to `Imports` to enable the
-        above. All other dependencies unchanged.
-  \item `.write_pedon_schema_to_disk()` (internal) now requires
-        a `path` argument. No exported function calls it; only
-        the `data-raw/` / build scripts do.
-  \item All taxonomic key behaviour is bit-for-bit identical
-        to v0.9.96. Empirical benchmark numbers from v0.9.96 are
-        unchanged.
+  \item \strong{Spectral model backend made version-robust.}
+        \code{predict_ossl_mbl()} / \code{predict_ossl_plsr_local()} delegate to
+        \code{resemble::mbl()}, whose \code{k} / \code{k_diss} / \code{k_range}
+        arguments were removed in \pkg{resemble} >= 2.0. The call now falls back
+        to the deterministic synthetic predictor (with a warning) on any
+        backend error instead of aborting -- so \code{fill_from_spectra()} and
+        the spectral vignette stay robust across \pkg{resemble} versions. This
+        was the CRAN pre-test ERROR.
+  \item \strong{Dependency-fragile spectral-model tests} (the \code{"spectra"}
+        gap-fill dispatch and \code{benchmark_spectral_fill()}) and the
+        \strong{wall-clock performance sentinel} now \code{skip_on_cran()} --
+        the latter was the source of the released version's WARNING (it timed
+        out on the ATLAS-BLAS check host).
+  \item \strong{DESCRIPTION:} single-quoted the technical acronyms 'SiBCS',
+        'OSSL' and 'SoilGrids' (CRAN incoming-feasibility spelling NOTE).
 }
 
+# soilKey 0.9.151 (2026-06-17)
+
+The "**unique USDA subgroup codes**" release -- a data-hygiene fix; no
+classification change (codes are internal ids, compared by name never by code,
+so the 44 canonical fixtures are byte-identical and coverage is unchanged at
+2049/2715).
+
+\itemize{
+  \item \strong{De-duplicated 47 USDA subgroup \code{code} values} across five
+        order files (vertisols 28, oxisols 11, andisols 5, alfisols 2, aridisols
+        1, inceptisols 1 -- e.g. \code{KFGN} was shared by \emph{Spodic} and
+        \emph{Fragiaquic Dystrudepts}). The coverage-slice generators
+        (v0.9.113/121/123/147) minted codes without intra-batch reservation, so
+        siblings in the same great-group block could collide. Each duplicate's
+        later occurrence was re-minted to a fresh free suffix in the same block;
+        names and \code{tests:} are untouched, so classification and coverage are
+        unaffected.
+  \item \strong{Regression guard} (\code{test-v09151}): every subgroup
+        \code{code} must now be globally unique across the USDA rule base.
+}
+
+# soilKey 0.9.150 (2026-06-17)
+
+The "**robustness + app-test hardening**" release -- no classification change
+(default path byte-identical).
+
+\itemize{
+  \item \strong{\code{download_ossl_subset()} fails gracefully} when the public
+        OSSL endpoint is unreachable or has moved. Previously a 404 (whose HTML
+        body is not a valid \code{.rds}) crashed \code{readRDS} with a cryptic
+        error; the function now detects both a failed download AND an
+        unparseable payload and stops with actionable guidance -- set
+        \code{options(soilKey.ossl_endpoint=)} to a mirror, build a library from
+        your own data with \code{\link{read_spectral_library}}, or use the
+        bundled synthetic \code{ossl_demo_sa}.
+  \item \strong{\code{shiny::testServer} coverage for the three Map-tab modules}
+        (\code{map} / \code{map_batch} / \code{map_grid}), previously parse / UI /
+        helper-tested only -- completing the Pro-app server-test coverage begun
+        in v0.9.118. Exercises the coordinate-tracking, column-name and
+        bounding-box / cell-count reactives.
+  \item \code{cran-comments.md} refreshed to the current v0.9.96 -> v0.9.150
+        series.
+}
+
+# soilKey 0.9.149 (2026-06-17)
+
+The "**Humic colour-value USDA predicate**" release -- writes the one predicate
+the v0.9.147 coverage slice was missing, unblocking 11 more subgroups.
+Completeness, not accuracy (default classification byte-identical).
+
+\itemize{
+  \item \strong{\code{humic_colour_usda()}} (new, internal/exported) implements
+        the verbatim KST-13 "Humic" Inceptisol intergrade differentia: a colour
+        value, moist, of 3 or less AND a colour value, dry, of 5 or less
+        throughout the upper 18 cm of the mineral soil. It reuses the schema's
+        \code{munsell_value_moist} / \code{munsell_value_dry} (the same fields
+        \code{mollic_epipedon_usda} reads). \strong{Conservative:} every
+        upper-18 cm layer must be dark in BOTH moist and dry value, with both
+        recorded -- a missing dry value cannot confirm the criterion -- so it
+        never over-fires on a dark surface alone.
+  \item \strong{+11 USDA subgroups} the v0.9.147 slice had to exclude for want of
+        this predicate: 7 single-modifier (Humic Densiudepts, Dystroxerepts,
+        Dystrustepts, Eutrudepts, Fragiudepts, Fragixerepts, Haploxerepts) and 4
+        \dQuote{Humic Lithic} compounds (\code{all_of} colour + lithic contact
+        within 50 cm). USDA subgroup coverage \strong{2038 -> 2049 / 2715
+        (75.5\%)}. Append-before-default + first-match (only refines a former
+        Typic).
+  \item The aquept Humic subgroups (Endo-/Epiaquepts) and all multi-modifier
+        Humic compounds (Aeric/Alfic/Aquic/Fluventic/Inceptic/Psammentic/Xeric)
+        remain excluded -- they need a base-saturation compound or additional
+        predicates.
+  \item Gate: 44 canonical fixtures byte-identical; KSSL+NASIS n=3860 = 0
+        worsened (the loaded KSSL has no \code{munsell_value_dry} in the upper
+        18 cm, so -- like the v0.9.123 Oxisol case -- the gate cannot exercise
+        this predicate; safety rests on the verbatim-exact criterion + the
+        conservative require-both-recorded design). \code{R CMD check --as-cran}
+        = 1 NOTE.
+}
+
+# soilKey 0.9.148 (2026-06-17)
+
+The "**spectral-dataset ingestion scaffolding**" release -- the on-ramp for the
+one genuine accuracy lever that has been data-blocked: a real Vis-NIR / MIR +
+lab-label dataset (e.g. a Brazilian spectral library) driving the existing OSSL
+prediction + Munsell + neighbour engine. The engine was already present; this
+adds the reader/binder/benchmark glue so a real dataset works with no code
+change. Entirely opt-in -- the default classification path is byte-identical.
+
+\itemize{
+  \item \strong{\code{read_spectral_library()}} (new, exported) turns an
+        arbitrary reflectance + metadata pair (wide \emph{or} long; fraction or
+        percent; any instrument grid via \code{resample_to=}) into the canonical
+        \code{list(Xr, Yr, metadata)} object consumed by
+        \code{\link{fill_from_spectra}} and
+        \code{\link{classify_by_spectral_neighbours}}. Column names map to the
+        canonical attributes through a built-in alias table including
+        \strong{Portuguese headers} (\emph{argila}, \emph{silte}, \emph{areia},
+        \emph{carbono}, \emph{ctc}, ...), overridable via \code{property_map} /
+        \code{label_map}.
+  \item \strong{\code{pedons_from_spectral_table()}} (new, exported) groups a
+        table by profile and returns \code{\link{PedonRecord}}s with the scan in
+        \code{$spectra$vnir} and reference labels in \code{$site} -- the query
+        objects for spectral classification.
+  \item \strong{\code{benchmark_spectral_fill()}} (new, exported) -- the honest,
+        non-circular k-fold ON/OFF measurement of the accuracy lift the spectra
+        buy (calibrate on the train profiles; for held-out profiles, classify a
+        spectra-only pedon vs the same pedon after \code{fill_from_spectra}).
+        Returns \code{accuracy_off}, \code{accuracy_on}, \code{delta}.
+  \item \strong{New gap-fill method \code{"spectra"}}:
+        \code{gapfill = list(method = "spectra", ossl_library = <lib>,
+        fill_method = "mbl")} on any \code{classify_*}. Predicted attributes
+        carry \code{source = "predicted_spectra"} (grade B); the taxonomic key is
+        never delegated to the model.
+  \item Input contract documented in
+        \code{system.file("templates/spectral_library_format.md", package =
+        "soilKey")}.
+}
+
+# soilKey 0.9.147 (2026-06-17)
+
+The "**USDA subgroup coverage +35**" release -- a criteria-exact completeness
+slice (NOT an accuracy change; the deterministic key is byte-identical on every
+already-classified pedon).
+
+\itemize{
+  \item \strong{USDA subgroup coverage 73.8\% -> 75.1\% (2003 -> 2038 / 2715).}
+        35 missing subgroups were registered, each one whose every modifier maps
+        to an \emph{already-existing} strict predicate, verified per-subgroup
+        against \code{ST_criteria_13th}: 13 Fragiaquic (\code{fragipan_usda} +
+        \code{aquic_subgroup_usda}), 13 Humic Oxisol/Inceptisol/Andisol
+        (\code{humic_oxisol_usda} / \code{humic_inceptisol_usda} /
+        \code{humic_andisol_usda}), 5 Gypsic (\code{gypsic_subgroup_usda}),
+        3 Spodic (\code{spodic_subgroup_usda}), Argic Petrocalcids
+        (\code{argillic_within_usda}, 100 cm), Aridic Leptic Haplusterts, and
+        Plinthic Quartzipsamments.
+  \item \strong{Append-before-default + first-match}: each new rule sits just
+        before its block's \code{Typic} default, so it can only ever refine a
+        former \code{Typic} -- never change an already-specific classification.
+  \item \strong{Gated.} KSSL+NASIS n=3860 before/after: \strong{0 worsened}
+        (only 1 pedon reaches a new subgroup at all -- the US sample barely
+        contains these Oxisol/intergrade subgroups, so safety rests on the
+        criteria-exact predicate mapping). 44 canonical fixtures byte-identical;
+        full suite green; \code{R CMD check --as-cran} = 1 NOTE.
+  \item \strong{Excluded (27, honest).} The remaining strict candidates were
+        \emph{not} registered: the \dQuote{Humic} Udept/Xerept intergrades whose
+        differentia is a dark-colour-value test with no predicate; the Natr-
+        great-group \dQuote{Leptic} (a soluble-salt criterion, not a contact);
+        \dQuote{Sodic} aquents and \dQuote{Plinthic} Petraquepts (same-word /
+        different-meaning traps). These need new predicates or schema, so they
+        stay out rather than be mis-mapped.
+}
+
+# soilKey 0.9.146 (2026-06-17)
+
+The "**argissólico relação-textural tightening**" release -- a small, principled
+SiBCS *accuracy* gain found by decomposing the Redape subgroup errors.
+
+\itemize{
+  \item \strong{\code{carater_argiluvico()} now requires the SiBCS \emph{relação
+        textural}} (Cap 1 item h: ratio > 1.5 / 1.7 / 1.8 by the A-horizon clay
+        band, via \code{test_ratio_textural_sibcs()}), not merely
+        \code{B_textural}'s looser argic clay-increase (>= 1.4). Enforced only
+        when clay is recorded (refine-when-present -> byte-identical without
+        clay). The looser test had been labelling the gradual latossolic clay
+        gradient (e.g. A 38\% -> B 59\%, ratio ~1.55 where the band needs > 1.7)
+        as the \emph{argissólico} subgroup in Latossolos that the reference calls
+        \emph{típico}.
+  \item \strong{Contained to subgroup level.} \code{carater_argiluvico} appears
+        only in \code{subgrupos/*.yaml}, never in order or great-group keys, so
+        order and great-group classification are byte-identical (Redape order
+        63.8\% and great-group 42.4\% unchanged; BDsolos-RJ order 30.97\%
+        unchanged). Only the \emph{subgroup} label can change.
+  \item \strong{Measured (Redape, the only dataset with SiBCS subgroup
+        references): subgroup accuracy 27.1\% -> 32.9\% (+5 pedons / +5.8 pp).}
+        A decomposition showed the 27\% ceiling is ~79\% upstream order/GG error
+        plus data-absent \emph{típico} defaults; this fixes the small genuinely
+        subgroup-level slice (over-firing \emph{argissólico}). One unit-test
+        fixture updated (a 1.67-ratio gradient that is not a SiBCS B textural ->
+        a genuine 2.3-ratio textural B).
+}
+
+# soilKey 0.9.145 (2026-06-17)
+
+The "**honest WRB qualifier coverage**" release -- a zero-risk completeness pass
+identified by a roadmap gap audit. No classification behaviour changes (the 44
+canonical fixtures are byte-identical); the deterministic keys are untouched.
+
+\itemize{
+  \item \strong{\code{coverage_report("wrb_qualifiers")} under-count fixed.} The
+        vendored WRB 2022 canonical table carries one upstream-corrupted name,
+        \dQuote{etrosalic} (the leading \emph{P} of \dQuote{Petrosalic} was
+        dropped at the source). \code{qual_petrosalic()} is a complete, correct
+        implementation, but the coverage detector looked up \code{qual_etrosalic}
+        and reported Petrosalic as missing. The lookup key is now normalised, so
+        the headline rises 229 -> 230/234 with zero behaviour change (Petrosalic
+        is in no RSG applicable list).
+  \item \strong{Three thin qualifier wrappers} -- \code{qual_sideralic()},
+        \code{qual_panpaic()}, \code{qual_claric()} -- expose the already-complete
+        backing diagnostics (\code{sideralic_properties()}, \code{panpaic()},
+        \code{claric_material()}) as callable qualifiers and let the coverage
+        report count them. None appears in any RSG applicable list, so
+        classification is unchanged. WRB qualifier coverage is now
+        \strong{233/234 (99.6\%)}; the only remaining gap, \emph{Novic}, is
+        genuinely schema-blocked (it needs a deposition-age field that no dataset
+        records).
+}
+
+# soilKey 0.9.144 (2026-06-16)
+
+The "**non-circular predicted-taxon gap-fill**" release -- the first gap-fill
+method that lifts accuracy on reference data that already carries the key
+attributes.
+
+\itemize{
+  \item \strong{\code{build_taxon_profiles()}} (new, exported) summarises a
+        calibration set of pedons into per-taxon mean depth profiles -- for each
+        taxon (first word of the reference label) it averages every continuous
+        attribute into the six standard depth slices (0-5 ... 100-200 cm).
+        Calibrate on a set DISJOINT from the pedons you fill (e.g. a train split)
+        to keep the fill non-circular.
+  \item \strong{\code{gapfill_by_predicted_taxon()}} (new, exported) classifies a
+        pedon with NO fill to obtain a \emph{provisional} taxon, then fills its
+        missing horizon cells from that taxon's profile via the shared
+        depth-interpolator. Non-circular by construction: the fill is keyed on the
+        model's own prediction, never the reference label. Filled cells carry
+        \code{source = "inferred_prior"} (evidence grade C). Reachable through
+        \code{gapfill = list(method = "taxon", taxon_profiles = <...>)} on every
+        \code{classify_*} entry point (default off -> byte-identical).
+  \item \strong{Honest measurement (2-fold cross-validated, both folds positive).}
+        On BDsolos-RJ (n=720, reference SiBCS) with profiles built on each train
+        half and the model's prediction driving the fill on the held-out half,
+        order accuracy moved \strong{31.0\% -> 32.8\% (+13 pedons, +1.8 pp)}; 115
+        pedons changed. Unlike the SoilGrids depth-fill (v0.9.143, slightly
+        negative), the predicted-taxon prior is a genuine -- if modest -- accuracy
+        lever, because it injects taxon-typical structure (e.g. a Bt clay bulge)
+        rather than a coarse spatial average.
+  \item \strong{Test hardening:} the long-standing \code{test-v0952} flake (the
+        \code{ClassificationResult$print} content assertion failed under a
+        monolithic suite run when an earlier test reconfigured the \pkg{cli}
+        message sink and bypassed the message-stream capture) now falls back to
+        asserting the trace data the print routine dumps. The \code{expect_no_error}
+        contract is unchanged; the suite is now green under both
+        \code{devtools::test()} and \code{R CMD check}.
+}
+
+# soilKey 0.9.143 (2026-06-16)
+
+The "**SiBCS keys verification + BDsolos coordinate-sign fix**" release.
+
+\itemize{
+  \item \strong{BDsolos coordinate-sign bug FIXED.} The CSV records the
+        hemisphere as a full word ("Sul" / "Oeste"), but the loader matched only
+        the letter (S/W/O), so every Brazilian coordinate was mirrored into the
+        N/E hemisphere (an RJ profile landed in the Red Sea). The deterministic
+        key ignores coordinates -- classification is byte-identical -- but
+        SoilGrids / spatial priors / mapping queried the wrong location.
+        \code{.bdsolos_dms_to_decimal} now negates for Sul / Oeste / West.
+        +9 unit tests.
+  \item \strong{SiBCS keys verified faithful} (no code change): Cambissolos
+        (Cap 6) confirmed against the verbatim -- 4 subordens, GGs 2/4/8/12 --
+        joining the Argissolos verification, plus an all-13-order structural
+        cross-check (44 subordens / 938 subgroups). The subgrupo accuracy ceiling
+        is data-limited, not key-limited.
+  \item \strong{SoilGrids gap-fill measured (honest = slightly negative).} With
+        coordinates corrected, SoilGrids depth-fill on 40 gap-bearing BDsolos
+        profiles moved order accuracy 25.0\% -> 22.5\% (-1 pedon). Unlike EU-LUCAS
+        (0->60\%, near-empty pedons), BDsolos profiles already carry the key data,
+        so filling residual gaps from a coarse 250 m grid perturbs more than it
+        helps. SoilGrids stays opt-in / off by default.
+}
+
+# soilKey 0.9.142 (2026-06-16)
+
+The "**calcic morphology field + Raptic/Urbic clauses**" release -- unblocks three
+deferred clauses that needed a morphology field or thickness gate, refine-when-
+present (byte-identical until the data exists).
+
+\itemize{
+  \item \strong{New schema field \code{secondary_carbonates_pct}} (identifiable
+        secondary carbonates by volume) -- the morphological OR-path of the calcic
+        horizon (WRB 2022 3.1.4 protocalcic / USDA KST by-volume). pedon-schema.json
+        regenerated.
+  \item \strong{\code{calcic()} core now enforces the WRB/USDA enrichment} at the
+        criterion level: a \eqn{\ge} 15\% layer is dropped ONLY when both the
+        +5\%-vs-underlying CaCO3 test fails AND \code{secondary_carbonates_pct} is
+        recorded and \eqn{<} 5\% (both WRB crit 2b and 2a disproven). Absent
+        morphology -> indeterminate -> byte-identical (resolves the v0.9.139
+        tension where the caco3-only core dropped 10 protocalcic Aridisols).
+  \item \strong{SiBCS \code{horizonte_calcico}} gains the "expresso em volume"
+        alternative (\code{secondary_carbonates_pct} \eqn{\ge} 5\%).
+  \item \strong{Raptic (rp)} now excludes a discontinuity whose recorded
+        \code{layer_origin} is aeolic / fluvic / solimovic / tephric (WRB Ch 5
+        p.144).
+  \item \strong{Urbic (ub)} now requires a \eqn{\ge} 20 cm qualifying layer
+        (WRB Ch 5 p.150).
+}
+
+# soilKey 0.9.141 (2026-06-16)
+
+The "**Fix D residue**" release -- closes the WRB 2022 qualifier-audit backlog by
+resolving the 7 items deferred in v0.9.132, each re-read against the verbatim
+WRB 2022 Ch 5. Two are real bugs; the rest are documented.
+
+\itemize{
+  \item \strong{Mazic (mz, p.140)} now requires a rupture-resistance class of at
+        least HARD beside the massive structure (Vertisols). The prior test
+        checked only the massive structure and over-fired on a soft (slaked, not
+        hardsetting) surface. Refine-when-present (\code{rupture_resistance};
+        absent -> byte-identical, massive-only).
+  \item \strong{Grumic (gm, p.136)} now requires a STRONG grade (was admitting
+        "moderate") and accepts strong angular/subangular BLOCKY self-mulching
+        (was granular-only), with the \eqn{\le} 1 cm aggregate limit applied per
+        structure class (granular up to "medium" \eqn{\le} 1 cm; "medium" blocky
+        is 10-20 mm \eqn{>} 1 cm, so only very-fine/fine blocky qualifies).
+  \item \strong{Documented, not changed:} \emph{Hyposalic} and
+        \emph{Hyperskeletic} are not WRB 2022 qualifiers (the 2022 terms are
+        Protosalic EC \eqn{\ge} 4 and Skeletic \eqn{\ge} 40\%) -- kept as package
+        extensions; \emph{Raptic} (material-origin exclusion), \emph{Urbic}
+        (\eqn{\ge} 20 cm + artefact fraction) and \emph{Evapocrustic}
+        (\eqn{\le} 2 cm crust) remain schema/proxy-limited.
+}
+
+# soilKey 0.9.140 (2026-06-16)
+
+The "**external / closure gap-fill**" release. Extends gap-fill beyond the
+v0.9.120 within-pedon interpolation -- then measures it honestly.
+
+\itemize{
+  \item \strong{New \code{gapfill_derive_horizon()}} fills cells that are exact
+        DEFINITIONAL closures of other measured columns in the same horizon: the
+        texture third (clay/silt/sand), \code{ecec = sum(bases) + al},
+        \code{al_sat = 100 * al / ecec}, \code{bs = 100 * sum(bases) / cec}.
+        Writes \code{source = "inferred_prior"} (grade C; never displaces a
+        measured value).
+  \item \strong{The classifiers' \code{gapfill=} argument gains a method
+        dispatcher}: \code{gapfill = list(method = c("interp", "derive",
+        "soilgrids"), ...)}. This makes the existing
+        \code{apply_soilgrids_depth_prior()} external prior (the EU-LUCAS
+        0->60\% mechanism) reachable from \code{classify_*}/\code{benchmark_*}
+        for the first time. \code{gapfill = TRUE} / a character vector keep their
+        v0.9.120 interpolation meaning; \code{gapfill = FALSE} (default) stays
+        byte-identical.
+  \item \strong{Measured honestly = NEUTRAL on the local SiBCS benchmarks.} A
+        diagnostic showed the missing cells are whole-horizon (clay NA only when
+        sand+silt also NA; base saturation NA only when CEC+bases also NA), so
+        closures rarely add decision-relevant data. \code{derive} fills 851 cells
+        on Redape and 1,574 on BDsolos RJ, yet accuracy is flat (Redape order/GG/
+        subgrupo +0.0000; BDsolos order +0.0014 = +1 pedon) -- e.g. recovered
+        \code{al_sat} is redundant with the measured \code{V < 50} branch of
+        carater_alitico. Gap-fill stays a DATA-RECOVERY / opt-in facility, not an
+        accuracy lever on the available reference data; the one real lever
+        (SoilGrids-by-coordinate) is unmeasurable on Redape (0/94 coordinates).
+        See \code{inst/benchmarks/reports/gapfill_measurement_v09140.md}.
+}
+
+# soilKey 0.9.139 (2026-06-15)
+
+The "**calcic secondary-carbonate enrichment**" release. Implements the verbatim
+calcic-horizon enrichment clause -- but, after a measured KSSL gate, scoped to
+SiBCS only.
+
+\itemize{
+  \item \strong{New \code{test_caco3_enrichment()}} encodes the measurable
+        enrichment criterion shared by all three systems: a candidate calcic
+        layer must have CaCO3-equiv \eqn{\ge} 5\% absolute (50 g/kg) more than an
+        underlying measured layer, unless an underlying layer is \eqn{\ge} 40\%
+        (marble/marl substrate exemption). A candidate with no underlying measured
+        layer is dropped (the criterion is inapplicable); absent CaCO3 leaves the
+        result unchanged.
+  \item \strong{\code{horizonte_calcico} (SiBCS) now enforces the +50 enrichment}
+        (Embrapa 2018 Cap 2 p.71), which -- unlike WRB/USDA -- has NO protocalcic
+        morphological alternative.
+  \item \strong{The shared \code{calcic()} core stays absolute-only
+        (byte-identical)} for its WRB/USDA consumers. WRB 2022 (3.1.4 crit 2) and
+        USDA KST allow protocalcic properties / by-volume secondary carbonates as
+        an OR-alternative to the +5\% enrichment -- a MORPHOLOGICAL observation the
+        schema cannot measure. A measured KSSL n=34,755 before/after test showed
+        that enforcing the caco3-only enrichment in the core drops 10 genuine
+        Aridisols (protocalcic calciargids/petrocalcids) to Entisols while fixing
+        20 false positives -- net +10 but NOT 0-worsened. So the core is unchanged
+        and the WRB/USDA enrichment is deferred pending a secondary-carbonate
+        morphology field (schema-blocked). See
+        \code{inst/benchmarks/reports/calcic_enrichment_v09139.md}.
+}
+
+# soilKey 0.9.138 (2026-06-15)
+
+The "**B textural relacao-textural**" release. Implements the long-deferred
+verbatim Embrapa (2018) SiBCS Cap 2 p.56 item (h) -- the proportional B/A
+textural ratio keyed on A-horizon clay -- and folds it into `B_textural`.
+
+\itemize{
+  \item \strong{New \code{test_ratio_textural_sibcs()}} computes the item-(h)
+        ratio over the footnote-4 control section: A clay = thickness-weighted
+        mean of the A horizons; B clay = thickness-weighted mean of the B
+        horizons (excluding BC) over a window of 30 cm from the top of B if the
+        A is \eqn{<} 15 cm thick, or twice the A thickness if \eqn{\ge} 15 cm.
+        Thresholds: ratio \eqn{>} 1.50 if A clay \eqn{>} 400 g/kg; \eqn{>} 1.70
+        if 150-400 g/kg; \eqn{>} 1.80 if \eqn{<} 150 g/kg.
+  \item \strong{\code{B_textural} now UNIONs (h) with the WRB \code{argic}
+        clay-increase.} Measured finding: item (h) is almost entirely a
+        \emph{subset} of argic -- the two diverge only for very sandy A horizons
+        (clay \eqn{<} ~7.5\%), where the ratio test is a smaller absolute jump
+        than argic's +6 pp. The union can therefore only ADD a B-textural pass
+        for those sandy cases, never remove one.
+  \item \strong{Measured benchmark-neutral.} The premise that \code{B_textural}
+        under-fired by omitting (h) is largely \emph{refuted}: BDsolos RJ order
+        accuracy (0.4141, all major-order recalls), Redape order (63.8\%) and
+        Redape subgrupo (27.1\%) are byte-identical to v0.9.137 -- the sandy-A
+        profiles where (h) adds beyond argic do not occur in those datasets.
+        Items (f) E-horizon, (i) cerosidade and (j) lithologic discontinuity
+        remain delegated/deferred (cerosidade morphology is data-sparse).
+}
+
+# soilKey 0.9.137 (2026-06-15)
+
+The "**SiBCS subsurface-B horizon audit**" release (Phase 3, slice 3 -- the
+subsurface B horizons, after the surface-A slice in v0.9.136). Seven divergences
+from the verbatim Embrapa (2018) Cap 2 (p.59-74) were confirmed against the
+manual and fixed; one workflow sub-claim was refuted. Refine-when-present
+throughout, so the FEBR/Redape/BDsolos SiBCS benchmarks are unchanged.
+
+\itemize{
+  \item \strong{B nitico structure and clay-skin GRADE.} Cap 2 p.62 (c) requires
+        structure of grade moderate/strong AND clay-skins (cerosidade) of
+        quantity \eqn{\ge} common \emph{and} grade moderate/strong. The code
+        tested only the structure type and the clay-skin quantity; a weak grade
+        now disqualifies (via \code{structure_grade} / \code{clay_films_strength}).
+  \item \strong{B nitico thickness exception.} Cap 2 p.62 (a): \eqn{\ge} 30 cm,
+        \emph{except} \eqn{\ge} 15 cm when a lithic / lithic-fragmentary contact
+        occurs within the first 50 cm.
+  \item \strong{B nitico ferric short-circuit removed.} Criterion (d) is strictly
+        low-activity clay OR (high-activity AND aluminic) -- there is no ferric
+        path. The earlier \code{fe_dcb_pct >= 8} short-circuit was a deviation;
+        it is removed (measured removal is benchmark-neutral -- ferric Nitossolos
+        are oxidic, hence low-activity, and already pass the low-activity path).
+  \item \strong{B incipiente exclusions completed.} Cap 2 p.60 (a) excludes
+        cementation/hardening (duripa, petrocalcico), fragipa, the plinthite of a
+        plintico, and distinct gleyic reduction. The prior list missed these
+        five, so a cemented Bkm or gleyed Bg could leak through the designation
+        gate; they are now excluded.
+  \item \strong{SiBCS vertico requires cracks \eqn{\ge} 1 cm.} Cap 2 p.73 specifies
+        cracks "com pelo menos 1 cm de largura"; \code{horizonte_vertico} now
+        passes \code{min_crack_width_cm = 1.0} to \code{vertic_horizon} (which
+        keeps its 0.5 cm default for WRB/USDA). The canonical SiBCS Vertissolo
+        fixture was widened to verbatim-valid cracks; the shared WRB/USDA fixture
+        is byte-identical.
+  \item \strong{Sulfurico gains the jarosite OR-path.} Cap 2 p.72-73 allows
+        jarosite (or sulfidic material below, or \eqn{\ge} 0.05\% soluble sulfate)
+        as alternatives to the sulfidic-material test that \code{thionic} encodes;
+        the jarosite path (\code{jarosite_present}) is now wired.
+  \item \strong{Refuted by the manual:} the workflow read \code{horizonte_sulfurico}'s
+        \code{sulfidic_s} threshold (0.01\%) as 5x below the SiBCS "0.05\%" -- but
+        the 0.05\% is for water-soluble \emph{sulfate}, a different analyte from
+        sulfidic \emph{sulfide}-S. No threshold change was made.
+  \item \strong{Deferred, documented honestly:} (1) \code{calcic} omits the
+        verbatim "\eqn{\ge} 50 g/kg more than the subjacent layer" clause -- but it
+        is a shared WRB/USDA/SiBCS core (Calcisols/Calcids), so it belongs in its
+        own KSSL-gated slice; (2) \code{B_planico} colour paths (b) variegated and
+        (c) mottled, plus the slow-permeability clause, are schema-blocked (no
+        mottle-colour / permeability fields); (3) \code{horizonte_E_albico}
+        delegates to the WRB albic the manual itself cites as its source.
+}
+
+# soilKey 0.9.136 (2026-06-15)
+
+The "**SiBCS diagnostic-horizon audit**" release (Phase 3, slice 2 -- the
+surface A horizons, after the atributos slice in v0.9.134). Four divergences
+from the verbatim Embrapa (2018) Cap 2 definitions were confirmed against the
+manual and fixed; one workflow-flagged "bug" was refuted by the verbatim text.
+Every fix is *refine-when-present* -- pedons lacking the relevant field stay
+byte-identical, so the FEBR/Redape/BDsolos SiBCS benchmarks are unchanged.
+
+\itemize{
+  \item \strong{A humico now enforces its colour gate.} Cap 2 p.51 opens the
+        definition with "valor e croma (cor do solo umido) iguais ou inferiores
+        a 4". The code checked the CO inequation, V \eqn{<} 65\% and thickness
+        but never colour -- a light-coloured A meeting only the carbon test
+        could pass. A sub-horizon with a recorded value/chroma (moist)
+        \eqn{>} 4 now disqualifies; absent colour leaves the result unchanged.
+  \item \strong{A chernozemico structure must be moderate or strong.} Cap 2
+        p.50 (a) requires "grau de desenvolvimento predominantemente moderado
+        ou forte"; the prior test merely excluded massive/grain/loose, so a
+        \emph{weak} grade wrongly passed.
+  \item \strong{A chernozemico thickness is now conditional on solum depth.}
+        Cap 2 p.51 (e): \eqn{\ge} 10 cm directly over a lithic contact;
+        \eqn{\ge} 18 cm \emph{and} \eqn{>} 1/3 of the solum (A+B) if the solum
+        \eqn{<} 75 cm; \eqn{\ge} 25 cm if the solum \eqn{\ge} 75 cm. The prior
+        flat 18 cm over-fired on deep solums and under-fired thin A over rock.
+  \item \strong{A antropico requires human artefacts.} Cap 2 p.53 makes
+        ceramic/lithic/bone/shell/charcoal artefacts "de presenca obrigatoria";
+        the \code{hortic}-based wrapper omitted that gate. When
+        \code{artefacts_pct} is recorded and zero, the horizon can no longer
+        key as antropico. (The \eqn{\ge} 20 cm "e" P \eqn{\ge} 30 mg/kg pair is
+        a verbatim AND, which \code{hortic} already enforced -- the workflow's
+        "inverted AND/OR" claim was refuted by the manual.)
+  \item \strong{Deferred, documented honestly:} the \code{B_textural}
+        relacao-textural ratio keyed on A-horizon clay (Cap 2 p.56 item h:
+        \eqn{>} 1.50 if A \eqn{>} 400 g/kg; \eqn{>} 1.70 if 150-400; \eqn{>}
+        1.80 if \eqn{<} 150 g/kg) remains delegated to the WRB \code{argic}
+        clay-increase. Re-wiring the most load-bearing SiBCS diagnostic (it
+        governs the dominant Argissolo/Latossolo split) is its own gated slice.
+}
+
+# soilKey 0.9.135 (2026-06-15)
+
+The "**fluvic-material proxy fix**" release. Tightening the fluvic-material
+stratification proxies turned out to be an accuracy win on real Brazilian data,
+and clarified why the verbatim SiBCS/WRB "OR" cannot yet be enabled.
+
+\itemize{
+  \item \strong{Texture stratification now requires a genuine clay REVERSAL}
+        (a depositional peak/valley with swings \eqn{\ge} 8\%), not a single
+        clay change. A monotone A->Bt clay increase (a normal Argissolo) is a
+        pedogenic trend, NOT stratification -- the old proxy
+        (\code{any(swing >= 8)}) wrongly flagged it, mislabelling Argissolos as
+        Neossolos Fluvicos.
+  \item \strong{Irregular-OC now requires a genuine erratic reversal} (a deeper
+        layer exceeding an overlying one by \eqn{\ge} 0.2\% absolute and
+        \eqn{\ge} 1.25x relative) and \strong{excludes OC increases into a
+        spodic illuvial horizon} (Bh/Bs/Bhs) -- that is podzolization
+        (pedogenic), which the SiBCS criterion explicitly excludes.
+  \item \strong{Measured accuracy lift} on the BDsolos RJ benchmark: Argissolo
+        recall 166 -> 175 and Argissolo->Neossolo confusion 60 -> 50; Redape
+        SiBCS order accuracy 59.6\% -> 63.8\%. No regressions (Chernossolo and
+        Latossolo recall preserved).
+  \item \strong{The verbatim "AND/OR" stays AND for now}: enabling the OR makes
+        an erratic-OC-only Chernozem key as a Neossolo Fluvico, because the
+        SiBCS key reaches the Neossolos branch before the stronger orders for
+        it -- a key-ordering issue to fix before the OR is safe. The tightened
+        proxies already improve accuracy under AND.
+  \item Gate: full suite 5692 pass / 0 fail; +4 unit tests; two benchmark
+        regression-guards updated to the new (better) numbers.
+        \code{R CMD check --as-cran} codoc OK.
+}
+
+# soilKey 0.9.134 (2026-06-15)
+
+The "**SiBCS attribute audit**" release (Phase 3, slice 1). With the Embrapa
+2018 manual (SiBCS 5th ed.) now in hand, a multi-agent audit checked the SiBCS
+*atributos diagnósticos* against the verbatim Cap 1 criteria (every flag
+re-confirmed by hand against the manual). Four confirmed bugs fixed:
+
+\itemize{
+  \item \strong{carater_acrico}: now (pH-KCl \eqn{\ge} 5.0 \strong{OR} ΔpH
+        \eqn{\ge} 0) AND (bases+Al) \eqn{\le} 1.5 cmol_c/kg clay -- the pH-KCl
+        \eqn{\ge} 5.0 alternative was missing (Cap 1 p31).
+  \item \strong{carater_alitico}: now Al \eqn{\ge} 4 cmol_c/kg AND
+        (Al-saturation \eqn{\ge} 50\% \strong{OR} V < 50\%) -- the two
+        saturation conditions were wrongly AND-ed (Cap 1 p32).
+  \item \strong{luvissolo_cromico}: criterion (c) (value \eqn{\ge} 5, chroma
+        > 4) is now restricted to hues 2.5Y-5Y; the catch-all \code{else}
+        previously applied it to any non-matching hue (Cap 1 p34).
+  \item \strong{carater_argiluvico}: now also requires the B to have prismatic
+        structure (any grade) OR blocky structure of at least moderate grade,
+        where structure is recorded (Cap 1 p33) -- previously the clay-ratio
+        (via B textural) alone.
+  \item \strong{Verified correct} (no change): atividade-argila Ta \eqn{\ge} 27,
+        eutrofico/distrofico, carbonatico/hipocarbonatico, sodico/solodico/
+        salico/salino, plintico/concrecionario/redoxico/planico, eutrico,
+        cromico hue branches, and mudanca-textural-abrupta (the manual's
+        "220->420" is the +200 g/kg rule, not a third case).
+  \item \strong{Deferred}: carater_fluvico / fluvic_material -- the SiBCS/WRB
+        criterion is verbatim an OR, but the package's \code{oc_irregular}
+        proxy (any +0.1\% OC bump with depth) over-fires under OR across all
+        three systems; kept as AND until that proxy is tightened.
+  \item Gate: full suite 5684 pass / 0 fail; +8 unit tests; all 44 canonical
+        fixtures byte-identical. \code{R CMD check --as-cran} codoc OK.
+}
+
+# soilKey 0.9.133 (2026-06-15)
+
+The "**schema-blocked qualifiers unlocked**" release (Fix D follow-up). Four new
+horizon-schema fields let the last schema-blocked WRB qualifiers enforce their
+verbatim WRB 2022 criteria, in the same refine-when-present / byte-identical-
+when-absent pattern as v0.9.128.
+
+\itemize{
+  \item New fields: \code{ice_pct}, \code{water_saturation_days},
+        \code{particles_630um_pct}, \code{jarosite_present} (plus the derived
+        \code{inst/schemas/pedon-schema.json}).
+  \item \strong{Glacic}: \code{ice_pct} \eqn{\ge} 75\% enforced where measured,
+        in a \eqn{\ge} 30 cm layer (was a cryic + ice-designation proxy only).
+  \item \strong{Aceric}: now requires \code{jarosite_present} where recorded
+        (beside the pH 3.5-5 gate from v0.9.132).
+  \item \strong{Mochipic}: \code{water_saturation_days} \eqn{\ge} 300 where
+        measured, in a \eqn{\ge} 25 cm layer.
+  \item \strong{Isopteric}: bulk density \eqn{\le} 1.3 and < 5\% particles
+        \eqn{\ge} 630 um where measured, in a \eqn{\ge} 30 cm layer.
+  \item \strong{Hydric}: now uses the \code{water_content_1500kpa_undried}
+        field (v0.9.128) directly when measured -- the WRB criterion is on
+        UNDRIED samples -- in a \eqn{\ge} 35 cm layer (air-dried proxy kept as
+        fallback).
+  \item Gate: full suite 5672 pass / 0 fail; +12 unit tests; all 44 canonical
+        fixtures byte-identical (the new fields are absent in them, and the
+        added thickness clauses don't flip any fixture). \code{R CMD check
+        --as-cran} codoc OK.
+}
+
+# soilKey 0.9.132 (2026-06-15)
+
+The "**qualifier audit, batch 1**" release (Fix D slice 4). A multi-agent audit
+of ~120 WRB qualifier predicates against the verbatim WRB 2022 Ch 5 PDF (with an
+adversarial-refutation pass, and every flag re-confirmed by hand against the
+PDF) fixed 11 threshold / depth / criterion bugs:
+
+\itemize{
+  \item \strong{Geric}: now (exch. bases + exch. Al) < 6 cmol_c/kg \strong{clay}
+        (Hypergeric < 1.5) -- was <= 1.5 cmol_c/kg fine earth (the Hypergeric
+        number, un-normalised by clay), plus a spurious delta-pH (Posic) branch
+        that is removed.
+  \item \strong{Sodic}: now requires \eqn{\ge} 15\% (Na+Mg) \strong{and}
+        \eqn{\ge} 6\% Na on the exchange complex (the (Na+Mg) clause was missing).
+  \item \strong{Eutrosilic}: now a sum of exchangeable bases \eqn{\ge} 15
+        cmol_c/kg fine earth (was base saturation \eqn{\ge} 50\%).
+  \item \strong{Pellic}: Munsell value \eqn{\le} 3 (was \eqn{\le} 4).
+  \item \strong{Aceric}: pH \eqn{\ge} 3.5 and < 5 (the lower bound was missing).
+  \item \strong{Carbonic}: \eqn{\ge} 5\% OC (was 6\%) in a layer \eqn{\ge} 10 cm.
+  \item \strong{Columnic}: columnar structure only, not prismatic, in a
+        \eqn{\ge} 15 cm layer.
+  \item \strong{Magnesic}: the Ca/Mg < 1 layer must be \eqn{\ge} 30 cm thick.
+  \item \strong{Thixotropic}: within 50 cm (was 100 cm).
+  \item \strong{Hyperorganic}: organic material \eqn{\ge} 200 cm thick (was just
+        an organic layer in the upper 100 cm).
+  \item \strong{Placic}: Fe-cementation at least \emph{weakly} (was restricted
+        to strongly/indurated), thickness \eqn{\ge} 0.1 and < 2.5 cm.
+  \item Gate: full suite 5656 pass / 0 fail; +16 unit tests; two old-criterion
+        unit tests updated (Eutrosilic, Hyperorganic). Verbatim WRB 2022 PDF;
+        \code{R CMD check --as-cran} codoc OK. Deferred (proxy / schema-blocked /
+        unconfirmed): hyperskeletic, isopteric, mochipic, glacic, raptic,
+        hyposalic, hydric-undried, grumic, mazic-hardness, urbic/evapocrustic
+        thickness.
+}
+
+# soilKey 0.9.131 (2026-06-14)
+
+The "**colour qualifiers**" release (qualifier-correctness audit, Fix D
+slice 3). Chromic, Rhodic and Xanthic completed against the verbatim WRB 2022
+PDF (Ch 5, p130 / p145 / p151).
+
+\itemize{
+  \item \strong{Chromic and Rhodic now require their full WRB definition}, not
+        just the Munsell colour: a \eqn{\ge} 30 cm thick layer, evidence of soil
+        formation (cambic criterion 3, reusing \code{test_cambic_soil_formation}
+        from v0.9.127), and -- for Rhodic -- a dry value no more than one unit
+        above the moist value. Hue tests now use \code{.munsell_hue_units}
+        (Chromic = redder than 7.5YR; Rhodic = redder than 5YR).
+  \item \strong{Chromic now excludes Rhodic} (the WRB definition's
+        "does not meet the Rhodic qualifier"). The two were previously able to
+        co-occur -- the canonical Ferralsol carried both; it is now correctly
+        \emph{Rhodic} only ("Geric Ferric Rhodic Ferralsol").
+  \item \strong{Xanthic} hue test widened to all "7.5YR or yellower" hues
+        (the regex missed 7.5Y/10Y) and given its \eqn{\ge} 30 cm
+        subhorizon-thickness requirement.
+  \item Gate: full suite 5655 pass / 0 fail; +6 unit tests; the FR canonical
+        name updated (Chromic dropped, validated as more-correct). Verbatim PDF;
+        \code{R CMD check --as-cran} codoc OK.
+}
+
+# soilKey 0.9.130 (2026-06-14)
+
+The "**texture qualifiers**" release (qualifier-correctness audit, Fix D
+slice 2). The five texture qualifiers were checked against the verbatim WRB
+2022 PDF (Ch 5).
+
+\itemize{
+  \item \strong{Clayic was a confirmed threshold bug, now fixed.} WRB 2022
+        defines Clayic as the texture classes \emph{clay, sandy clay or silty
+        clay} (clay \eqn{\ge} 40\%, or clay \eqn{\ge} 35\% with sand \eqn{\ge}
+        45\% for sandy clay) over \eqn{\ge} 30 cm within 100 cm. The code used a
+        \code{clay >= 60\%} proxy, which under-fired across the clay-class range
+        40-60\%. Now uses the proper texture-class test.
+  \item \strong{Arenic / Loamic / Siltic / Skeletic verified as acceptable.}
+        Arenic delegates to the (sand / loamy sand) texture diagnostic; Loamic
+        and Siltic are defensible texture-class proxies; Skeletic's \eqn{\ge}
+        40\% coarse-fragments threshold matches the PDF. No changes.
+  \item Gate: full suite 5642 pass / 0 fail; +5 unit tests; the canonical
+        fixtures are unaffected (their clay values fall outside the newly-added
+        40-60\% band at Clayic-eligible depths). Validation rests on the
+        verbatim PDF, as for the other WRB qualifier work.
+}
+
+# soilKey 0.9.129 (2026-06-14)
+
+The "**WRB 2022 base status**" release (qualifier-correctness audit, Fix D
+part 1). The base-status qualifiers **Dystric / Eutric / Hyperdystric /
+Hypereutric** (and the Epi-/Endo- variants) are redefined from the obsolete
+WRB 2014 base-saturation criterion to the **WRB 2022 exchangeable-Al-vs-bases**
+criterion (Ch 5, p131-133), verified verbatim against the authoritative PDF.
+
+\itemize{
+  \item \strong{The criterion changed, not just a threshold.} WRB 2022 keys
+        Dystric/Eutric on \emph{exchangeable Al vs exchangeable bases}
+        (Al-saturation), NOT base saturation: Dystric = Al > bases in half or
+        more of 20-100 cm; Eutric = bases \eqn{\ge} Al in the major part;
+        Hyperdystric = Al > bases throughout AND Al > 4x bases (Al-sat > 80\%)
+        in the major part; Hypereutric = the base-dominated mirror (Al-sat
+        \eqn{\le} 20\%). Mineral layers use \code{al_sat_pct} or \code{al_cmol}
+        vs the base cations; organic layers use the Histosol pH branch.
+  \item \strong{Strict, by design (user decision): no base-saturation
+        fallback.} Where no exchangeable-Al datum is present the result is
+        \code{NA}, not a guess from \code{bs_pct}.
+  \item \strong{Showcase:} the canonical variable-charge Ferralsol now keys as
+        \emph{Eutric}, not Dystric -- its base saturation is low (24\%, against
+        the pH7 CEC) but on the effective exchange (ECEC ~2.6) the bases exceed
+        Al. This is exactly the case the 2014->2022 redefinition was made for.
+        The canonical Cambisol (bases \eqn{\gg} 4x Al throughout) now keys as
+        the more-specific \emph{Hypereutric}.
+  \item New internal helpers \code{.wrb_acidity_fracs} /
+        \code{.wrb_base_status_result} / \code{.wrb_hyper_status_result}; the
+        \code{coverage_report()} stub-detector learns the new delegation (the
+        E3 pattern), keeping qualifier coverage at 229/234. SiBCS
+        \code{distrofico}/\code{eutrofico} (base-saturation, correct for SiBCS)
+        are untouched.
+  \item Gate: full suite 5621 pass / 0 fail; +21 unit tests; the affected unit
+        tests and the CM/FR canonical-fixture expectations updated to the
+        WRB 2022 results (validated as more-correct). KSSL is USDA-labelled
+        (WRB-blind) and the FEBR-WRB benchmark is not locally re-runnable
+        (upstream FEBR repo retired), so validation rests on the verbatim PDF +
+        the canonical fixtures, as for the Phase 2 WRB diagnostic fixes.
+}
+
+# soilKey 0.9.128 (2026-06-14)
+
+The "**schema-blocked predicates unlocked**" release (predicate-correctness
+backlog, Fix C). Four new horizon-schema fields let five predicates enforce
+their verbatim criteria instead of an air-dried-only / proxy approximation.
+Every refinement follows one rule: **enforced only when the field is present;
+absent => prior behaviour**, so all existing data classifies identically.
+
+\itemize{
+  \item \strong{New schema fields} (in \code{horizon_column_spec()} and the
+        derived \code{inst/schemas/pedon-schema.json}):
+        \code{water_content_1500kpa_undried}, \code{particles_002_2mm_pct},
+        \code{cracks_top_cm}, \code{incubation_ph}.
+  \item \code{vitrand_qualifying_usda}: now requires 1500 kPa water retention
+        < 15\% air-dried \strong{and} < 30\% undried (KST 13ed Ch 6); the
+        undried branch fires only where measured.
+  \item \code{vitrandic_subgroup_usda}: branch 2 now also requires the
+        fine-earth fraction to be \eqn{\ge} 30\% in the 0.02-2.0 mm size class
+        (KST 13ed Ch 9), beside \eqn{\ge} 5\% glass.
+  \item \code{vertic_subgroup_usda}: the crack branch now honours the
+        "cracks within 125 cm of the surface" depth limit via
+        \code{cracks_top_cm}.
+  \item \strong{\code{hyposulfidic_material} is reachable again.} Without the
+        incubation test, hypersulfidic = (S + pH) and hyposulfidic =
+        (S + pH) AND NOT(S + pH) = always empty. With \code{incubation_ph}, a
+        sulfidic + pH>=4 layer that stays \eqn{\ge} 4 on aerobic incubation is
+        hyposulfidic (WRB 3.3.9); one that drops < 4 is hypersulfidic
+        (WRB 3.3.8). Absent => the layer is reported as potential hypersulfidic,
+        as before.
+  \item Gate: 44 canonical fixtures byte-identical; KSSL n=2895 before/after
+        \strong{0 changed} (the fields are absent in that data); +16 unit tests;
+        full suite 5604 pass / 0 fail; \code{R CMD check --as-cran} unchanged.
+}
+
+# soilKey 0.9.127 (2026-06-14)
+
+The "**sideralic criterion 2**" release (predicate-correctness backlog, Fix B).
+`sideralic_properties` (WRB 2022 Ch 3.2.13) now enforces **both** required
+criteria, not just the low-CEC one. Criterion 2 — "evidence of soil formation as
+defined in criterion 3 of the cambic horizon" — is implemented and required on
+the same layer as criterion 1.
+
+\itemize{
+  \item \strong{New reusable helper \code{test_cambic_soil_formation()}}
+        implements WRB cambic-horizon criterion 3 faithfully against the
+        authoritative 2022 PDF: pedogenic contrast vs adjacent layers — hue /
+        chroma / clay increase vs the underlying layer (3.a), hue / value /
+        chroma vs an overlying mineral layer \eqn{\ge} 5 cm thick (3.b),
+        carbonate removal (3.c), and the Fe-ox/Fe-dith + reddish-chroma path
+        (3.d). A companion \code{.munsell_hue_units()} places Munsell hues on a
+        continuous 2.5-unit red-to-yellow scale so "\eqn{\ge} 2.5 units
+        redder/yellower" is exact.
+  \item \strong{Honest missing-data semantics:} where the soil-formation
+        evidence cannot be assessed (no Munsell / clay / Fe / carbonate
+        adjacency data), \code{sideralic_properties} returns \code{NA} rather
+        than a false positive. Previously only criterion 1 was enforced, so the
+        property over-fired on low-CEC parent material with no pedogenic
+        development.
+  \item Documented simplifications (no schema support): the \eqn{\ge} 90\%
+        exposed-area Munsell qualifier is taken as met by the recorded colour;
+        gypsum removal in 3.c is omitted (no gypsum column); lithic
+        discontinuities use the leading-integer designation convention.
+  \item \code{sideralic_properties} is not wired into any classification key, so
+        all 44 canonical fixtures are byte-identical and no classification
+        changes; the change is purely additive correctness. +14 unit tests;
+        full suite 5590 pass / 0 fail; \code{R CMD check --as-cran} unchanged.
+}
+
+# soilKey 0.9.126 (2026-06-14)
+
+The "**Humult criterion 1 restored**" release (predicate-correctness backlog,
+Fix A). `humult_qualifying_usda` now implements **both** branches of KST 13ed
+key HB, not just the organic-carbon-mass branch: criterion 1 (>= 0.9% organic
+carbon, weighted average, in the upper 15 cm of the argillic or kandic horizon)
+is re-enabled.
+
+\itemize{
+  \item \strong{The 15 cm window is anchored at the \emph{illuvial onset}}, not
+        at the diagnostic's reported top: the shallowest argic/kandic layer
+        whose clay exceeds the horizon directly above it. This is what made
+        criterion 1 safe to ship. An earlier attempt inherited a top-detection
+        artifact from \code{argillic_within_usda} -- \code{argic()}'s deliberate
+        "min-above" heuristic (v0.9.23, added to catch gradual FEBR Hapludalfs)
+        can include a transitional B that has \emph{no} clay increase relative
+        to the horizon above it, which inflated the OC window with low-carbon
+        subsoil and produced a false-positive Humult. Anchoring at the onset
+        moves the window onto the true Bt and removes the artifact without
+        touching the high-risk \code{argic()} core.
+  \item \strong{KSSL n=2895 before/after gate: 0 worsened at subgroup level.}
+        Exactly one pedon changes suborder, and it is \emph{book-correct}: a
+        profile with 1.06\% OC (weighted average) across 10--25 cm of its
+        argillic genuinely satisfies criterion 1. The previously-deferred
+        false-positive (a profile whose only "increase" was the artifact B)
+        now correctly stays out of Humults (onset OC 0.33\% < 0.9\%).
+  \item Gate: all 44 canonical fixtures byte-identical; full suite green
+        (5590 pass / 0 fail); \code{R CMD check --as-cran} unchanged.
+}
+
+# soilKey 0.9.125 (2026-06-13)
+
+The "**WRB predicate audit, Phase 2**" release. A review of the 79 WRB
+diagnostic-horizon/property/material predicates against WRB 2022 (4th ed). Unlike
+the USDA audit (where `ST_criteria_13th` is machine-verifiable), WRB has no such
+ground truth in the package -- so every workflow flag was checked against the
+\strong{authoritative WRB 2022 PDF}, which proved decisive.
+
+\itemize{
+  \item \strong{The PDF cross-check refuted 4 agent flags and found 1 bug the
+        agents missed.} Refuted: \code{tephric_material} (>= 30\% glass is
+        correct, not 5\%); \code{histic_horizon} (WRB 3.1.15 has \emph{no}
+        depth-from-surface criterion -- the "30 cm" is the USDA epipedon rule);
+        \code{plaggic} depth (3.1.29 is a surface horizon with no top-depth
+        limit); \code{shrink_swell_cracks} (>= 0.5 cm is correct).
+  \item \strong{2 confirmed bugs fixed} (each grounded in the verbatim WRB 2022
+        text; gate = 44 fixtures byte-identical + full suite):
+        \itemize{
+          \item \code{ornithogenic_material}: WRB 3.3.15 requires \strong{both}
+                bird-activity evidence \strong{and} >= 750 mg/kg Mehlich-3 P --
+                corrected from OR to AND.
+          \item \code{plaggic}: Mehlich-3 P threshold 50 -> \strong{100} mg/kg
+                (3.1.29 criterion 2b) -- a bug the static review missed.
+        }
+  \item \strong{Deferred (verified):} \code{sideralic_properties} criterion 2
+        (needs the cambic soil-formation-evidence check factored out);
+        \code{hypersulfidic}/\code{hyposulfidic} (schema-blocked -- no 8-week
+        incubation-result field).
+  \item KSSL (USDA-labelled) is blind to WRB diagnostic changes, so it is not
+        used as the gate here. Report:
+        \code{inst/benchmarks/reports/wrb_predicate_audit_v09125.md}.
+        +4 unit tests; no new exports.
+}
+
+# soilKey 0.9.124 (2026-06-13)
+
+The "**USDA predicate correctness audit, Phase 1**" release. A systematic review
+of the **102 USDA core diagnostic predicates** against their verbatim KST
+13th-edition criteria (`SoilTaxonomy::ST_criteria_13th`; KST Ch. 3), each flagged
+divergence then \strong{adversarially verified} to refute false positives.
+
+\itemize{
+  \item \strong{Outcome:} 58 correct, 17 defensible simplifications, 8
+        missing-data-only, 1 cannot-verify, 18 flagged -- of which adversarial
+        verification \strong{confirmed 8} and refuted 10 (e.g. the alleged
+        \code{mollisol_qualifying_usda} NA-logic bug and the \code{humic_oxisol}
+        16 kg/m2 "non-canonical" claim were correctly left untouched).
+  \item \strong{4 confirmed bugs fixed} (each stricter -- removing false
+        positives -- with a KSSL n=2895 before/after gate showing \strong{0
+        changed, 0 worsened}):
+        \itemize{
+          \item \code{rendoll_qualifying_usda}: lithic/paralithic contact within
+                \strong{50 cm} (was 100 cm).
+          \item \code{hydraquent_qualifying_usda}: the \strong{20-50 cm} window
+                with \strong{clay >= 8\%} in \strong{all} horizons (was 0-50 cm,
+                any layer, no clay condition).
+          \item \code{aeric_oxisol_usda}: the chroma-3 horizon must be
+                \strong{directly below the epipedon} (A*/O* horizons are now
+                excluded; was any layer below 1 cm).
+          \item \code{duric_subgroup_usda}: cemented in \strong{>= 90\% of the
+                pedon} (was any single cemented layer).
+        }
+  \item \strong{4 confirmed bugs deferred, honestly.} Three are schema-limited
+        (fixing them with the data we have would be guessing):
+        \code{vertic_subgroup_usda} (needs a crack-position field),
+        \code{vitrand_qualifying_usda} (needs separate air-dried/undried water),
+        \code{vitrandic_subgroup_usda} (needs a 0.02-2 mm particle-size field).
+        The fourth, \code{humult_qualifying_usda} criterion (1), is written but
+        held: the gate showed it inherits a top-detection error from
+        \code{argillic_within_usda} -- a \emph{new} bug the integration gate
+        caught that the static review missed -- so it waits until that predicate
+        is corrected.
+  \item Full report: \code{inst/benchmarks/reports/usda_predicate_audit_v09124.md}.
+        +9 unit tests; 44 fixtures byte-identical; no new exports.
+}
+
+# soilKey 0.9.123 (2026-06-13)
+
+The "**criteria-verified intergrade subgroups**" release (front E4b). Adds **+25**
+USDA intergrade subgroups -- the safe, exactly-correct slice of the multi-modifier
+colour set -- by reusing existing predicates whose match to the KST 13th-edition
+differentia (`ST_criteria_13th`) was verified one subgroup at a time.
+
+\itemize{
+  \item \strong{USDA subgroup coverage 72.9\% -> 73.8\%} (1978 -> 2003 of 2715):
+        12 \emph{Humic Rhodic} + 12 \emph{Humic Xanthic} Oxisols (multi-predicate
+        \code{all_of} of \code{humic_oxisol_usda} \[>= 16 kg/m2 OC in 100 cm\]
+        plus \code{rhodic_subgroup_usda} / \code{xanthic_subgroup_usda}), and
+        \emph{Leptic Haplogypsids} (\code{gypsic_horizon_usda} within 18 cm).
+        \strong{No new predicates} -- every modifier maps to an existing
+        predicate that matches its criterion clause exactly.
+  \item \strong{Reading the canonical criteria caught a real trap.} The
+        investigation's uniform "Leptic -> leptic_vertic_usda" map is \emph{wrong}
+        for the Natr- great groups: there "Leptic" means \dQuote{visible crystals
+        of gypsum / soluble salts within 40 cm}, not a contact. And the Alfisol
+        "Chromic" is chroma >= 4 within 18 cm (after mixing), not the Vertisol
+        chroma >= 3 within 30 cm. Both were therefore \strong{excluded} rather
+        than wired to a mismatched predicate.
+  \item Same generator discipline: \strong{append-before-default} (149 insertions
+        / 0 deletions, existing YAML byte-for-byte, great group invariant);
+        \strong{KSSL n=2895 gate: 0 worsened} (and 0 changed -- KSSL is a
+        continental-US sample with almost no Oxisols/Gypsids, so the gate is a
+        safety floor, not a strong test here; safety rests on the criteria-exact
+        predicates + append-before-default). Of 44 fixtures, \strong{1} refines
+        \code{Typic -> Leptic Haplogypsids} (the Gypsisol fixture, validated: its
+        gypsic horizon begins at 15 cm, within the 18 cm window); the other 43
+        byte-identical.
+  \item \strong{Honestly deferred} (out of safe reach without new schema or
+        climate data): the salts-based \emph{Leptic} Natr- subgroups (need a
+        visible-salt-crystal morphology field soilKey does not carry -- an EC
+        proxy would be incorrect); the soil-moisture-regime intergrades
+        (Aridic / Udic / Torrertic); the Alfisol Chromic-Vertic intergrades
+        (need a distinct chroma >= 4 / 18 cm predicate); and Anthropic / Aquertic
+        (compound predicates).
+}
+
+# soilKey 0.9.122 (2026-06-13)
+
+The "**honest decomposition qualifiers**" release. A premise-check (the recurring
+discipline of this project) found that the three "WRB qualifier stubs" the
+roadmap planned to implement -- \emph{Fibric}, \emph{Hemic}, \emph{Sapric} --
+were \strong{already implemented}: each delegates to \code{.qual_decomp()}, which
+keys the dominant organic-decomposition class. What was actually wrong was the
+\emph{measurement}, plus a missed data path.
+
+\itemize{
+  \item \strong{\code{coverage_report("wrb_qualifiers")} now counts delegations
+        honestly: 226 -> 229 of 234.} The stub-detector
+        (\code{.qualifier_is_implemented}) inspected only a qualifier's one-line
+        body, so a real delegation like
+        \code{qual_fibric <- function(pedon) .qual_decomp(pedon, "fibric",
+        "Fibric")} was false-flagged as an inert stub. It now follows one level
+        of delegation (any helper called with \code{pedon}) before deciding;
+        Fibric/Hemic/Sapric are correctly counted, and the spurious "3 inert
+        stubs" message is gone. The remaining 5 gaps are all genuinely
+        schema-blocked (Claric / Panpaic / Sideralic / Novic / "etrosalic").
+  \item \strong{\code{.decomp_class()} now uses measured decomposition data.}
+        For an organic layer the Oi/Oe/Oa designation proxy leaves unclassified,
+        it falls back to the von Post humification index, else the rubbed-fibre
+        content, using the thresholds already declared in
+        \code{horizon_column_spec()} (von Post H1-H4 fibric / H5-H6 hemic /
+        H7-H10 sapric; rubbed fibre >= 40\% fibric / 17-40\% hemic / < 17\%
+        sapric). \strong{Additive only} -- a layer the designation already
+        classified is never overridden -- so every profile keyed via
+        O-subscripts (including all 44 canonical fixtures, none of which carry
+        measured decomposition data) stays \strong{byte-identical}. The benefit
+        is real-world peats that report a von Post index or fibre content but no
+        O-subscript designation.
+}
+
+# soilKey 0.9.121 (2026-06-13)
+
+The "**USDA colour & contact subgroups**" release (taxonomic completeness,
+front E4). Adds **+57** canonical USDA subgroups gated on colour and shallow
+contact -- every one grounded directly in the KST 13th-edition differentia
+(`ST_criteria_13th`), not paraphrased.
+
+\itemize{
+  \item \strong{USDA subgroup coverage 70.8\% -> 72.9\%} (1921 -> 1978 of
+        2715): +20 \emph{chromic} (Vertisols), +12 \emph{xanthic} (Oxisols),
+        +9 \emph{calcic} (Alfisols/Andisols), +16 \emph{leptic} (Vertisols).
+  \item Two new predicates, written to the exact canonical criteria. The
+        Vertisol \code{chromic_subgroup_usda()} is the value/chroma
+        \dQuote{not dark} test (within 30 cm: moist value >= 4, dry value >= 6,
+        or moist chroma >= 3), \strong{not} the red-hue \code{chromic} of WRB;
+        the Aquerts great groups drop the chroma clause
+        (\code{use_chroma = FALSE}). \code{leptic_vertic_usda()} is the USDA
+        shallow densic/lithic/paralithic contact within 100 cm, distinct from
+        the WRB coarse-fragment \emph{leptic}. \code{xanthic_subgroup_usda()}
+        and \code{calcic_subgroup_usda()} are reused, the latter with the
+        per-subgroup depth window (100 / 125 / 150 cm).
+  \item Same disciplined generator as front C: \strong{append-before-default}
+        (each new entry inserted before its \code{Typic} catch-all) so the
+        first-match engine provably cannot change any profile that already
+        matched a specific subgroup -- only \code{Typic} fall-throughs can
+        refine. Existing YAML entries are preserved \strong{byte-for-byte} (269
+        insertions, 0 deletions), great group invariant.
+  \item \strong{KSSL n=2895 before/after gate: 0 worsened} (no modifier turns a
+        previously-correct \code{Typic} into a wrong specific; 83 changed, all
+        neutral) -- so all 57 are kept, none excluded. See
+        \code{inst/benchmarks/reports/kssl_subgroup_gate_v09121.md}.
+  \item Of the 44 canonical fixtures, \strong{2} refine
+        \code{Typic Hapluderts -> Chromic Hapluderts} (the Vertisol fixtures,
+        validated: their upper-30 cm colours meet the Chromic criterion); the
+        other 42 are byte-identical.
+  \item \strong{Honestly scoped.} 5 \code{Leptic} subgroups whose differentia
+        is a shallow gypsic horizon (\code{Leptic Haplogypsids}) or visible
+        soluble-salt crystals (\code{Leptic Natralbolls/Natrudolls/Natrustolls/
+        Natrustalfs}) are \emph{deferred} -- they are a different concept than a
+        contact, and shipping a single \code{leptic} predicate for them would be
+        wrong. The 49 multi-modifier intergrade colour subgroups (e.g.
+        \emph{Aquertic Chromic Hapludalfs}) are likewise deferred (they need
+        compound predicates).
+}
+
+# soilKey 0.9.120 (2026-06-13)
+
+The "**within-pedon gap-fill**" release (Track 2, missing-data recovery). The
+honest ceiling on external accuracy is *missing data*, not the keys: most
+argic-RSG reference profiles report clay in only a subset of horizons, so the
+clay-increase test (and the Acrisol / Lixisol / Alisol / Luvisol
+discrimination that hangs on it) stalls on an artefact of incomplete reporting.
+This release adds an opt-in lever to recover those *interior* gaps from each
+profile's own measured layers -- and, in the same breath, an honest measurement
+of when that helps and when it does not.
+
+\itemize{
+  \item New \code{gapfill_within_pedon()} fills interior \code{NA} cells of the
+        continuous depth-trending attributes (clay/silt/sand, pH, organic
+        carbon, CEC/ECEC, base/aluminium saturation, bulk density) by linear
+        interpolation from the horizons where each attribute is *measured*. It
+        is the within-pedon companion to \code{apply_soilgrids_depth_prior()}
+        (external SoilGrids profile) and shares its depth-interpolation core.
+  \item \strong{Two honesty guards.} (1) \emph{Interpolation only} -- a cell is
+        filled only when its mid-depth lies strictly between the shallowest and
+        deepest measured layer; values above the top or below the bottom
+        measured horizon are left \code{NA} (no extrapolation). (2)
+        \emph{Authority order} -- fills are written with \code{inferred_prior}
+        provenance through \code{PedonRecord$add_measurement()}, so they never
+        displace a measured/spectra/VLM value and the evidence grade honestly
+        drops to \code{"C"}.
+  \item New opt-in \code{gapfill} argument on \code{classify_wrb2022()},
+        \code{classify_sibcs()}, \code{classify_usda()} and
+        \code{classify_all()} -- default \code{FALSE} keeps every
+        classification \strong{byte-identical}. When enabled it runs on a deep
+        copy, so the caller's pedon is never mutated. Accepts \code{TRUE}, a
+        character vector of attributes, or a named list of
+        \code{gapfill_within_pedon()} arguments.
+  \item \code{benchmark_unified(gapfill = ...)} threads the same lever through
+        the harness so the ON/OFF accuracy delta is measurable reproducibly.
+  \item \strong{Measured ON/OFF on KSSL (n=2895, USDA labels)} -- and reported
+        honestly. Gap-fill touches \strong{297 pedons (10.3\%)}, filling 1598
+        interior cells (mean 5.4 each); it changes the deepest USDA name for 26.
+        On the eligible subset its accuracy delta is \strong{neutral-to-slightly
+        negative}: order 114 -> 108 (\strong{-6}), great group 26 -> 27
+        (+1), subgroup 19 -> 19 (0; among the changed: 1 gain, 1 loss, 24
+        wrong -> wrong). KSSL's USDA labels are noisy (subgroup baseline
+        ~3\%) and an interpolated clay value can re-route the order diagnostic,
+        so on this dataset gap-fill is \strong{not} an automatic win. It is a
+        missing-data \emph{recovery} tool, not a guaranteed accuracy gain --
+        which is exactly why it ships \strong{opt-in and off by default}.
+  \item Honest ceiling (documented): within-pedon interpolation only helps
+        \emph{partially}-measured profiles; profiles with an attribute missing
+        in *every* horizon still need an external prior (SoilGrids / taxon PTF),
+        and topsoil-only datasets cannot be interpolated at depth. Its design
+        target is the partial-missing argic-discrimination case (the FEBR-WRB
+        B2 scenario), not KSSL order accuracy.
+}
+
+# soilKey 0.9.119 (2026-06-13)
+
+The "**honest coverage v2**" release (Track 1, part 2). Makes the package's
+completeness claims auditable at \strong{every} level and corrects two
+over-stated numbers.
+
+\itemize{
+  \item \code{coverage_report()} now covers \code{"usda_great_group"} (339/339,
+        100\%), \code{"usda_suborder"} (68/68, 100\%) and \code{"sibcs"} (honest
+        registered class counts -- 13 / 44 / 192 / 938 -- with the caveat that
+        there is no external canonical SiBCS 5 list to diff against), alongside
+        the existing \code{"usda_subgroup"} and \code{"wrb_qualifiers"}.
+  \item \strong{WRB qualifier coverage is now measured honestly.} A qualifier
+        counts as covered only if its \code{qual_*} function is a genuine
+        implementation, not an unconditional \code{passed = NA} stub. The
+        headline is \strong{226 of 234} deliverable -- 214 implemented + 12
+        \emph{specifier-derived} (Epi-/Endo-/Bathy-... forms produced by the
+        specifier engine from their base qualifier) -- with the 3 inert stubs
+        (Fibric, Hemic, Sapric) reported in \code{$stubs} and the 5
+        function-less, schema-blocked names (Claric, Panpaic, Sideralic,
+        Novic, ...) in \code{$missing}. (The earlier \dQuote{229/234} counted
+        function existence, including stubs.)
+  \item Honest correction: an audit had suggested \emph{~90 inert WRB
+        qualifiers}; direct measurement shows only \strong{3} genuine
+        implementation gaps -- WRB qualifier coverage is essentially complete.
+}
+
+No engine, diagnostics, rule or key changes; the 44 canonical fixtures are
+byte-identical.
+
+# soilKey 0.9.118 (2026-06-13)
+
+The "**engineering robustness**" release (Track 1 of the post-roadmap plan,
+part 1). Hardens the package without changing any classification behaviour.
+
+\itemize{
+  \item \code{horizon_column_spec()} and \code{ensure_horizon_schema()} are now
+        \strong{exported}. They were foundational schema helpers reached from
+        the Pro app via \code{soilKey:::} (the same internal-namespace smell
+        that retired the legacy app); the three \code{:::} call sites now use
+        the public API, and users can coerce/validate a horizon table before
+        building a \code{\link{PedonRecord}}.
+  \item New internal rule-base integrity check: \code{.validate_rules(system)}
+        confirms that every predicate referenced in a system's YAML rules
+        exists as a function. A new test runs it for WRB / SiBCS / USDA (31 /
+        111 / 153 predicates, 0 missing), so a typo'd predicate name in a rule
+        -- which the engine would otherwise degrade to a silent \code{NA} at
+        classification time -- now fails the test suite.
+  \item \code{shiny::testServer} coverage for the eight Pro-app modules that
+        were previously parse-tested only (pedon, classify, photo, spectra,
+        spatial, uncertainty, report, settings).
+  \item Investigated but deliberately left as-is (honest non-changes): the
+        \pkg{febr} loader stays out of \code{Suggests} because \pkg{febr} is
+        GitHub-only (not on CRAN) -- the \code{getExportedValue()} +
+        \code{requireNamespace()} pattern is correct, and a Suggests entry
+        would fail \code{R CMD check}; and the rule engine already returns a
+        graceful \code{NA} (not an error) for a missing predicate.
+}
+
+No engine, diagnostics, rules or key changes; the 44 canonical fixtures are
+byte-identical.
+
+# soilKey 0.9.117 (2026-06-13)
+
+The "**retire the legacy app + bilingual report**" release (app-maturity front
+D, part 4 of 4 -- front D complete).
+
+## Legacy single-page app retired
+
+\itemize{
+  \item The original \code{"classic"} single-page uploader (frozen since
+        v0.9.39, no test coverage, superseded by the eleven-tab Pro app) is
+        removed. \code{run_classify_app(ui = "classic")} still works for
+        back-compatibility: it emits a deprecation warning and launches the Pro
+        app instead. One interface to maintain, less CRAN surface.
+}
+
+## Bilingual reports
+
+\itemize{
+  \item \code{report()}, \code{report_html()} and \code{report_pdf()} gain a
+        \code{lang} argument (\code{"en"} default, \code{"pt"} for Brazilian
+        Portuguese). The fixed report labels (section titles, table headers,
+        the footer) now come from a small \code{.report_msg()} catalogue; the
+        classification content, taxonomic nomenclature and horizon column
+        headers are data and stay untranslated.
+  \item The English catalogue holds the pre-i18n labels \strong{verbatim} and
+        \code{"en"} is the default, so a default-language report is
+        \strong{byte-identical} to before (verified against a v0.9.116
+        reference). The Pro app's Report tab renders in the app's current
+        language automatically.
+}
+
+With this, app-maturity front D is complete: bilingual UI (v0.9.114),
+accessibility + responsive layout (v0.9.115), horizon-geometry validation
+(v0.9.116), and now the legacy retirement + bilingual reports. The engine,
+diagnostics, rules and classification keys were untouched throughout.
+
+# soilKey 0.9.116 (2026-06-13)
+
+The "**horizon-geometry validation**" release (app-maturity front D, part 3 of
+4). The Pedon builder now catches malformed depth geometry before a profile is
+classified.
+
+## New: \code{validate_horizon_geometry()}
+
+\itemize{
+  \item A pure, exported helper that checks a horizon table's depth geometry
+        and returns \code{list(valid, errors, warnings, details)}. Errors (a
+        sane classification is impossible): missing / non-numeric depths,
+        negative depths, \code{top_cm >= bottom_cm} (inverted or zero
+        thickness), overlapping horizons. Warnings (allowed, but flagged): the
+        shallowest horizon not starting at the surface, gaps between horizons,
+        out-of-order entry, duplicate designations.
+  \item It works on a plain data frame, so it complements
+        \code{PedonRecord$validate()} (which additionally checks chemistry) and
+        can validate an untrusted CSV before a record is built.
+}
+
+## Pro app integration
+
+\itemize{
+  \item The Pedon builder shows \strong{live}, localised geometry feedback
+        under the horizon table as cells are edited, and \strong{blocks}
+        \emph{Build} on errors (warnings are surfaced but allowed). Messages
+        are composed from the structured \code{details} so they appear in the
+        chosen language (English / Portuguese); the feedback colours meet
+        WCAG AA contrast.
+}
+
+Engine, diagnostics, rules and the classification keys are untouched;
+\code{PedonRecord$validate()} is unchanged.
+
+# soilKey 0.9.115 (2026-06-13)
+
+The "**accessible + responsive Pro app**" release (app-maturity front D, part 2
+of 4). Markup/CSS only -- no logic, no dependency, no behaviour change.
+
+## Accessibility
+
+\itemize{
+  \item The document \code{lang} now follows the chosen interface language
+        (\code{en}/\code{pt}) via \code{page_navbar(lang=)}, so screen readers
+        use the right pronunciation rules.
+  \item The navbar language selector gains \code{role="group"} and a
+        translated \code{aria-label}; transient \code{showNotification()}
+        toasts are announced through an \code{aria-live="polite"} /
+        \code{role="status"} region.
+  \item Ribbon text colours darkened to clear WCAG AA 4.5:1 contrast
+        (\code{.sk-empty}, \code{.sk-built}); the busy spinner and button
+        transitions honour \code{prefers-reduced-motion}.
+}
+
+## Responsive layout
+
+\itemize{
+  \item New \code{@media} breakpoints (768px / 480px) in \code{soilkey.css}:
+        sidebars and result cards stack, tall maps/plots cap to the viewport
+        height, the pedon ribbon reflows to a single column, and padding
+        tightens -- the app is usable down to a ~375px phone. No HTML
+        restructuring; the deterministic engine and all keys are untouched.
+}
+
+# soilKey 0.9.114 (2026-06-12)
+
+The "**bilingual Pro app**" release (app-maturity front D, part 1 of 4). The
+professional Shiny app (`run_classify_app()`) gains a full Brazilian-Portuguese
+interface alongside English -- a long-standing gap given the SiBCS / Brazilian
+audience -- with **zero new dependencies** and **no change to default
+behaviour**.
+
+## Internationalisation (i18n)
+
+\itemize{
+  \item A dependency-free translation layer: a catalogue of \strong{352} UI
+        strings in \code{inst/i18n/translations.yaml} (an \code{en} and a
+        \code{pt} section keyed by the same semantic keys) and a small
+        \code{i18n()} helper in the app
+        (\code{inst/shiny/classify_app_pro/R/i18n.R}). Every user-facing string
+        across the 12 app modules now flows through \code{i18n()}.
+  \item A \strong{EN / PT selector} in the navbar flips the language live (it
+        sets the \code{soilKey.app_lang} option and reloads, so the
+        per-session UI rebuilds in the chosen language).
+        \code{run_classify_app(lang = "pt")} launches straight into Portuguese.
+  \item The English catalogue holds the pre-i18n strings \strong{verbatim} and
+        English is the default, so the app renders \strong{byte-identically} to
+        before -- the existing \code{testServer} / UI-builder tests pass
+        unchanged. Taxonomic nomenclature (WRB / SiBCS / USDA names, RSG /
+        order / great-group / subgroup names) and data column headers are left
+        untranslated by design.
+  \item Engine, diagnostics, rules and the classification keys are
+        \strong{untouched}; this is an app + packaged-data change only.
+}
+
+This is the first of four focused app-maturity PRs (front D). Still to come:
+accessibility + responsive layout, horizon-geometry validation in the Pedon
+builder, and retiring the legacy single-page app + a bilingual \code{report()}.
+
+# soilKey 0.9.113 (2026-06-12)
+
+The "**USDA subgroup completeness, honestly measured**" release (taxonomic
+completeness front C). Adds 829 missing Soil Taxonomy 13th-edition subgroups to
+the deterministic key, raising measured subgroup coverage from 40.2 % to
+70.8 %, and ships \code{coverage_report()} -- an auditable, by-name diff of
+registered-vs-canonical taxa that replaces hand-maintained coverage claims. The
+engine, the 44 canonical fixtures' great groups, and the WRB / SiBCS keys are
+untouched; the only outputs that change are four canonical fixtures that gain a
+\strong{more specific} subgroup of the \strong{same} great group.
+
+## Honest measurement: \code{coverage_report()}
+
+\itemize{
+  \item New exported \code{coverage_report(system)} for
+        \code{"usda_subgroup"} and \code{"wrb_qualifiers"}. It compares by
+        \strong{name} (never by code) against the canonical sets from
+        \code{kst13_codes()} and \code{wrb2022_canonical()}, returning per-order
+        / per-qualifier-group coverage plus the exact list of missing taxa, and
+        optionally writes a Markdown report. By-name is load-bearing:
+        soilKey's internal great-group codes \strong{diverge} from the Soil
+        Taxonomy codes for 34 great groups (e.g. Hydrudands and Melanudands are
+        swapped; the Entisol Fluvent / Psamment blocks are swapped), so a
+        code-set diff would be meaningless.
+  \item Reports written to \code{inst/benchmarks/reports/coverage_*_v09113.md}.
+}
+
+## USDA subgroup completeness (+829 subgroups, 40.2 % -> 70.8 %)
+
+\itemize{
+  \item A verified modifier-to-predicate map (49 unambiguous global modifiers +
+        15 order-dependent ones, every predicate confirmed to exist) drives a
+        generator that inserts each missing canonical subgroup whose modifiers
+        all resolve. Multi-word intergrade names (Aqualfic, Fragiaquic, ...) and
+        modifiers with no sound predicate are \strong{deliberately skipped}, not
+        guessed.
+  \item Insertion is \strong{append-before-default}: new specifics go after all
+        existing specifics and immediately before the \code{Typic} default.
+        Because \code{run_taxa_list} is first-match with a last-entry fallback,
+        this \strong{cannot} change any profile that already matched a specific
+        subgroup -- only profiles that were falling through to \code{Typic} can
+        gain a refinement. Existing hand-tuned entries are preserved
+        byte-for-byte; the great group is invariant.
+  \item Gelisols, Histosols and Spodosols were already complete and stay at
+        100 %; Andisols reach 83.9 %, Aridisols (many modifiers still without a
+        sound predicate) remain lowest at 45.6 %.
+}
+
+## KSSL subgroup safety gate (n = 2895)
+
+\itemize{
+  \item Every candidate addition was validated on 2895 real KSSL+NASIS pedons
+        carrying a reference subgroup, classified before and after, per profile.
+        The strict rule: any predicate that turns a \strong{previously-correct
+        Typic} into a \strong{wrong} specific subgroup is excluded.
+  \item Four loose intergrade proxies -- \code{alfic}, \code{fluventic},
+        \code{psammentic}, \code{vertic} -- each caused such flips (4 / 2 / 2 /
+        1) and fired heavily without ever matching the reference; all four are
+        \strong{excluded} from Phase-1 (existing entries that use them are
+        retained -- only new additions are skipped). \code{thaptic},
+        \code{rhodic}, \code{petronodic} and \code{umbric} passed with zero
+        regressions and are kept.
+}
+
+## Four canonical fixtures gain a more specific subgroup
+
+\itemize{
+  \item \code{make_andosol_canonical}: Typic -> \strong{Thaptic} Hydrudands
+        (buried dark, organic-rich horizon at depth).
+  \item \code{make_argissolo_canonical}: Typic -> \strong{Rhodic} Kandiudults
+        (red Munsell hue in the subsoil -- the Argissolo Vermelho).
+  \item \code{make_calcisol_canonical}: Typic -> \strong{Petronodic}
+        Haplocalcids (carbonate nodules).
+  \item \code{make_planossolo_canonical}: Typic -> \strong{Umbric} Albaqualfs
+        (dark, low-base-saturation epipedon).
+  \item Each fires on genuine multi-condition evidence and is the same great
+        group as before; all 40 other USDA fixtures are byte-identical.
+}
+
+## Four new WRB 2022 qualifiers (byte-identical)
+
+\itemize{
+  \item \code{qual_aeolic}, \code{qual_fragic}, \code{qual_limonic} and
+        \code{qual_tsitelic} wrap diagnostics that already existed and are wired
+        per RSG in \code{inst/rules/wrb2022/qualifiers.yaml} (qualifier coverage
+        225 -> 229 of 234). \strong{Verified: zero change} across the 44
+        canonical WRB fixtures.
+}
+
+## Deferred to Phase-2
+
+\itemize{
+  \item Moisture-regime subgroup modifiers (xeric / ustic / udic), the
+        over-firing \code{aeric} / \code{humic} and the four excluded
+        intergrades (pending sounder predicates), and the
+        Claric / Panpaic / Sideralic qualifiers (which move fixtures and need
+        pedological review).
+}
+
+# soilKey 0.9.112 (2026-06-11)
+
+The "**an argic horizon is never a Regosol**" release (accuracy front B2,
+engine). The honest B1 benchmark exposed a correctness bug in the WRB key:
+a profile with a CONFIRMED argic (clay-illuvial B) horizon could drop to the
+Regosol catch-all -- the gate for soils with NO diagnostic subsurface horizon
+-- purely because the eutric/alic split (base saturation / Al-saturation) was
+unmeasured, leaving the Luvisol gate at \code{NA}.
+
+## The fix (surgical, in the key)
+
+\itemize{
+  \item \code{luvisol()} (R/diagnostics-rsg-argic-derived.R) gains a graceful
+        Al-saturation default, mirroring the Acrisol BS-fallback: when
+        \code{argic()} passes, the clay is high-activity (CEC/clay >= 24), and
+        Al-saturation is \strong{unmeasured} on a \strong{B master horizon},
+        the profile defaults to \strong{Luvisol} (the generic high-activity
+        argic RSG; Alisol is the high-Al special case that requires positive
+        Al-sat >= 50 evidence). It fires only on \code{is.na()}, so a measured
+        Luvisol (Al-sat < 50) or Alisol (Al-sat >= 50) is never overridden, and
+        a B-horizon guard keeps it off a Fluvisol's stratified C-layer clay
+        jump (a sedimentary, not pedogenic, increase). \code{al_sat_pct} stays
+        in the result's \code{missing_data}, and Alisol surfaces as an
+        ambiguity, so the assumption is transparent.
+}
+
+## Impact
+
+\itemize{
+  \item Measured on the FEBR WRB benchmark: \strong{+9 Luvisols recovered
+        (Regosol -> Luvisol), 0 regressions} (17.8\% -> 21.9\% order accuracy).
+        All \strong{44 canonical fixtures classify byte-identically} (the
+        fallback only fires on missing data, which the fixtures never have).
+  \item Scope note from the B1 measurement: the dominant FEBR-WRB ceiling is
+        \emph{missing data} (most argic-RSG reference pedons carry no measured
+        clay at all), which no key change can address -- so this is a targeted
+        correctness fix, not the broad "discriminator" the earlier audit
+        imagined.
+}
+
+
+# soilKey 0.9.110 (2026-06-11)
+
+The "**benchmark methodology**" release (front B1 of the accuracy work). A
+readiness audit found the benchmark numbers were not yet defensible: a sampling
+bug starved sparsely-labelled systems, the reports gave only point accuracy, and
+there was no baseline to read accuracy against. This release makes the
+measurement honest and paper-ready. \strong{The classification engine is
+unchanged} -- every edit is in the benchmark harness; canonical fixtures are
+byte-identical. (The accuracy-raising engine work -- the argic/ferralic/nitic
+discriminator -- is a separate follow-up, "B2".)
+
+## Sampling fix (filter-then-cap)
+
+\itemize{
+  \item The per-(dataset, system) dispatch now \strong{filters each dataset to
+        the pedons carrying the requested system's reference label BEFORE}
+        applying the \code{max_n} cap. Previously the cap was taken first, so a
+        sparsely-labelled system was sampled from the wrong pool -- e.g.
+        FEBR-USDA collapsed to n=3 though hundreds of profiles carry a USDA
+        label. FEBR now also loads with \code{require_classification = "any"} so
+        its WRB and USDA labels are not masked by the SiBCS-only default.
+        Applied to the FEBR and BDsolos branches; reuses the seed-42,
+        RNG-state-preserving \code{.benchmark_reproducible_sample}.
+}
+
+## Imbalance-aware metrics + bootstrap CIs
+
+\itemize{
+  \item A pooled confusion matrix now yields \strong{balanced accuracy,
+        macro-F1, Cohen's kappa, per-class precision/recall/F1}, and a
+        \strong{no-information-rate (NIR) majority-class baseline} -- the figure
+        an accuracy must beat to be meaningful. Point accuracy carries a
+        \strong{reproducible bootstrap 95\% CI} (seed 42). These attach to
+        \code{benchmark_unified()}'s pooled output and to every report row
+        (existing fields are unchanged).
+}
+
+## Honest reporting
+
+\itemize{
+  \item The consolidated report (\code{run_all_benchmarks()}) gains the new
+        metric columns and flags rows with \strong{n < 30} as indicative-only.
+  \item The \strong{LUCAS WRB} row is labelled a topsoil-only \strong{lower
+        bound} (LUCAS ships 0--20 cm chemistry); the honest WRB-at-scale number
+        is the morphologically-complete offline \strong{FEBR} row, now
+        un-starved by the sampling fix and -- critically -- with its raw WRB
+        reference labels (\code{"HAPLIC ACRISOL (...)"}) reduced to the RSG
+        comparison level via \code{normalise_febr_wrb()} (likewise
+        \code{normalise_febr_usda()} for USDA); without this they never matched
+        the predicted RSG and scored a spurious 0\%. The opt-in network
+        subsoil-fill path (\code{benchmark_lucas_2018(fill_subsoil_from =
+        "soilgrids")}) is documented in a report footnote rather than run.
+}
+
+
+# soilKey 0.9.109 (2026-06-11)
+
+The "**CRAN release hardening**" release. A readiness audit found that a full
+\code{R CMD check} was clean only because CI did not pass \code{--as-cran}; under
+\code{--as-cran}, 545 exported function topics were missing a \code{\\value}
+section -- a near-certain CRAN rejection. This release fixes that and tightens
+release hygiene. \strong{No user-visible behaviour changed} (the engine is
+documentation-only here; the deterministic key dispatches its predicates by name
+exactly as before).
+
+## Public API right-sized
+
+\itemize{
+  \item ~600 atomic taxonomic-engine predicates -- WRB qualifiers
+        (\code{qual_*}), USDA subgroup / great-group gates (\code{*_usda}),
+        SiBCS attribute / horizon gates (\code{carater_*}, \code{horizonte_*}),
+        and the per-Order dispatchers -- are now marked \code{@keywords
+        internal}. They \strong{remain exported and callable}
+        (\code{soilKey::qual_ferralic()} and \code{?qual_ferralic} still work)
+        but leave the public reference index, trimming the documented public
+        API from ~910 to ~195 topics. They are collected under an
+        "Internal -- motor taxonomico" section on the pkgdown site.
+  \item The remaining ~85 genuinely public topics that lacked one (WRB Ch 3
+        diagnostics, RSG gates, the SiBCS canonical fixtures, the reference
+        accessors) gained a \code{\\value} section. The package now passes
+        \code{R CMD check --as-cran} with \strong{0 errors / 0 warnings}.
+}
+
+## Documentation & release hygiene
+
+\itemize{
+  \item Runnable \code{\\examples} (offline, on canonical fixtures) added to
+        the main entry points -- \code{classify_wrb2022/sibcs/usda},
+        \code{classify_all}, \code{report}, \code{PedonRecord},
+        \code{compute_ki/compute_kr}; \code{classify_with_uncertainty} moved to
+        \code{\\donttest}. Network / VLM examples stay \code{\\dontrun}.
+  \item CI now runs \code{R CMD check --as-cran} explicitly and gates the
+        pkgdown reference with \code{pkgdown::check_pkgdown()}; dead
+        \code{SOILKEY_SKIP_*} workflow env vars removed.
+  \item \code{LazyDataCompression: xz} declared; \code{cran-comments.md} and
+        \code{CITATION.cff} refreshed to 0.9.109; lifecycle promoted to
+        \emph{maturing}.
+}
+
+
+# soilKey 0.9.108 (2026-06-11)
+
+The "**Pro app polish**" release -- the third and final follow-up front
+(benchmarks -> accuracy -> app). The professional Shiny app
+(\code{run_classify_app(ui = "pro")}) gets a soil-science visual identity,
+an onboarding on-ramp, richer feedback, and a report that finally reflects
+the two deepest-level options. The classification engine is unchanged; the
+only package-level change is an **additive, backward-compatible** extension
+of \code{report()}.
+
+## App: look & feel
+
+\itemize{
+  \item A **soil palette** (topsoil brown \code{#6B4423}, subsoil terracotta
+        \code{#A0522D}, vegetation moss \code{#4F772D}) layered on \code{flatly}
+        via \code{bslib::bs_theme()}, plus a slim \code{www/soilkey.css}
+        (warmer cards, navbar wordmark, rounder badges, button micro-feedback,
+        and a soft CSS-only busy spinner over any recalculating output).
+}
+
+## App: intuitive + examples
+
+\itemize{
+  \item A global **pedon ribbon** under the navbar shows the active profile
+        (id, horizon count, coordinates, build status) on every tab, so
+        context never gets lost when switching tabs.
+  \item A **"Getting started" Help modal** explains the workflow and offers a
+        one-click **"Load example & classify"** -- it builds the canonical
+        Ferralsol through the real Pedon flow (so every tab is immediately
+        usable) and jumps to Classify.
+  \item The **Spectra** tab now plots the attached Vis-NIR spectrum (one
+        reflectance trace per horizon); the **Photo** tab previews the
+        uploaded image with the VLM extraction confidence as an evidence
+        badge.
+  \item **Input validation**: latitude/longitude are range-checked before a
+        pedon is built (the map and grid tabs already validated coordinates
+        and bounding boxes).
+  \item The **Pedon** tab gains a "Download horizons CSV" button; the
+        \strong{USDA family} and \strong{WRB depth-specifier} toggles are
+        surfaced directly in the Classify sidebar (two-way-synced with the
+        Settings tab through shared app state).
+}
+
+## Report reflects the settings
+
+\itemize{
+  \item \code{report()} (and \code{report_html()} / \code{report_pdf()}) gain
+        \code{include_family} and \code{specifiers} arguments, forwarded to
+        \code{classify_usda()} / \code{classify_wrb2022()} when a
+        \code{PedonRecord} is passed. Both default to \code{FALSE}, so the
+        output is **byte-identical** to earlier versions unless opted in
+        (covered by a regression test). The Pro-app Report tab passes the
+        live Settings values and previews a checklist of the active
+        depth-level options.
+}
+
+No new dependencies (the theme uses \code{bs_theme}, the spinner is pure CSS).
+
+
+# soilKey 0.9.107 (2026-06-11)
+
+The "**SiBCS accuracy**" release. Guided by the v0.9.106 benchmark, a
+multi-agent root-cause pass found that five SiBCS orders scored zero
+recall on the Redape gold standard because the loader/gate dropped
+morphological signal that the source data actually carries. Recovering
+four of them lifts Redape order accuracy from \strong{43/94 (45.7\%) to
+56/94 (59.6\%)} -- \strong{+13 profiles} -- with the 44 canonical
+fixtures unchanged.
+
+## Recovered orders
+
+\itemize{
+  \item \strong{Gleissolos} (0 -> 8/8): the Redape loader now promotes the
+        \code{g} (gleyic) master-letter suffix (Cg, Cgnz) to the
+        redoximorphic signal -- the \code{REDOXICO} flag it relied on is a
+        stricter, different concept and is false on reduced glei matrices.
+  \item \strong{Plintossolos} (0 -> 3/3): the loader honours the \code{f}
+        (plintita) suffix (Btf), mirroring the existing petro/lito-plinthite
+        promotion.
+  \item \strong{Vertissolos} (0 -> 2/2): the loader promotes the \code{v}
+        (vertic) suffix (Bv, Cvz, Btv) to slickensides + cracks; a new
+        \strong{B-planico exclusion} in \code{vertissolo()} keeps a
+        \emph{Planossolo vertissolico} (abrupt textural change) from
+        flipping to Vertissolo.
+  \item \strong{Chernossolos} (0 -> 1/2): \code{horizonte_A_chernozemico()}
+        now aggregates the \emph{contiguous run of A horizons} from the
+        surface (A1/A2/...) instead of only the topmost slice, so the
+        thickness test sees the whole chernic A.
+}
+
+All loader fixes are scoped to the Redape ingestion path and never flip a
+global default, so the \code{*_designation_inference} guard tests and the
+canonical-fixture names stay byte-identical. (Nitossolos requires a
+GeoTab structure/cerosidade code legend that is not documented in the
+source; deferred.)
+
+# soilKey 0.9.106 (2026-06-11)
+
+The "**Reproducible benchmark suite**" release. Adds the pedologist-curated
+Redape dataset to the unified benchmark and a single, tolerant entry point
+that runs every available benchmark and writes a consolidated report. The
+classification engine is untouched -- this only measures it.
+
+## New: run_all_benchmarks()
+
+\code{run_all_benchmarks()} replaces the "source 22 \file{run_*.R} scripts
+by hand" workflow with one reproducible call.
+
+\itemize{
+  \item \strong{Auto-detects} which reference datasets are present locally
+        (BDsolos / FEBR / KSSL+NASIS / LUCAS+ESDB / Redape) and runs each via
+        \code{\link{benchmark_unified}}; absent datasets are skipped with a
+        note, never an error.
+  \item Always runs the offline \strong{canonical-fixture sanity row}
+        (coverage check) and adds the AfSP offline sample when present.
+  \item Returns a tidy \code{summary} (dataset x system x n x accuracy) and,
+        with \code{report_path=}, writes a consolidated Markdown report
+        listing accuracy by dataset/system and the zero-recall classes that
+        are the next improvement targets.
+}
+
+## New: Redape in benchmark_unified()
+
+\code{benchmark_unified(datasets = "redape")} now pools the Redape dataset
+(Vaz et al. 2023; ~96 pedologist-reviewed SiBCS profiles) -- the SiBCS
+gold standard -- alongside BDsolos / FEBR / KSSL / LUCAS. It reuses
+\code{\link{benchmark_redape}} and reports at the order level.
+
+## Fixes
+
+\itemize{
+  \item \code{benchmark_unified()} now loads the FEBR superconjunto with the
+        correct \code{load_febr_pedons()} (it was calling the BDsolos loader,
+        which errored on the FEBR format, so FEBR was silently dropped).
+  \item FEBR pedons are now drawn as a \strong{reproducible random sample}
+        (seed 42, RNG-state-preserving) before the \code{max_n} cap -- the
+        source file is ordered by class, so head-N sampling was badly biased
+        (it reported 0\% on an all-Planossolos slice).
+}
+
+## User-facing changes
+
+\itemize{
+  \item New export: \code{run_all_benchmarks}. Override the data root with
+        \code{options(soilKey.benchmark_root = "...")}.
+  \item A versioned suite report ships under
+        \file{inst/benchmarks/reports/}.
+}
+
+# soilKey 0.9.105 (2026-06-10)
+
+The "**WRB depth specifiers**" release. Completes the WRB 2022 Chapter 5
+name: depth specifiers (Epi-/Endo-/Bathy-/Amphi-/Panto-/Kato-) are now
+auto-attached to depth-anchored qualifiers from the diagnostic feature's
+actual depth.
+
+## New: classify_wrb2022(specifiers = TRUE)
+
+The specifier engine (\code{.detect_specifier}/\code{.apply_specifier})
+has existed since v0.9.2.B but only fired on already-prefixed names. This
+release computes the specifier from the feature's layers and attaches it.
+
+\itemize{
+  \item \code{classify_wrb2022(pedon, specifiers = TRUE)} prefixes the
+        right specifier: a gleyic feature confined to 50--100 cm yields
+        \code{Endogleyic} instead of \code{Gleyic}; 0--50 cm
+        \code{Epi-}; below 100 cm \code{Bathy-}; throughout
+        \code{Panto-}; a split feature \code{Amphi-}; the lower part
+        \code{Kato-}. A feature spanning 0--100 cm contiguously keeps the
+        bare name.
+  \item Applied to the depth-anchored (subsurface) qualifiers only.
+        Epipedon / surface-by-definition qualifiers (Mollic, Umbric,
+        Chernic, Histic, Takyric, ...) and the thermal Cryic are
+        excluded -- their depth is definitional, so a specifier would be
+        invalid.
+  \item Default \code{specifiers = FALSE} keeps the canonical names
+        \strong{byte-identical} (verified across all canonical fixtures).
+  \item \code{resolve_wrb_qualifiers()} gains the \code{specifiers}
+        argument; the specifier is applied AFTER sibling suppression, so
+        it never interferes with qualifier ordering or suppression.
+}
+
+## User-facing changes
+
+\itemize{
+  \item \code{classify_all()} gains \code{specifiers = FALSE}, forwarded
+        to \code{classify_wrb2022()}.
+  \item The Pro Shiny app's Settings tab gains a "WRB depth specifiers"
+        switch; the Classify tab then shows the prefixed WRB name.
+  \item No new exports; the computation lives in internal helpers.
+}
+
+# soilKey 0.9.104 (2026-06-10)
+
+The "**USDA family (5th level)**" release. Deepens USDA Soil Taxonomy
+classification from the Subgroup (4th category) to the \strong{family}
+(5th), so all three systems now reach their deepest formal level (WRB:
+full qualifier name; SiBCS: Familia; USDA: family).
+
+## New: USDA family modifiers
+
+The USDA family is a multi-label set of class modifiers PREPENDED to the
+subgroup name, e.g. \emph{"fine, kaolinitic, isohyperthermic Rhodic
+Hapludox"}. Like the SiBCS \code{familia}, it is computed (not keyed):
+each dimension is orthogonal and derived from quantitative attributes.
+
+\itemize{
+  \item \code{classify_usda(pedon, include_family = TRUE)} derives and
+        prepends the family; the default (\code{FALSE}) is byte-identical
+        to earlier versions.
+  \item Six dimension functions (each returning a \code{FamilyAttribute}
+        with evidence + missing fields): \code{family_particle_size_usda},
+        \code{family_mineralogy_usda} (reusing \code{compute_ki} /
+        \code{compute_kr}), \code{family_cec_activity_usda},
+        \code{family_reaction_usda}, \code{family_temperature_regime_usda},
+        \code{family_depth_class_usda}.
+  \item \code{classify_usda_family()} runs the applicable dimensions and
+        \code{family_label_usda()} assembles the canonical-order label.
+  \item Thresholds follow \emph{Keys to Soil Taxonomy} 13th ed., Ch.
+        16--17. Where the schema lacks fine-sand granulometry, a documented
+        approximation by \code{sand_pct} is recorded in \code{$evidence}.
+}
+
+## Soil temperature regime
+
+\code{family_temperature_regime_usda()} uses
+\code{pedon$site$soil_temperature_regime} when supplied. Otherwise (with
+\code{infer_temperature = TRUE}) it estimates the mean annual soil
+temperature from latitude and elevation and assigns
+frigid/mesic/thermic/hyperthermic with an \code{iso-} prefix in the
+low-seasonality tropics; inferred values set \code{evidence$inferred =
+TRUE} and record the missing site field, keeping provenance honest.
+
+## User-facing changes
+
+\itemize{
+  \item \code{classify_all()} gains \code{include_family = FALSE},
+        forwarded to \code{classify_usda()}.
+  \item The Pro Shiny app's Settings tab gains a "Resolve USDA 5th level
+        (family)" toggle; the Classify tab then shows the full USDA name.
+  \item New exports: \code{classify_usda_family}, \code{family_label_usda},
+        and the six \code{family_*_usda} dimension functions.
+  \item The 6th USDA category (\emph{series}) remains out of scope --- it
+        requires the external NRCS series database.
+}
+
+# soilKey 0.9.103 (2026-06-10)
+
+The "**Gridded prediction**" release. Phase 3 (final) of the mapping
+roadmap: produce a raster soil-class map over an area of interest. The
+Map tab gains a third sub-tab, \emph{Grid prediction}, offering three
+selectable methods -- all reduced to one common shape (a categorical
+\code{terra} raster rendered with \code{leaflet::addRasterImage()}).
+
+## New: "Grid prediction" sub-tab in the Map tab
+
+\itemize{
+  \item \strong{SoilGrids covariates + key} -- the differentiator. For
+        each cell of a regular grid, samples SoilGrids covariates
+        (clay / sand / silt / pH / SOC / CEC) at two depths via
+        \code{lookup_soilgrids()}, assembles a two-horizon pseudo-pedon
+        and runs the \emph{deterministic key}. Unlike the SoilGrids
+        MostProbable layer (which predicts the class by ML), this
+        applies the key to covariates. Needs network; morphological
+        diagnostics are unavailable from covariates, so the result
+        carries evidence grade C and leans to Cambisol / Regosol.
+  \item \strong{Interpolate points} -- nearest-neighbour (Voronoi) of
+        the \emph{Batch classify} points (or demo points) across the
+        grid. Offline; the genuine pedon-scale soil map.
+  \item \strong{SoilGrids overlay} -- samples the MostProbable WRB
+        raster on the grid and maps integers to RSG via
+        \code{soilgrids_wrb_lut()}. A lightweight ML reference to
+        compare against the key.
+}
+
+The area of interest is a bounding box (typed, or captured from the
+current map view) with a resolution slider (capped at 1600 cells to
+bound network + classification time). The result is summarised by class
+(cells + share) and exportable as a GeoTIFF via \code{terra::writeRaster()}.
+
+This completes the three-phase mapping roadmap (point prior, batch soil
+map, gridded prediction). No new package exports and no change to any
+classifier; the tab orchestrates existing spatial functions.
+
+# soilKey 0.9.102 (2026-06-10)
+
+The "**Batch soil map**" release. Phase 2 of the mapping roadmap: turn
+a set of described profiles into a classified point map. Where v0.9.101
+read a prior at one clicked point, this release classifies *many*
+profiles at once and plots each by its class -- the genuine
+pedon-scale soil map, every point backed by a deterministic
+classification.
+
+## New: "Batch classify" sub-tab in the Map tab
+
+The Map tab now hosts two sub-tabs. \emph{Point prior} is the v0.9.101
+single-point map; \emph{Batch classify} is new.
+
+\itemize{
+  \item Two point sources: \strong{Demo (fixtures)} spreads N canonical
+        fixtures across Brazil (so the tab is demonstrable with no
+        data), or \strong{Upload CSV} ingests a long-format table (one
+        row per horizon) with an id column, lat/lon and horizon
+        attributes.
+  \item Each profile becomes a \code{PedonRecord} and is classified
+        under all three systems with \code{classify_all()}. Points are
+        drawn on a \pkg{leaflet} map coloured by reference soil group /
+        order (selectable: WRB 2022 / SiBCS 5 / USDA ST 13), with a
+        legend and a per-point popup listing all three class names and
+        evidence grades.
+  \item A summary table lists every classified point, and
+        \strong{Export GeoPackage} writes the classified point set to a
+        \code{.gpkg} via \pkg{sf} (same idiom as \code{report_to_qgis()}).
+}
+
+The CSV parser groups rows by profile id and reuses
+\code{PedonRecord$new()} (which normalises each horizon table via the
+canonical schema); the taxonomic key is, as everywhere, deterministic
+R code. \strong{Phase 3} (gridded prediction) remains exploratory and
+is tracked in \file{ARCHITECTURE.md}.
+
+# soilKey 0.9.101 (2026-06-10)
+
+The "**Interactive map**" release. Opens the mapping roadmap by giving
+the professional Shiny app its first cartographic surface: a
+\pkg{leaflet} map where the user clicks to place a point and queries the
+SoilGrids class prior at that location. No change to the taxonomic key
+-- this is spatial *reading*, not classification.
+
+## New: "Map" tab in the Pro Shiny app
+
+A ninth tab joins \code{run_classify_app(ui = "pro")}, sitting between
+\emph{Spatial} and \emph{Uncertainty}.
+
+\itemize{
+  \item An interactive \pkg{leaflet} map (OpenStreetMap / Esri imagery /
+        CartoDB / OpenTopoMap basemaps). Click anywhere to drop the
+        query point and draw its buffer.
+  \item "Query prior here" runs \code{soil_classes_at_location()} at the
+        active coordinate and renders the ranked class distribution
+        (WRB 2022 / USDA ST 13 / SiBCS 5) plus the canonical
+        typical-attribute table. The deterministic key is never invoked
+        from this tab.
+  \item The tab is useful \emph{with or without} a built pedon: when a
+        pedon exists, a map click rewrites \code{pedon$site$lat/lon} so
+        the \emph{Spatial} tab stays in sync; otherwise the clicked
+        coordinate is held locally.
+}
+
+This is \strong{Phase 1} of the three-phase mapping roadmap. Phase 2
+(batch multi-profile classification from an uploaded point set, plotted
+by class) and Phase 3 (gridded prediction) are tracked in
+\file{ARCHITECTURE.md} and are not part of this release.
+
+## User-facing changes
+
+\itemize{
+  \item New \code{Suggests} dependency: \pkg{leaflet}. The \code{"pro"}
+        app now lists it alongside \pkg{bslib} / \pkg{shinyWidgets} /
+        \pkg{plotly}; \code{run_classify_app(ui = "pro")} raises the
+        usual copy-pasteable install hint if it is absent.
+  \item No new package exports and no change to any classifier; the tab
+        reuses the existing \code{soil_classes_at_location()} engine.
+}
+
+# soilKey 0.9.100 (2026-05-19)
+
+The "**Provenance-weighted uncertainty**" release. Last of the four
+sequential roadmap releases. Turns the README "idea / roadmap" item
+\emph{Pedometric uncertainty quantification} into a shipped feature:
+a probabilistic class output from a Monte-Carlo perturbation of the
+provenance ledger.
+
+## New: classify_with_uncertainty()
+
+Where \code{classification_robustness()} (v0.9.42) answers "does the
+class hold?" with one percentage, \code{classify_with_uncertainty()}
+returns the full posterior distribution over classes -- and weights
+the Monte-Carlo noise by provenance.
+
+\itemize{
+  \item Each \code{(horizon, attribute)} cell is perturbed by an
+        amount scaled to its evidence grade: an A-grade measurement
+        wobbles by ~3\%, an E-grade assumption by ~30\%. A profile
+        resting on VLM-extracted or assumed values is therefore
+        correctly reported as more uncertain than one resting on
+        laboratory measurements.
+  \item Returns a \code{soilkey_uncertainty} object: the posterior
+        \code{P(class)} (named, summing to 1), the modal class, the
+        Shannon entropy, and a leave-one-attribute-out sensitivity
+        ranking that identifies which measurement would most sharpen
+        the result.
+  \item pH and Munsell columns receive additive perturbations;
+        everything else multiplicative. Geometry (\code{top_cm} /
+        \code{bottom_cm}) is never perturbed.
+}
+
+## New: get_perturbation_scale()
+
+Exposes the per-grade Monte-Carlo magnitudes (A through E) so the
+weighting is inspectable and overridable via the \code{scales}
+argument of \code{classify_with_uncertainty()}.
+
+## User-facing changes
+
+\itemize{
+  \item \code{classification_robustness()} gains a
+        \code{provenance_aware} argument. \code{FALSE} (default) is
+        byte-identical to v0.9.42; \code{TRUE} switches to the
+        grade-scaled perturbation.
+  \item The Shiny Pro app's Uncertainty tab now renders the posterior
+        distribution, entropy and attribute sensitivity.
+  \item New exports: \code{classify_with_uncertainty},
+        \code{get_perturbation_scale}.
+}
+
+# soilKey 0.9.99 (2026-05-19)
+
+The "**Field-photo-only classification**" release. Third of the four
+sequential roadmap releases. Turns the README "idea / roadmap" item
+\emph{Field-photo-only classification} into a shipped pipeline:
+photo + GPS -> schema-validated extraction -> multi-system
+classification, with no laboratory data required.
+
+## New: classify_from_photos()
+
+\code{classify_from_photos()} assembles a \code{PedonRecord} entirely
+from vision-language extraction of field photographs and classifies it
+under all three systems.
+
+\itemize{
+  \item Profile photographs are sent to a VLM for Munsell-colour
+        extraction per horizon (\code{extract_munsell_from_photo()});
+        an optional field-sheet image supplies site metadata.
+  \item Missing horizon attributes are back-filled from a SoilGrids
+        depth prior (see below).
+  \item WRB 2022 / SiBCS 5 / USDA ST 13 keys run on the assembled
+        pedon. The taxonomic key is never delegated to the model.
+  \item The result carries a low evidence grade by construction
+        (\code{D} VLM-extracted, \code{C} prior-inferred), so a
+        photo-only screening estimate is never mistaken for a
+        described-and-sampled profile.
+  \item \code{provider} is required -- a real classification is never
+        produced from canned data by accident.
+}
+
+## New: apply_soilgrids_depth_prior()
+
+The depth-resolved companion to \code{spatial_prior_soilgrids()}.
+For each horizon it interpolates the value at the mid-depth from the
+six standard SoilGrids 2.0 depth slices (0-5 ... 100-200 cm) and
+records the fill as an \code{inferred_prior} provenance entry. The
+live fetch uses the ISRIC SoilGrids REST API; offline callers (and
+the test suite) pass \code{depth_profiles} directly.
+
+## New: compute_per_attribute_evidence_grade()
+
+Resolves the evidence grade of every \code{(horizon, attribute)} cell
+(A measured, B spectra-predicted, C prior-inferred, D VLM-extracted,
+E user-assumed), picking the most authoritative source per cell. This
+underpins the photo-only pipeline and the v0.9.100 provenance-weighted
+uncertainty MC.
+
+## User-facing changes
+
+\itemize{
+  \item Evidence grade \strong{E} (user-assumed) is split out from
+        D. \code{compute_evidence_grade()} now returns E when a
+        \code{user_assumed} value is present; \code{ClassificationResult}
+        documents the five-grade scale.
+  \item New exports: \code{classify_from_photos},
+        \code{apply_soilgrids_depth_prior},
+        \code{compute_per_attribute_evidence_grade}.
+}
+
+# soilKey 0.9.98 (2026-05-19)
+
+The "**WRB Tier-3 strict mode**" release. Second of the four
+sequential roadmap releases. Turns the README "in progress" item
+\emph{WRB Tier-3 RSG-gate strict mode} into a shipped, opt-in feature.
+
+## New: per-RSG strict-mode gates
+
+Seven Tier-2 RSG gates gain a \code{strict} argument. With
+\code{strict = FALSE} (the default) every gate behaves exactly as in
+v0.9.97 -- full backward compatibility. With \code{strict = TRUE} a
+per-RSG numerical threshold is strengthened toward the canonical
+WRB 2022 Chapter 4 intent:
+
+\itemize{
+  \item \strong{Vertisols} -- overlying-clay floor raised 30\% ->
+        35\%.
+  \item \strong{Andosols} -- the v0.9.85 buried-exclusion tolerance
+        is switched off: any argic / ferralic / plinthic / spodic
+        horizon excludes, regardless of depth.
+  \item \strong{Gleysols} -- the path-1 gleyic+reducing layer must
+        start within 25 cm (was 40 cm); the designation-only path-3
+        fallback is disabled.
+  \item \strong{Planosols} -- the \code{planic_features} fallback
+        path is disabled; the canonical abrupt-textural-difference +
+        stagnic + reducing evidence is required.
+  \item \strong{Ferralsols} -- when an argic horizon sits above the
+        ferralic, the argic exception now needs \emph{two} of the
+        three paths (WDC \\< 10\%, DeltapH \\>= 0, SOC \\>= 1.4\%),
+        not just one.
+  \item \strong{Chernozems} -- base-saturation floor raised 50\% ->
+        80\%.
+  \item \strong{Kastanozems} -- base-saturation floor raised 50\% ->
+        75\%.
+}
+
+All 31 canonical WRB fixtures classify identically under both modes;
+strict mode only changes genuinely borderline profiles.
+
+## User-facing changes
+
+\itemize{
+  \item \code{classify_wrb2022()} gains a \code{strict} argument.
+        When non-\code{NULL} it forces the \code{soilKey.rsg_strict}
+        option for the duration of the call (restored on exit), so
+        the YAML-dispatched RSG gates pick it up.
+  \item New package option \code{soilKey.rsg_strict} (default
+        \code{FALSE}). The Shiny Pro app's Settings tab toggles it.
+  \item Each RSG gate now records \code{strict_mode} (and the
+        effective threshold) in its \code{DiagnosticResult}
+        evidence, so the key trace is self-documenting.
+}
+
+# soilKey 0.9.97 (2026-05-19)
+
+The "**Shiny Pro app**" release. First of four sequential feature
+releases (v0.9.97 -> v0.9.100) that turn the README roadmap items into
+shipped functionality. This release delivers a professional,
+multi-tab graphical front-end to the full soilKey pipeline.
+
+## New: professional Shiny app
+
+A complete rewrite of the interactive app, shipped alongside (not
+replacing) the original. Launch it with \code{run_classify_app()}.
+
+\itemize{
+  \item \strong{Eight-tab layout} built on \pkg{bslib} (Bootstrap 5):
+        \emph{Pedon}, \emph{Classify}, \emph{Photo}, \emph{Spectra},
+        \emph{Spatial}, \emph{Uncertainty}, \emph{Report} and
+        \emph{Settings}.
+  \item \strong{Pedon builder} -- seed a profile from any of the 44
+        canonical fixtures, a CSV upload, or a blank template, then
+        edit any horizon cell in place (\pkg{DT} editable table). A
+        \pkg{plotly} depth-profile plot updates live.
+  \item \strong{Classify} -- runs WRB 2022 / SiBCS 5 / USDA ST 13
+        side-by-side with the full deterministic key trace, the
+        close-call ambiguities, and the measurements that would
+        refine the result.
+  \item \strong{Photo} -- drives the VLM extraction pipeline
+        (\code{extract_munsell_from_photo()},
+        \code{extract_site_from_fieldsheet()}). Defaults to the
+        offline \code{MockVLMProvider}; a live \pkg{ellmer} chat can
+        be supplied via \code{options(soilKey.vlm_chat=)}.
+  \item \strong{Spectra} -- attach a Vis-NIR matrix and gap-fill
+        horizon attributes against OSSL (\code{fill_from_spectra()}).
+  \item \strong{Spatial} -- query the SoilGrids spatial prior
+        (\code{spatial_prior_soilgrids()}) and visualise the RSG
+        probability distribution.
+  \item \strong{Uncertainty} -- Monte-Carlo robustness analysis
+        (\code{classification_robustness()}); v0.9.100 will upgrade
+        this tab to the provenance-weighted posterior.
+  \item \strong{Report} -- download a self-contained cross-system
+        HTML or PDF report, with automatic HTML fallback when LaTeX
+        is unavailable.
+  \item \strong{Settings} -- switch the diagnostic engine
+        (soilKey / aqp), toggle WRB Tier-3 strict mode, and set the
+        missing-data policy; the choices propagate to every tab.
+}
+
+## User-facing changes
+
+\itemize{
+  \item \code{run_classify_app()} gains a \code{ui} argument. The
+        default \code{ui = "pro"} launches the new app;
+        \code{ui = "classic"} launches the original single-page
+        uploader (v0.9.39 layout), which is unchanged.
+  \item New \code{Suggests}: \pkg{bslib}, \pkg{shinyWidgets},
+        \pkg{plotly}, \pkg{htmltools}. The \code{classic} app still
+        needs only \pkg{shiny} and \pkg{DT}. \code{run_classify_app()}
+        raises a clear, copy-pasteable error if a package is missing.
+}
 
 # soilKey 0.9.96 (2026-05-09)
 
@@ -4795,7 +6815,7 @@ mapping layer:
 - **`classify_via_smartsolos_api(pedon, api_key, endpoint,
   drenagem, reference_sibcs, base_url, timeout_seconds, post_fn,
   verbose)`** -- POSTs a soilKey \code{PedonRecord} to
-  \code{https://api.cnptia.embrapa.br/smartsolos/expert/v1/classification}
+  \code{`https://api.cnptia.embrapa.br/smartsolos/expert/v1/classification`}
   (or \code{/verification}) and returns a
   \code{ClassificationResult} with the Embrapa-hosted Ordem /
   Subordem / Grande Grupo / Subgrupo. Bearer token comes from

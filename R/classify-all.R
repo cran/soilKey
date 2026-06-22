@@ -46,6 +46,16 @@
 #'        \code{"error"}. Forwarded verbatim to each classifier.
 #' @param include_familia Forwarded to \code{\link{classify_sibcs}} (default
 #'        \code{TRUE}). Has no effect on the other systems.
+#' @param include_family Forwarded to \code{\link{classify_usda}} (default
+#'        \code{FALSE}) to derive the USDA 5th-level family. No effect on the
+#'        other systems.
+#' @param specifiers Forwarded to \code{\link{classify_wrb2022}} (default
+#'        \code{FALSE}) to auto-attach WRB depth specifiers. No effect on the
+#'        other systems.
+#' @param gapfill Forwarded to all three classifiers (default \code{FALSE} =>
+#'        byte-identical). Opt-in within-pedon depth gap-fill; see
+#'        \code{\link{gapfill_within_pedon}}. Applied independently per system
+#'        on a deep copy, so the caller's pedon is never mutated.
 #' @param ... Additional named arguments are silently ignored.
 #' @return A named list with elements:
 #'   \itemize{
@@ -62,19 +72,20 @@
 #' @seealso \code{\link{classify_wrb2022}}, \code{\link{classify_sibcs}},
 #'   \code{\link{classify_usda}}.
 #' @examples
-#' \donttest{
 #' pr <- make_ferralsol_canonical()
 #' all_three <- classify_all(pr)
 #' all_three$summary
 #'
 #' # WRB + USDA only (skip SiBCS):
 #' classify_all(pr, systems = c("wrb2022", "usda"))$summary
-#' }
 #' @export
 classify_all <- function(pedon,
                             systems        = "all",
                             on_missing     = c("warn", "silent", "error"),
                             include_familia = TRUE,
+                            include_family = FALSE,
+                            specifiers = FALSE,
+                            gapfill    = FALSE,
                             ...) {
   on_missing <- match.arg(on_missing)
 
@@ -87,7 +98,8 @@ classify_all <- function(pedon,
 
   if ("wrb2022" %in% systems) {
     out$wrb <- tryCatch(
-      classify_wrb2022(pedon, on_missing = on_missing),
+      classify_wrb2022(pedon, on_missing = on_missing,
+                         specifiers = specifiers, gapfill = gapfill),
       error = function(e) {
         warning(sprintf("classify_wrb2022 failed: %s", conditionMessage(e)),
                   call. = FALSE)
@@ -98,7 +110,7 @@ classify_all <- function(pedon,
   if ("sibcs" %in% systems) {
     out$sibcs <- tryCatch(
       classify_sibcs(pedon, on_missing = on_missing,
-                       include_familia = include_familia),
+                       include_familia = include_familia, gapfill = gapfill),
       error = function(e) {
         warning(sprintf("classify_sibcs failed: %s", conditionMessage(e)),
                   call. = FALSE)
@@ -108,7 +120,8 @@ classify_all <- function(pedon,
   }
   if ("usda" %in% systems) {
     out$usda <- tryCatch(
-      classify_usda(pedon, on_missing = on_missing),
+      classify_usda(pedon, on_missing = on_missing,
+                      include_family = include_family, gapfill = gapfill),
       error = function(e) {
         warning(sprintf("classify_usda failed: %s", conditionMessage(e)),
                   call. = FALSE)

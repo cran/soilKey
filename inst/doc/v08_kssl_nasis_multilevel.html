@@ -350,15 +350,16 @@ classifier accuracy at every level of the hierarchy (Order / Suborder /
 Great Group / Subgroup) on real, published lab data.</p>
 <div id="the-kssl-nasis-join-load_kssl_pedons_with_nasis" class="section level1">
 <h1>1. The KSSL + NASIS join (load_kssl_pedons_with_nasis)</h1>
-<p>The Kellogg Soil Survey Laboratory (<a href="https://ncsslabdatamart.sc.egov.usda.gov">NCSS lab data,
-USDA-NRCS</a>) ships ~36 000 pedons with full analytical chemistry
-(clay, sand, silt, OC, pH, CEC, BS, …) but minimal field morphology. The
-NASIS Morphological database (a separate sqlite distribution) carries
-the matching <strong>field-survey morphology</strong>: Munsell colors,
-structure grade / size / type, clay films (<code>phpvsf</code>),
-slickensides, and the <strong><code>pediagfeatures</code>
-diagnostic-features table</strong> (~13 500 entries identifying
-argillic, mollic, cambic, spodic, fragipan, etc.).</p>
+<p>The Kellogg Soil Survey Laboratory (NCSS lab data, USDA-NRCS — the
+NCSS Lab Data Mart, <code>ncsslabdatamart.sc.egov.usda.gov</code>) ships
+~36 000 pedons with full analytical chemistry (clay, sand, silt, OC, pH,
+CEC, BS, …) but minimal field morphology. The NASIS Morphological
+database (a separate sqlite distribution) carries the matching
+<strong>field-survey morphology</strong>: Munsell colors, structure
+grade / size / type, clay films (<code>phpvsf</code>), slickensides, and
+the <strong><code>pediagfeatures</code> diagnostic-features
+table</strong> (~13 500 entries identifying argillic, mollic, cambic,
+spodic, fragipan, etc.).</p>
 <p><code>load_kssl_pedons_with_nasis()</code> joins the two by
 <code>peiid</code> and depth-overlap matching, returning one PedonRecord
 per profile with both lab and morphology populated:</p>

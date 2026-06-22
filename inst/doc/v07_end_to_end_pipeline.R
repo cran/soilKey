@@ -90,16 +90,15 @@ length(cls_wrb$trace)         # number of RSGs tested before assignment
 
 ## ----report-html, eval = FALSE------------------------------------------------
 # results <- list(wrb = cls_wrb, sibcs = cls_sibcs, usda = cls_usda)
-# report(results, file = file.path(tempdir(), "perfil_042.html"),
-#        pedon = pedon)
+# report(results, file = "perfil_042.html", pedon = pedon)
 
 ## ----report-qgis, eval = FALSE------------------------------------------------
 # results <- list(wrb = cls_wrb, sibcs = cls_sibcs, usda = cls_usda)
 # report_to_qgis(
 #   pedon           = pedon,
 #   classifications = results,
-#   file            = file.path(tempdir(), "perfil_042.gpkg"),
-#   report_html     = file.path(tempdir(), "perfil_042.html")
+#   file            = "perfil_042.gpkg",
+#   report_html     = "perfil_042.html"
 # )
 
 ## ----diagram, eval = FALSE----------------------------------------------------

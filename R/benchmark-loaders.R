@@ -32,8 +32,8 @@
 #'
 #' KSSL is the de-facto standard for validating USDA Soil Taxonomy keys
 #' (~50k profiles, lab-grade analytical data, professional pedon
-#' descriptions). Get the export from
-#' \url{https://ncsslabdatamart.sc.egov.usda.gov/}.
+#' descriptions). Get the export from the USDA-NRCS NCSS Lab Data Mart
+#' (\code{ncsslabdatamart.sc.egov.usda.gov}).
 #'
 #' @param pedon_csv Path to the pedon-level CSV (one row per profile,
 #'        with site-level metadata + classification).
@@ -176,7 +176,7 @@ load_lucas_pedons <- function(lucas_csv, head = NULL, verbose = TRUE) {
 #' The dadosolos / BDsolos archive ships with ~5k profiles in PT-BR
 #' with full SiBCS classification, lab data, and horizon morphology --
 #' the primary validation set for Brazilian-context use. Available
-#' from \url{https://www.bdsolos.cnptia.embrapa.br/}.
+#' from \code{https://www.bdsolos.cnptia.embrapa.br/}.
 #'
 #' @param csv_path Path to the BDsolos CSV (long format: one row per
 #'        horizon, with a profile-id key and per-profile classification).
@@ -325,10 +325,6 @@ load_embrapa_pedons <- function(csv_path, head = NULL, verbose = TRUE) {
 #'         \code{accuracy_ci}, \code{confusion}, and
 #'         \code{per_pedon} (one row per pedon with predicted vs
 #'         reference).
-#' @param seed Optional integer passed to \code{\link[withr]{with_seed}}
-#'        to make the bootstrap reproducible without mutating the
-#'        caller's global RNG state. When \code{NULL} (default), the
-#'        bootstrap uses the current RNG stream untouched.
 #' @export
 benchmark_run_classification <- function(pedons,
                                             system = c("wrb2022",
@@ -337,8 +333,7 @@ benchmark_run_classification <- function(pedons,
                                                        "subordem",
                                                        "great_group",
                                                        "suborder"),
-                                            boot_n = 1000L,
-                                            seed   = NULL) {
+                                            boot_n = 1000L) {
   system <- match.arg(system)
   level  <- match.arg(level)
   # v0.9.22 / v0.9.24: USDA subgroup / great_group / suborder
@@ -500,19 +495,11 @@ benchmark_run_classification <- function(pedons,
                   as.character(per_pedon[[pred_col]])
   acc <- mean(matches, na.rm = TRUE)
 
-  # Bootstrap CI. CRAN policy forbids `set.seed()` inside library
-  # functions (PR-FB / 2026-05 audit); when the caller asks for a
-  # reproducible bootstrap they can pass `seed`, which is applied via
-  # `withr::with_seed()` so the global RNG stream is restored on exit.
+  # Bootstrap CI.
   if (boot_n >= 1L && length(matches) > 1L) {
-    boot_fn <- function() {
-      replicate(boot_n, mean(sample(matches, replace = TRUE)))
-    }
-    boots <- if (!is.null(seed)) {
-      withr::with_seed(as.integer(seed), boot_fn())
-    } else {
-      boot_fn()
-    }
+    set.seed(42L)
+    boots <- replicate(boot_n,
+                         mean(sample(matches, replace = TRUE)))
     ci <- stats::quantile(boots, c(0.025, 0.975), na.rm = TRUE)
   } else {
     ci <- c(NA_real_, NA_real_)

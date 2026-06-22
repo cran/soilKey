@@ -22,7 +22,7 @@
 
 
 #' Resolve the path to a vendored canonical KST 13th JSON file
-#' @keywords internal
+#' @noRd
 .kst13_path <- function(filename) {
   p <- system.file("rules", "usda", "canonical", filename,
                      package = "soilKey")
@@ -55,7 +55,7 @@
 
 
 #' Read + cache a KST13 JSON file
-#' @keywords internal
+#' @noRd
 .kst13_load_cached <- function(filename) {
   if (!exists(filename, envir = .KST13_CACHE, inherits = FALSE)) {
     if (!requireNamespace("jsonlite", quietly = TRUE)) {
@@ -73,6 +73,7 @@
 #'
 #' Useful when the vendored JSON files are updated mid-session.
 #' Frees ~3.1 MB.
+#' @return \code{NULL}, invisibly. Called for its side effect of emptying the KST 13th-edition lookup cache.
 #' @export
 clear_kst13_cache <- function() {
   rm(list = ls(envir = .KST13_CACHE, all.names = TRUE),

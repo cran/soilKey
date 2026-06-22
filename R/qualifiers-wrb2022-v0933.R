@@ -62,21 +62,21 @@
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 qual_endocalcic <- function(pedon)
   .q_endo_presence("Endocalcic", calcic(pedon), pedon, 50, 100)
 
 #' Endogleyic qualifier (eng): gleyic conditions between 50 and 100 cm.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 qual_endogleyic <- function(pedon)
   .q_endo_presence("Endogleyic", gleyic_properties(pedon), pedon, 50, 100)
 
 #' Endostagnic qualifier (ens): stagnic conditions between 50 and 100 cm.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 qual_endostagnic <- function(pedon)
   .q_endo_presence("Endostagnic", stagnic_properties(pedon), pedon, 50, 100)
 
@@ -92,7 +92,7 @@ qual_endostagnic <- function(pedon)
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 qual_floatic <- function(pedon) {
   h <- pedon$horizons
   cand <- .in_upper(pedon, 100)
@@ -134,7 +134,7 @@ qual_floatic <- function(pedon) {
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 qual_toxic <- function(pedon) {
   h <- pedon$horizons
   cand <- .in_upper(pedon, 100)
@@ -177,7 +177,7 @@ qual_toxic <- function(pedon) {
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 qual_ombric <- function(pedon) {
   h <- pedon$horizons
   cand <- .in_upper(pedon, 100)
@@ -226,7 +226,7 @@ qual_ombric <- function(pedon) {
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}}.
-#' @export
+#' @noRd
 qual_rheic <- function(pedon) {
   h <- pedon$horizons
   cand <- .in_upper(pedon, 100)

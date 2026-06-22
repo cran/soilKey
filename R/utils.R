@@ -19,7 +19,10 @@
 #' attribute means editing this single function.
 #'
 #' @return Named list of column types in canonical order.
-#' @keywords internal
+#' @examples
+#' spec <- horizon_column_spec()
+#' head(names(spec))
+#' @export
 horizon_column_spec <- function() {
   list(
     # ---- geometry & boundaries ----
@@ -67,6 +70,7 @@ horizon_column_spec <- function() {
     al_cmol                 = "numeric",
     # ---- carbonates / sulphates ----
     caco3_pct               = "numeric",
+    secondary_carbonates_pct = "numeric",  # v0.9.142: identifiable SECONDARY carbonates by volume (soft masses / pseudomycelia / pendents / nodules). The morphological OR-path of the calcic horizon: WRB 2022 3.1.4 protocalcic / USDA KST >= 5% by-volume secondary carbonates, beside the +5%-vs-underlying enrichment
     caso4_pct               = "numeric",
     # ---- iron / aluminum oxides ----
     fe_dcb_pct              = "numeric",
@@ -141,7 +145,21 @@ horizon_column_spec <- function() {
     surface_puff_layer            = "logical",   # WRB Ch 5 (Kalaic / Puffic): seasonal puffed surface layer (TRUE / FALSE / NA)
     thixotropic_index             = "numeric",   # WRB Ch 5 (Thixotropic): thixotropic-behaviour index (0-100) from slurry test
     saprolite_pct                 = "numeric",   # WRB Ch 5 (Saprolithic): % by volume of in-situ weathered saprolite material
-    water_regime_pattern          = "character"  # WRB Ch 5 (Uterquic): bidirectional / single / aquic regime classification
+    water_regime_pattern          = "character", # WRB Ch 5 (Uterquic): bidirectional / single / aquic regime classification
+    # ---- v0.9.128 additions: fields that unlock schema-blocked predicates ---
+    # Each refines a predicate that previously used an air-dried-only / proxy
+    # criterion; used only when present (absent => existing behaviour, so all
+    # fixtures stay byte-identical).
+    water_content_1500kpa_undried = "numeric",   # 1500 kPa water retention on UNDRIED samples; Vitrands/Vitrandic need < 30% undried beside < 15% air-dried (KST 13ed Ch 6)
+    particles_002_2mm_pct         = "numeric",   # % of the FINE-EARTH fraction in the 0.02-2.0 mm size class; Vitrandic subgroup crit 2 needs >= 30% (KST 13ed Ch 9)
+    cracks_top_cm                 = "numeric",   # depth (cm) of the UPPER boundary of shrink-swell cracks; Vertic subgroup needs cracks within 125 cm (KST 13ed)
+    incubation_ph                 = "numeric",   # pH after the WRB 8-week aerobic incubation test; hypersulfidic drops < 4, hyposulfidic stays >= 4 (WRB 2022 Ch 3.3.8/3.3.9)
+    # ---- v0.9.133 additions: unlock the remaining schema-blocked WRB qualifiers
+    # (refine-when-present, byte-identical-when-absent, as in v0.9.128).
+    ice_pct                       = "numeric",   # volume % ice (related to whole soil); WRB 2022 Glacic needs >= 75% (Ch 5)
+    water_saturation_days         = "numeric",   # cumulative days/year water-saturated; WRB 2022 Mochipic needs >= 300 days (Ch 5)
+    particles_630um_pct           = "numeric",   # % particles >= 630 um; WRB 2022 Isopteric needs < 5% (Ch 5)
+    jarosite_present              = "logical"    # jarosite mineral present; WRB 2022 Aceric requires it beside pH 3.5-5 (Ch 5)
   )
 }
 
@@ -175,8 +193,12 @@ make_empty_horizons <- function(n = 0L) {
 #' end. Coerces character values to numeric where the schema requires it.
 #'
 #' @param h Input data.frame or data.table.
-#' @return A \code{data.table}.
-#' @keywords internal
+#' @return A \code{data.table} with the canonical horizon columns present, in
+#'   canonical order, with extra columns preserved at the end.
+#' @examples
+#' h <- ensure_horizon_schema(data.frame(top_cm = 0, bottom_cm = 20))
+#' "designation" %in% names(h)
+#' @export
 ensure_horizon_schema <- function(h) {
   if (is.null(h)) return(make_empty_horizons(0L))
   if (!data.table::is.data.table(h)) h <- data.table::as.data.table(h)
@@ -204,7 +226,7 @@ ensure_horizon_schema <- function(h) {
 
 #' Empty provenance table
 #'
-#' @keywords internal
+#' @noRd
 make_empty_provenance <- function() {
   data.table::data.table(
     horizon_idx = integer(),
@@ -217,7 +239,7 @@ make_empty_provenance <- function() {
 
 #' Format a numeric value with suffix, returning "NA" for NA/NULL
 #'
-#' @keywords internal
+#' @noRd
 fmt_num <- function(x, suffix = "", digits = 1) {
   if (is.null(x)) return("NA")
   if (length(x) == 1 && is.na(x)) return("NA")
@@ -226,7 +248,7 @@ fmt_num <- function(x, suffix = "", digits = 1) {
 
 #' Valid provenance source codes
 #'
-#' @keywords internal
+#' @noRd
 valid_provenance_sources <- function() {
   c("measured", "extracted_vlm", "predicted_spectra",
     "inferred_prior", "user_assumed")
@@ -238,7 +260,7 @@ valid_provenance_sources <- function() {
 #' multiple sources (e.g. measured beats predicted_spectra beats
 #' extracted_vlm beats inferred_prior beats user_assumed).
 #'
-#' @keywords internal
+#' @noRd
 provenance_authority <- function(source) {
   authority <- c(
     measured          = 5L,

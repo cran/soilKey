@@ -34,11 +34,10 @@
 #'        (typically `<some>/ESDB-Raster-Library-1k-GeoTIFF-...`).
 #' @return A character vector of attribute names (sorted).
 #' @examples
-#' \donttest{
-#' root <- file.path(tempdir(), "ESDB-Raster-Library-1k-GeoTIFF-20240507")
-#' if (dir.exists(root)) {
-#'   available_esdb_attributes(root)
-#' }
+#' \dontrun{
+#' available_esdb_attributes("~/data/ESDB-Raster-Library-1k-GeoTIFF-20240507")
+#' #> [1] "AGLI1NNI" "AGLI2NNI" "AGLIM1" "AGLIM2" "ALT" "ATC" "AWC_SUB" ...
+#' #>     [continued: 71 attributes]
 #' }
 #' @export
 available_esdb_attributes <- function(raster_root) {
@@ -79,16 +78,17 @@ available_esdb_attributes <- function(raster_root) {
 #'         values) of the same length as \code{nrow(coords)}.
 #'         \code{NA} for points outside the raster footprint.
 #' @examples
-#' \donttest{
-#' root <- file.path(tempdir(), "ESDB-Raster-Library-1k-GeoTIFF-20240507")
-#' if (dir.exists(root) && requireNamespace("terra", quietly = TRUE)) {
-#'   # Single point: Wageningen, Netherlands (5.66 E, 51.97 N)
-#'   lookup_esdb(c(5.66, 51.97), "WRBLV1", root)
+#' \dontrun{
+#' root <- "~/data/ESDB-Raster-Library-1k-GeoTIFF-20240507"
 #'
-#'   # Vector: Lisbon + Berlin + Helsinki
-#'   coords <- rbind(c(-9.14, 38.72), c(13.40, 52.52), c(24.94, 60.17))
-#'   lookup_esdb(coords, "WRBLV1", root)
-#' }
+#' # Single point: Wageningen, Netherlands (5.66 E, 51.97 N)
+#' lookup_esdb(c(5.66, 51.97), "WRBLV1", root)
+#' #> [1] "GL"   # Gleysol per the ESDB 1km raster
+#'
+#' # Vector: Lisbon + Berlin + Helsinki
+#' coords <- rbind(c(-9.14, 38.72), c(13.40, 52.52), c(24.94, 60.17))
+#' lookup_esdb(coords, "WRBLV1", root)
+#' #> [1] "CM" "LV" "PZ"   # Cambisol, Luvisol, Podzol
 #' }
 #' @seealso \code{\link{available_esdb_attributes}}
 #' @export

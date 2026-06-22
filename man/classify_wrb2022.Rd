@@ -9,7 +9,10 @@ classify_wrb2022(
   prior = NULL,
   prior_threshold = 0.01,
   on_missing = c("warn", "silent", "error"),
-  rules = NULL
+  rules = NULL,
+  strict = NULL,
+  specifiers = FALSE,
+  gapfill = FALSE
 )
 }
 \arguments{
@@ -31,6 +34,33 @@ an "inconsistent" warning (default 0.01).}
 attributes.}
 
 \item{rules}{Optional pre-loaded rule set.}
+
+\item{strict}{Logical or \code{NULL}. Controls WRB Tier-3 strict
+mode for the per-RSG numerical gates (Vertisols, Andosols,
+Gleysols, Planosols, Ferralsols, Chernozems, Kastanozems).
+When \code{NULL} (default) the gates follow
+\code{getOption("soilKey.rsg_strict", FALSE)}. Passing
+\code{TRUE} or \code{FALSE} forces strict mode on or off for
+the duration of this call; see the individual RSG-gate help
+pages (e.g. \code{\link{ferralsol}}) for the strengthened
+thresholds.}
+
+\item{specifiers}{Logical. When \code{TRUE}, auto-attach WRB 2022
+Ch 5 depth specifiers (Epi-/Endo-/Bathy-/Amphi-/Panto-/Kato-)
+to depth-anchored qualifiers based on the diagnostic feature's
+actual depth -- e.g. a gleyic feature confined to 50--100 cm
+yields \code{Endogleyic} instead of \code{Gleyic}. Default
+\code{FALSE} keeps the canonical names byte-identical. Surface
+/ epipedon qualifiers are excluded (their depth is definitional).}
+
+\item{gapfill}{Opt-in within-pedon depth gap-fill, default \code{FALSE}
+(no-op, classification stays byte-identical). \code{TRUE} fills
+interior \code{NA} cells of the continuous depth-trending attributes
+by linear interpolation from the profile's own measured horizons; a
+character vector restricts it to those attributes; a named list is
+passed to \code{\link{gapfill_within_pedon}}. Filled cells carry
+\code{inferred_prior} provenance, so the evidence grade drops to
+\code{"C"}. Runs on a deep copy -- the caller's pedon is never mutated.}
 }
 \value{
 A \code{\link{ClassificationResult}}.
@@ -42,4 +72,9 @@ reporting, runs the key, and assembles a
 \code{\link{ClassificationResult}} with the trace, ambiguities,
 missing-data hints, evidence grade, and (in future) prior sanity
 check.
+}
+\examples{
+pedon <- make_ferralsol_canonical()
+res <- classify_wrb2022(pedon)
+res$name
 }

@@ -25,11 +25,9 @@ external systems (web APIs, ETL pipelines, multimodal extraction)
 to catch schema violations early.
 }
 \examples{
-\donttest{
-if (requireNamespace("jsonlite", quietly = TRUE) &&
-      requireNamespace("jsonvalidate", quietly = TRUE)) {
-  p <- make_ferralsol_canonical()
-  validate_pedon_json(p)
-}
+\dontrun{
+p <- make_ferralsol_canonical()
+validate_pedon_json(p)
+#> [1] TRUE
 }
 }

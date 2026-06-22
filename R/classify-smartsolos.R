@@ -58,7 +58,7 @@
 
 #' Map a soilKey \code{structure_grade} string to the SmartSolos integer
 #' (\code{ESTRUTURA_GRAU}: 1=fraca, 2=moderada, 3=forte).
-#' @keywords internal
+#' @noRd
 .smartsolos_struct_grade <- function(x) {
   if (is.null(x) || is.na(x)) return(NA_integer_)
   s <- tolower(trimws(as.character(x)))
@@ -73,7 +73,7 @@
 
 #' Map \code{structure_size} (very fine .. very coarse) to SmartSolos
 #' \code{ESTRUTURA_TAMANHO} (1..5).
-#' @keywords internal
+#' @noRd
 .smartsolos_struct_size <- function(x) {
   if (is.null(x) || is.na(x)) return(NA_integer_)
   s <- tolower(trimws(as.character(x)))
@@ -88,7 +88,7 @@
 
 
 #' Map \code{structure_type} to SmartSolos \code{ESTRUTURA_TIPO} (1..6).
-#' @keywords internal
+#' @noRd
 .smartsolos_struct_type <- function(x) {
   if (is.null(x) || is.na(x)) return(NA_integer_)
   s <- tolower(trimws(as.character(x)))
@@ -104,7 +104,7 @@
 
 #' Map \code{clay_films_amount} (few/common/many) to SmartSolos
 #' \code{CEROSIDADE_QUANTIDADE} (1..3).
-#' @keywords internal
+#' @noRd
 .smartsolos_clay_films_amt <- function(x) {
   if (is.null(x) || is.na(x)) return(NA_integer_)
   s <- tolower(trimws(as.character(x)))
@@ -117,7 +117,7 @@
 
 
 #' Map \code{clay_films_strength} to SmartSolos \code{CEROSIDADE_GRAU} (1..3).
-#' @keywords internal
+#' @noRd
 .smartsolos_clay_films_strength <- function(x) {
   if (is.null(x) || is.na(x)) return(NA_integer_)
   s <- tolower(trimws(as.character(x)))
@@ -145,7 +145,7 @@
 #'        reference SiBCS classification (\code{ordem, subordem,
 #'        gde_grupo, subgrupo}) for use with the
 #'        \code{/verification} endpoint.
-#' @keywords internal
+#' @noRd
 .smartsolos_pedon_to_payload <- function(pedon,
                                             drenagem = NULL,
                                             reference_sibcs = NULL) {
@@ -226,7 +226,7 @@
 
 
 #' Convert a SmartSolosExpert response to a soilKey ClassificationResult
-#' @keywords internal
+#' @noRd
 .smartsolos_response_to_result <- function(resp, pedon, endpoint) {
   if (!is.list(resp) || is.null(resp$items) || length(resp$items) == 0L) {
     stop(".smartsolos_response_to_result(): empty 'items' in response.")
@@ -295,7 +295,7 @@
 #' \code{L0..L4}).
 #'
 #' Authentication: register a free AgroAPI account at
-#' \url{https://www.agroapi.cnptia.embrapa.br/portal/}, subscribe to
+#' \code{https://www.agroapi.cnptia.embrapa.br/portal/}, subscribe to
 #' the SmartSolosExpert API and generate an access token. Pass it via
 #' the \code{AGROAPI_TOKEN} environment variable or the
 #' \code{api_key} argument.
@@ -328,18 +328,14 @@
 #'         (the per-level match counters \code{L0..L4}).
 #'
 #' @examples
-#' \donttest{
-#' # Needs a SmartSolos Expert API token (set AGROAPI_TOKEN) and
-#' # network access; the example no-ops on CRAN.
-#' if (nzchar(Sys.getenv("AGROAPI_TOKEN")) &&
-#'       requireNamespace("httr", quietly = TRUE)) {
-#'   res <- try(classify_via_smartsolos_api(make_argissolo_canonical()),
-#'              silent = TRUE)
-#'   if (!inherits(res, "try-error")) {
-#'     res$rsg_or_order      # "ARGISSOLO"
-#'     res$qualifiers
-#'   }
-#' }
+#' \dontrun{
+#' Sys.setenv(AGROAPI_TOKEN = "<your token>")
+#' res <- classify_via_smartsolos_api(make_argissolo_canonical())
+#' res$rsg_or_order      # "ARGISSOLO"
+#' res$qualifiers
+#' #> $subordem  "VERMELHO"
+#' #> $gde_grupo "Distrofico"
+#' #> $subgrupo  "tipico"
 #' }
 #' @seealso \code{\link{classify_sibcs}} for the local PROLOG-free
 #'          classifier; \code{\link{compare_smartsolos}} for a
@@ -454,13 +450,10 @@ classify_via_smartsolos_api <- function(pedon,
 #'         \code{ordem, subordem, gde_grupo, subgrupo, n_match}.
 #'
 #' @examples
-#' \donttest{
-#' if (nzchar(Sys.getenv("AGROAPI_TOKEN")) &&
-#'       requireNamespace("httr", quietly = TRUE)) {
-#'   cmp <- try(compare_smartsolos(make_argissolo_canonical()),
-#'              silent = TRUE)
-#'   if (!inherits(cmp, "try-error")) cmp$agreement
-#' }
+#' \dontrun{
+#' Sys.setenv(AGROAPI_TOKEN = "<your token>")
+#' cmp <- compare_smartsolos(make_argissolo_canonical())
+#' cmp$agreement
 #' }
 #' @export
 compare_smartsolos <- function(pedon, ...) {

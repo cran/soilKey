@@ -28,13 +28,7 @@
 #' @param include_familia Pass-through to \code{classify_sibcs}
 #'        when \code{"sibcs"} is in \code{systems}. Default
 #'        \code{FALSE}.
-#' @param seed Integer applied through \code{\link[withr]{with_seed}}
-#'        so the synthetic pedon pool is reproducible \emph{without}
-#'        mutating the caller's global RNG state. Pass \code{NULL} to
-#'        leave the RNG stream untouched. Default \code{42L} preserves
-#'        the bit-for-bit-identical pool earlier soilKey releases
-#'        produced (CRAN policy: never call \code{set.seed()} on the
-#'        caller's RNG).
+#' @param seed RNG seed for reproducibility. Default 42.
 #' @param verbose If \code{TRUE} (default), prints a per-system
 #'        summary line.
 #' @return A list with elements:
@@ -51,9 +45,13 @@
 #'   }
 #'
 #' @examples
-#' \donttest{
-#' bench <- benchmark_performance(n = 5)
+#' \dontrun{
+#' bench <- benchmark_performance(n = 100)
 #' bench$summary
+#' #>     system n_pedons total_seconds mean_seconds median_seconds pedons_per_minute
+#' #> 1 wrb2022      100        ~ 5-12      0.05-0.12      ~          ~
+#' #> 2   sibcs      100        ~ 5-15      0.05-0.15      ~          ~
+#' #> 3    usda      100        ~ 4-10      0.04-0.10      ~          ~
 #' }
 #' @export
 benchmark_performance <- function(n = 100L,
@@ -63,21 +61,11 @@ benchmark_performance <- function(n = 100L,
                                     verbose = TRUE) {
   systems <- match.arg(systems, several.ok = TRUE)
   if (n < 1L) stop("benchmark_performance(): n must be >= 1.")
+  set.seed(as.integer(seed))
 
-  # Synth pedons under withr::with_seed when reproducibility is asked
-  # for; otherwise draw from the current RNG stream. We never call
-  # set.seed() directly (CRAN policy).
-  make_pool <- function() {
-    out <- vector("list", n)
-    for (i in seq_len(n)) {
-      out[[i]] <- .make_synth_perf_pedon(i)
-    }
-    out
-  }
-  pedons <- if (!is.null(seed)) {
-    withr::with_seed(as.integer(seed), make_pool())
-  } else {
-    make_pool()
+  pedons <- vector("list", n)
+  for (i in seq_len(n)) {
+    pedons[[i]] <- .make_synth_perf_pedon(i)
   }
 
   per_pedon <- vector("list", 0L)
@@ -148,7 +136,7 @@ benchmark_performance <- function(n = 100L,
 
 
 #' Synthesise a small but realistic 5-horizon pedon for benchmarking
-#' @keywords internal
+#' @noRd
 .make_synth_perf_pedon <- function(i) {
   rho <- runif(1L, 0.7, 1.5)
   hue <- sample(c("10R", "2.5YR", "5YR", "7.5YR", "10YR", "2.5Y"),

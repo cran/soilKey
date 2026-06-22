@@ -46,7 +46,7 @@ queries; cap this when running interactive demos.}
 
 \item{query_fn}{Optional injection of the per-coordinate WoSIS
 query function. Default uses
-\code{\link{.query_nearest_wosis_wrb}}. Tests pass a stub
+\code{.query_nearest_wosis_wrb}. Tests pass a stub
 here to exercise the join logic without network.}
 
 \item{...}{Forwarded to \code{\link{download_ossl_subset}}.}
@@ -104,18 +104,23 @@ Treat the labels as priors, not ground truth.
 }
 
 \examples{
-\donttest{
-# Pulls OSSL + WoSIS over the network; the example no-ops on CRAN.
-if (interactive()) {
-  lib <- try(download_ossl_subset_with_labels(
-    region          = "south_america",
-    max_distance_km = 10
-  ), silent = TRUE)
-  if (!inherits(lib, "try-error")) {
-    table(lib$Yr$wrb_rsg, useNA = "always")
-    table(lib$Yr$wrb_label_source)
-  }
-}
+\dontrun{
+# Real OSSL South-America subset with WRB labels:
+lib <- download_ossl_subset_with_labels(
+  region          = "south_america",
+  max_distance_km = 10
+)
+table(lib$Yr$wrb_rsg, useNA = "always")
+table(lib$Yr$wrb_label_source)
+
+# Drop into the spectral analogy classifier:
+res <- classify_by_spectral_neighbours(
+  spectrum     = my_query_spectrum,
+  ossl_library = lib,
+  k            = 25,
+  region       = list(lat = -22.7, lon = -43.7,
+                      radius_km = 500)
+)
 }
 }
 \seealso{

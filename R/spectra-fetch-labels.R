@@ -89,7 +89,7 @@
 #' @param verbose Emit \code{cli} progress messages.
 #' @param query_fn Optional injection of the per-coordinate WoSIS
 #'        query function. Default uses
-#'        \code{\link{.query_nearest_wosis_wrb}}. Tests pass a stub
+#'        \code{.query_nearest_wosis_wrb}. Tests pass a stub
 #'        here to exercise the join logic without network.
 #' @param ... Forwarded to \code{\link{download_ossl_subset}}.
 #'
@@ -100,18 +100,23 @@
 #'         WoSIS endpoint, snapshot date).
 #'
 #' @examples
-#' \donttest{
-#' # Pulls OSSL + WoSIS over the network; the example no-ops on CRAN.
-#' if (interactive()) {
-#'   lib <- try(download_ossl_subset_with_labels(
-#'     region          = "south_america",
-#'     max_distance_km = 10
-#'   ), silent = TRUE)
-#'   if (!inherits(lib, "try-error")) {
-#'     table(lib$Yr$wrb_rsg, useNA = "always")
-#'     table(lib$Yr$wrb_label_source)
-#'   }
-#' }
+#' \dontrun{
+#' # Real OSSL South-America subset with WRB labels:
+#' lib <- download_ossl_subset_with_labels(
+#'   region          = "south_america",
+#'   max_distance_km = 10
+#' )
+#' table(lib$Yr$wrb_rsg, useNA = "always")
+#' table(lib$Yr$wrb_label_source)
+#'
+#' # Drop into the spectral analogy classifier:
+#' res <- classify_by_spectral_neighbours(
+#'   spectrum     = my_query_spectrum,
+#'   ossl_library = lib,
+#'   k            = 25,
+#'   region       = list(lat = -22.7, lon = -43.7,
+#'                       radius_km = 500)
+#' )
 #' }
 #' @seealso \code{\link{download_ossl_subset}}, \code{\link{classify_by_spectral_neighbours}}.
 #' @export
@@ -227,7 +232,7 @@ download_ossl_subset_with_labels <- function(region          = c("global",
 #' Returns \code{NULL} on transport failure; \code{NA} fields when
 #' the bbox has no labeled WoSIS profile.
 #'
-#' @keywords internal
+#' @noRd
 .query_nearest_wosis_wrb <- function(lat, lon,
                                        max_distance_km,
                                        endpoint =
@@ -287,7 +292,7 @@ download_ossl_subset_with_labels <- function(region          = c("global",
 
 #' Normalize a WRB RSG name to its plural canonical form so lookups
 #' work whether the source supplied "Ferralsol" or "Ferralsols".
-#' @keywords internal
+#' @noRd
 .wrb_canonical_plural <- function(rsg) {
   if (is.na(rsg)) return(NA_character_)
   out <- as.character(rsg)
@@ -303,7 +308,7 @@ download_ossl_subset_with_labels <- function(region          = c("global",
 #' form -- WoSIS, the WRB book, and OSSL all use slightly different
 #' conventions.
 #'
-#' @keywords internal
+#' @noRd
 .wrb_to_sibcs_modal_ordem <- function(rsg) {
   if (is.na(rsg)) return(NA_character_)
   modal <- c(
@@ -326,7 +331,7 @@ download_ossl_subset_with_labels <- function(region          = c("global",
 #' Accepts either the singular ("Ferralsol") or plural ("Ferralsols")
 #' form.
 #'
-#' @keywords internal
+#' @noRd
 .wrb_to_usda_modal_order <- function(rsg) {
   if (is.na(rsg)) return(NA_character_)
   modal <- c(

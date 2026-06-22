@@ -8,8 +8,7 @@ benchmark_run_classification(
   pedons,
   system = c("wrb2022", "sibcs", "usda"),
   level = c("order", "subgroup", "subordem", "great_group", "suborder"),
-  boot_n = 1000L,
-  seed = NULL
+  boot_n = 1000L
 )
 }
 \arguments{
@@ -44,11 +43,6 @@ one of the \code{load_*} functions).}
 }}
 
 \item{boot_n}{Bootstrap replicates for CI (default 1000).}
-
-\item{seed}{Optional integer passed to \code{\link[withr]{with_seed}}
-to make the bootstrap reproducible without mutating the
-caller's global RNG state. When \code{NULL} (default), the
-bootstrap uses the current RNG stream untouched.}
 }
 \value{
 A list with elements \code{accuracy_top1},

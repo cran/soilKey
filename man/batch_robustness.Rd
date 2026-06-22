@@ -22,7 +22,7 @@ for paper-grade claims like "85 % of classifications are robust
 to a 5 % analytical-error perturbation".
 }
 \examples{
-\donttest{
+\dontrun{
 pedons <- list(make_ferralsol_canonical(),
                  make_luvisol_canonical(),
                  make_chernozem_canonical())

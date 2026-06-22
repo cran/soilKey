@@ -40,7 +40,7 @@
 #' @return Logical scalar: \code{TRUE} if any element matches a strong
 #'         qualifier; \code{FALSE} for empty input or weak-only
 #'         qualifiers.
-#' @keywords internal
+#' @noRd
 .argic_strong_films_match <- function(films_chr) {
   if (length(films_chr) == 0L) return(FALSE)
   films_chr <- films_chr[!is.na(films_chr) & nzchar(films_chr)]
@@ -118,13 +118,10 @@ argic_with_strong_clay_films <- function(pedon) {
 #'        \code{strong_films_at_argic},
 #'        and \code{would_exclude_from_latossolo}.
 #' @examples
-#' \donttest{
-#' csv_path <- "RJ.csv"
-#' if (file.exists(csv_path)) {
-#'   peds <- load_bdsolos_csv(csv_path)
-#'   a <- audit_argic_strong_films(peds, reference_filter = "LATOSSOLO")
-#'   table(a$would_exclude_from_latossolo)
-#' }
+#' \dontrun{
+#' peds <- load_bdsolos_csv("RJ.csv")
+#' a <- audit_argic_strong_films(peds, reference_filter = "LATOSSOLO")
+#' table(a$would_exclude_from_latossolo)
 #' }
 #' @export
 audit_argic_strong_films <- function(pedons, reference_filter = NULL) {

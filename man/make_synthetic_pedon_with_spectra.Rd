@@ -16,14 +16,7 @@ make_synthetic_pedon_with_spectra(
 \item{wavelengths}{Integer vector of wavelengths (default
 \code{350:2500}).}
 
-\item{seed}{Integer applied through \code{\link[withr]{with_seed}}
-so the synthetic spectra are reproducible \emph{without}
-mutating the caller's global RNG state (the prior stream is
-restored on exit). Pass \code{NULL} to draw from the current
-RNG stream untouched. Default \code{1L} keeps the
-bit-for-bit identical output that earlier soilKey releases
-produced, but does so via \code{with_seed()} (CRAN policy:
-never call \code{set.seed()} on the caller's RNG).}
+\item{seed}{Integer seed for the RNG used to generate the spectra.}
 }
 \value{
 A \code{\link{PedonRecord}} with a \code{$spectra$vnir}

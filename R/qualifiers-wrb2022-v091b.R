@@ -22,17 +22,17 @@
 #' Chernic qualifier (ch): chernic horizon (intensely worm-mixed mollic-like)
 #' within 100 cm.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_chernic     <- function(pedon) .q_presence("Chernic",     chernic(pedon),     100, pedon)
 
 #' Pisoplinthic qualifier (px): pisoplinthic horizon within 100 cm.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_pisoplinthic <- function(pedon) .q_presence("Pisoplinthic", pisoplinthic(pedon), 100, pedon)
 
 #' Abruptic qualifier (ap): abrupt textural difference within 100 cm.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_abruptic    <- function(pedon) .q_presence("Abruptic",    abrupt_textural_difference(pedon), 100, pedon)
 
 
@@ -44,7 +44,7 @@ qual_abruptic    <- function(pedon) .q_presence("Abruptic",    abrupt_textural_d
 #' only; v0.9.2 adds the cross-check against \code{thionic} / sulfidic
 #' material to disambiguate from naturally acidic Histosols.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_aceric <- function(pedon) {
   h <- pedon$horizons
   layers <- which(!is.na(h$top_cm) & h$top_cm <= 50)
@@ -54,7 +54,11 @@ qual_aceric <- function(pedon) {
             missing = "ph_h2o",
             reference = "WRB (2022) Ch 5, Aceric"))
   ph <- h$ph_h2o[layers]
-  ok <- !is.na(ph) & ph <= 5
+  # WRB 2022 Ch 5 Aceric: pH (1:1 water) >= 3.5 AND < 5, AND jarosite present.
+  # The jarosite clause is enforced where jarosite_present is recorded;
+  # otherwise the pH gate alone is used (v0.9.133, refine-when-present).
+  jar <- (h$jarosite_present %||% rep(NA, nrow(h)))[layers]
+  ok <- !is.na(ph) & ph >= 3.5 & ph < 5 & (is.na(jar) | jar)
   passed <- any(ok)
   DiagnosticResult$new(
     name = "Aceric", passed = passed,
@@ -81,7 +85,7 @@ qual_aceric <- function(pedon) {
 #' Mazic qualifier (mz): structureless / massive surface horizon
 #' (Vertisol). Diagnostic of slaked, crusted Vertisol surfaces.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_mazic <- function(pedon) {
   h  <- pedon$horizons
   sl <- .surface_layer(pedon)
@@ -92,13 +96,24 @@ qual_mazic <- function(pedon) {
             reference = "WRB (2022) Ch 5, Mazic"))
   grade <- h$structure_grade[sl]
   type  <- h$structure_type[sl]
-  ok <- (!is.na(grade) & grade %in% c("structureless", "massive")) |
-          (!is.na(type) & grepl("massive", type, ignore.case = TRUE))
+  massive <- (!is.na(grade) & grade %in% c("structureless", "massive")) |
+               (!is.na(type) & grepl("massive", type, ignore.case = TRUE))
+  # v0.9.141: WRB 2022 (Ch 5, p.140) Mazic = massive structure AND a rupture-
+  # resistance class of AT LEAST HARD in the upper 20 cm (Vertisols only). The
+  # prior test checked only the massive structure, so it over-fired on a soft
+  # massive surface. refine-when-present: a RECORDED rupture_resistance must read
+  # hard / very hard / extremely hard (NOT "slightly hard"); absent leaves the
+  # result byte-identical to the pre-v0.9.141 massive-only behaviour.
+  rupt <- if ("rupture_resistance" %in% names(h)) h$rupture_resistance[sl]
+          else rep(NA_character_, length(sl))
+  hard_ok <- is.na(rupt) | rupt %in% c("hard", "very hard", "extremely hard")
+  ok <- massive & hard_ok
   passed <- any(ok)
   DiagnosticResult$new(
     name = "Mazic", passed = passed,
     layers = sl[ok],
-    evidence = list(structure_grade = grade, structure_type = type),
+    evidence = list(structure_grade = grade, structure_type = type,
+                    rupture_resistance = rupt),
     missing = if (all(is.na(grade)) && all(is.na(type)))
                 c("structure_grade", "structure_type") else character(0),
     reference = "WRB (2022) Ch 5, Mazic"
@@ -108,7 +123,7 @@ qual_mazic <- function(pedon) {
 #' Grumic qualifier (gr): strong fine granular surface horizon
 #' (self-mulching Vertisol).
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_grumic <- function(pedon) {
   h  <- pedon$horizons
   sl <- .surface_layer(pedon)
@@ -120,9 +135,20 @@ qual_grumic <- function(pedon) {
   grade <- h$structure_grade[sl]
   type  <- h$structure_type[sl]
   size  <- h$structure_size[sl]
-  ok <- !is.na(grade) & grade %in% c("strong", "moderate") &
-          !is.na(type)  & grepl("granular", type, ignore.case = TRUE) &
-          (is.na(size)  | size %in% c("very fine", "fine", "medium"))
+  # v0.9.141: WRB 2022 (Ch 5, p.136) Grumic = a >= 1 cm layer at the mineral soil
+  # surface with STRONG granular OR STRONG angular/subangular BLOCKY structure of
+  # aggregate size <= 1 cm (self-mulching; Vertisols only). The prior test (a)
+  # admitted a "moderate" grade -- the verbatim requires strong only -- and
+  # (b) required "granular", missing the strong-blocky self-mulching form.
+  # The <= 1 cm aggregate limit is structure-class-dependent: granular peds up to
+  # "medium" stay <= 1 cm, but "medium" blocky peds are 10-20 mm (> 1 cm), so for
+  # blocky only "very fine"/"fine" qualify.
+  is_gran   <- !is.na(type) & grepl("granular", type, ignore.case = TRUE)
+  is_blocky <- !is.na(type) & grepl("blocky",   type, ignore.case = TRUE)
+  size_ok <- is.na(size) |
+               (is_gran   & size %in% c("very fine", "fine", "medium")) |
+               (is_blocky & size %in% c("very fine", "fine"))
+  ok <- !is.na(grade) & grade %in% "strong" & (is_gran | is_blocky) & size_ok
   passed <- any(ok)
   DiagnosticResult$new(
     name = "Grumic", passed = passed,
@@ -138,7 +164,7 @@ qual_grumic <- function(pedon) {
 #' Pellic qualifier (pe): in the upper 30 cm, Munsell value <= 4 moist
 #' AND chroma <= 2 moist. Diagnostic of "black" (dark) Vertisols.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_pellic <- function(pedon) {
   h <- pedon$horizons
   layers <- which(!is.na(h$top_cm) & h$top_cm < 30)
@@ -149,7 +175,8 @@ qual_pellic <- function(pedon) {
             reference = "WRB (2022) Ch 5, Pellic"))
   vals <- h$munsell_value_moist[layers]
   chrs <- h$munsell_chroma_moist[layers]
-  ok <- !is.na(vals) & !is.na(chrs) & vals <= 4 & chrs <= 2
+  # WRB 2022 Ch 5 Pellic: Munsell value <= 3 AND chroma <= 2 moist (was <= 4).
+  ok <- !is.na(vals) & !is.na(chrs) & vals <= 3 & chrs <= 2
   passed <- any(ok)
   DiagnosticResult$new(
     name = "Pellic", passed = passed,
@@ -189,7 +216,7 @@ qual_pellic <- function(pedon) {
 #' Aluandic qualifier (aa): andic properties + Al-dominant active
 #' component (Al / (Al + 0.5 Si) >= 0.5 in mass).
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_aluandic <- function(pedon) {
   d <- .al_si_dominance(pedon)
   if (!isTRUE(d$passed))
@@ -212,7 +239,7 @@ qual_aluandic <- function(pedon) {
 #' Silandic qualifier (sn): andic properties + Si-dominant active
 #' component (Al / (Al + 0.5 Si) < 0.5 in mass; allophane-rich).
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_silandic <- function(pedon) {
   d <- .al_si_dominance(pedon)
   if (!isTRUE(d$passed))
@@ -241,7 +268,7 @@ qual_silandic <- function(pedon) {
 #' "potentially over-permissive" via the \code{notes} field when the
 #' value falls in the 70-100\% band.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_hydric <- function(pedon) {
   ap <- andic_properties(pedon)
   if (!isTRUE(ap$passed))
@@ -251,19 +278,27 @@ qual_hydric <- function(pedon) {
             reference = "WRB (2022) Ch 5, Hydric"))
   h  <- pedon$horizons
   ly <- intersect(ap$layers, .in_upper(pedon, 100))
-  w  <- h$water_content_1500kpa[ly]
+  # WRB 2022 Ch 5 Hydric: andic layer(s) combined >= 35 cm with water content
+  # >= 70% at 1500 kPa on UNDRIED samples. Where the undried measurement is
+  # present (v0.9.128 field) it is used directly; otherwise the air-dried
+  # proxy >= 70% is kept (v0.9.133). >= 35 cm combined thickness.
+  wu <- (h$water_content_1500kpa_undried %||% rep(NA_real_, nrow(h)))[ly]
+  wa <- h$water_content_1500kpa[ly]
+  w  <- ifelse(!is.na(wu), wu, wa)
   ok <- !is.na(w) & w >= 70
-  passed <- any(ok)
-  air_dried_band <- any(!is.na(w) & w >= 70 & w < 100)
+  qly <- ly[ok]
+  thk <- if (length(qly) > 0L)
+    sum(h$bottom_cm[qly] - h$top_cm[qly], na.rm = TRUE) else 0
+  passed <- thk >= 35
   DiagnosticResult$new(
     name = "Hydric", passed = passed,
-    layers = ly[ok],
-    evidence = list(andic = ap, water_content_1500kpa = w),
+    layers = if (passed) qly else integer(0),
+    evidence = list(andic = ap, water_1500kpa = w, thickness_cm = thk),
     missing = if (all(is.na(w))) "water_content_1500kpa" else character(0),
     reference = "WRB (2022) Ch 5, Hydric",
-    notes = if (passed && air_dried_band)
-              "v0.9.1: 70-100% accepted as air-dried equivalent of WRB's >=100% undried"
-            else NA_character_
+    notes = if (any(!is.na(wu)))
+              "v0.9.133: undried 1500 kPa water used where measured"
+            else "v0.9.1: air-dried 1500 kPa proxy (undried not measured)"
   )
 }
 
@@ -272,7 +307,7 @@ qual_hydric <- function(pedon) {
 #' Munsell value <= 2 and chroma <= 2 (moist). Melanic Index >= 1.7
 #' (the canonical UV-OD ratio) is deferred to v0.9.2.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_melanic <- function(pedon) {
   ap <- andic_properties(pedon)
   if (!isTRUE(ap$passed))
@@ -308,7 +343,7 @@ qual_melanic <- function(pedon) {
 #' complex (Ca + Mg + K + Na exch + 1 N KCl Al-exch <= 2 cmol+/kg fine
 #' earth) in some layer of the andic part within 100 cm.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_acroxic <- function(pedon) {
   ap <- andic_properties(pedon)
   if (!isTRUE(ap$passed))
@@ -342,7 +377,7 @@ qual_acroxic <- function(pedon) {
 
 #' Pachic qualifier (pc): mollic OR umbric horizon >= 50 cm thick.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_pachic <- function(pedon) {
   mo <- mollic(pedon)
   um <- umbric_horizon(pedon)
@@ -371,7 +406,7 @@ qual_pachic <- function(pedon) {
 #' Eutrosilic qualifier (es): silandic + base saturation >= 50\% in some
 #' layer of the silandic part within 100 cm.
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 qual_eutrosilic <- function(pedon) {
   si <- qual_silandic(pedon)
   if (!isTRUE(si$passed))
@@ -381,14 +416,21 @@ qual_eutrosilic <- function(pedon) {
             reference = "WRB (2022) Ch 5, Eutrosilic"))
   h  <- pedon$horizons
   ly <- si$layers
-  bs <- h$bs_pct[ly]
-  ok <- !is.na(bs) & bs >= 50
+  # WRB 2022 Ch 5 Eutrosilic: andic-properties layer with a SUM of exchangeable
+  # bases (Ca+Mg+K+Na, by NH4OAc) >= 15 cmol_c/kg fine earth -- NOT base
+  # saturation >= 50% (the v0.9 proxy).
+  base_sum <- rowSums(cbind(h$ca_cmol[ly], h$mg_cmol[ly], h$k_cmol[ly],
+                            h$na_cmol[ly]), na.rm = TRUE)
+  any_base <- !is.na(h$ca_cmol[ly]) | !is.na(h$mg_cmol[ly]) |
+              !is.na(h$k_cmol[ly]) | !is.na(h$na_cmol[ly])
+  ok <- any_base & base_sum >= 15
   passed <- any(ok)
   DiagnosticResult$new(
     name = "Eutrosilic", passed = passed,
     layers = ly[ok],
-    evidence = list(silandic = si, bs_pct = bs),
-    missing = if (all(is.na(bs))) "bs_pct" else character(0),
+    evidence = list(silandic = si, base_sum_cmol = base_sum),
+    missing = if (!any(any_base)) c("ca_cmol","mg_cmol","k_cmol","na_cmol")
+              else character(0),
     reference = "WRB (2022) Ch 5, Eutrosilic"
   )
 }

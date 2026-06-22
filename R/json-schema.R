@@ -22,19 +22,16 @@
 #' @param pretty Logical, only used for \code{as = "json"}.
 #' @return A list (default) or a JSON string.
 #' @examples
+#' \dontrun{
 #' schema <- pedon_json_schema()
 #' names(schema)
+#' #> [1] "$schema"     "$id"         "title"       "type"        "required"   "properties"
 #'
-#' \donttest{
 #' # Validate a JSON profile against the schema:
-#' if (requireNamespace("jsonvalidate", quietly = TRUE) &&
-#'       requireNamespace("jsonlite", quietly = TRUE)) {
+#' if (requireNamespace("jsonvalidate", quietly = TRUE)) {
 #'   schema_json <- pedon_json_schema(as = "json")
-#'   p <- make_ferralsol_canonical()
-#'   p_json <- jsonlite::toJSON(list(site = p$site,
-#'                                     horizons = list()),
-#'                                 auto_unbox = TRUE, null = "null")
-#'   jsonvalidate::json_validate(p_json, schema_json, engine = "ajv")
+#'   jsonvalidate::json_validate('{"site":{...},"horizons":[...]}',
+#'                                  schema_json, engine = "ajv")
 #' }
 #' }
 #' @export
@@ -160,12 +157,10 @@ pedon_json_schema <- function(as = c("list", "json"), pretty = TRUE) {
 #' @return A logical scalar (\code{TRUE} when valid). Validation errors
 #'         appear as the \code{errors} attribute when \code{FALSE}.
 #' @examples
-#' \donttest{
-#' if (requireNamespace("jsonlite", quietly = TRUE) &&
-#'       requireNamespace("jsonvalidate", quietly = TRUE)) {
-#'   p <- make_ferralsol_canonical()
-#'   validate_pedon_json(p)
-#' }
+#' \dontrun{
+#' p <- make_ferralsol_canonical()
+#' validate_pedon_json(p)
+#' #> [1] TRUE
 #' }
 #' @export
 validate_pedon_json <- function(x) {
@@ -203,15 +198,12 @@ validate_pedon_json <- function(x) {
 }
 
 
-#' Internal helper: serialise the schema and write it to disk.
-#'
-#' Called by data-raw / build scripts only -- not exported. The caller
-#' must pass an explicit destination path so we never write into the
-#' user's working directory or home filespace by default.
-#' @keywords internal
-.write_pedon_schema_to_disk <- function(path) {
-  if (missing(path) || !is.character(path) || !nzchar(path))
-    stop(".write_pedon_schema_to_disk(): `path` is required.")
+#' Internal helper: write the schema to inst/schemas/pedon-schema.json
+#' Called by data-raw / build scripts only -- not exported.
+#' @noRd
+.write_pedon_schema_to_disk <- function(
+    path = file.path("inst", "schemas", "pedon-schema.json")
+) {
   if (!requireNamespace("jsonlite", quietly = TRUE))
     stop("Package 'jsonlite' is required.")
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)

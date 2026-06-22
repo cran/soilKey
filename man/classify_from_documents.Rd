@@ -41,7 +41,7 @@ object (when you want full control over
 \item{model}{Optional model identifier; passed through to
 \code{vlm_provider()} when \code{provider} is a
 string. Defaults to the per-provider default
-from \code{\link{default_model}}.}
+from \code{default_model}.}
 
 \item{systems}{Character vector listing which classification
 systems to run; subset of
@@ -146,32 +146,28 @@ remain one argument away when they are the right call.
 
 \examples{
 \dontshow{if (requireNamespace("ellmer", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-\donttest{
-# Requires user-provided PDF/image files and a VLM provider; the
-# block guards against missing inputs so it no-ops on CRAN.
-pdf_path <- "perfil_042_descricao.pdf"
-if (file.exists(pdf_path) && interactive()) {
-  # The simplest possible end-to-end call -- local Gemma 4 edge.
-  res <- classify_from_documents(
-    pdf      = pdf_path,
-    image    = "perfil_042_parede.jpg",
-    report   = file.path(tempdir(), "perfil_042.html")
-  )
-  res$classifications$wrb$name
+\dontrun{
+# The simplest possible end-to-end call -- local Gemma 4 edge.
+res <- classify_from_documents(
+  pdf      = "perfil_042_descricao.pdf",
+  image    = "perfil_042_parede.jpg",
+  report   = "perfil_042.html"
+)
+res$classifications$wrb$name
+#> "Geric Ferric Rhodic Chromic Ferralsol (Clayic, Humic, Dystric, Ochric, Rubic)"
 
-  # Cloud provider for a one-shot, production run
-  res <- classify_from_documents(
-    pdf      = pdf_path,
-    provider = "anthropic"
-  )
+# Cloud provider for a one-shot, production run
+res <- classify_from_documents(
+  pdf      = "perfil_042_descricao.pdf",
+  provider = "anthropic"
+)
 
-  # Different Gemma 4 size on Ollama
-  res <- classify_from_documents(
-    pdf      = pdf_path,
-    provider = "ollama",
-    model    = "gemma4:31b"
-  )
-}
+# Different Gemma 4 size on Ollama
+res <- classify_from_documents(
+  pdf      = "perfil_042_descricao.pdf",
+  provider = "ollama",
+  model    = "gemma4:31b"
+)
 }
 \dontshow{\}) # examplesIf}
 }

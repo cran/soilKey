@@ -68,15 +68,10 @@ Spectra are pre-processed inside the function (default
 remember which transform was applied at training time.
 }
 \examples{
-\donttest{
-if (requireNamespace("pls", quietly = TRUE)) {
-  # Toy training run on the bundled synthetic library:
-  data(ossl_demo_sa)
-  models <- try(train_pls_from_ossl(ossl_demo_sa,
-                                      properties = c("clay_pct", "ph_h2o"),
-                                      min_n = 10L,
-                                      validation = "none"),
-                 silent = TRUE)
-}
+\dontrun{
+lib <- download_ossl_subset(region = "south_america")
+models <- train_pls_from_ossl(lib,
+                               properties = c("clay_pct", "ph_h2o"))
+result <- predict_from_spectra(my_pedon, models = models)
 }
 }

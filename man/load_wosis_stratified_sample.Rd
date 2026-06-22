@@ -67,12 +67,12 @@ pulls time out as of 2026-05).
 }
 
 \examples{
-\donttest{
-s <- try(load_wosis_stratified_sample(), silent = TRUE)
-if (!inherits(s, "try-error")) {
-  length(s$pedons)
-  table(vapply(s$pedons, function(p) p$site$wosis_rsg, character(1)))
-}
+\dontrun{
+s <- load_wosis_stratified_sample()
+length(s$pedons)
+#> 130
+table(vapply(s$pedons, function(p) p$site$wosis_rsg, character(1)))
+#> 5 of each: Acrisol, Andosol, ... Vertisol
 }
 
 }

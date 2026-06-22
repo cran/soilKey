@@ -156,8 +156,7 @@ length(cls_wrb$trace)         # number of RSGs tested before assignment
 
 ```{r report-html, eval = FALSE}
 results <- list(wrb = cls_wrb, sibcs = cls_sibcs, usda = cls_usda)
-report(results, file = file.path(tempdir(), "perfil_042.html"),
-       pedon = pedon)
+report(results, file = "perfil_042.html", pedon = pedon)
 ```
 
 The output is a single HTML file with inline CSS -- no external network requests, suitable for emailing to a colleague or attaching to a laudo.
@@ -171,8 +170,8 @@ results <- list(wrb = cls_wrb, sibcs = cls_sibcs, usda = cls_usda)
 report_to_qgis(
   pedon           = pedon,
   classifications = results,
-  file            = file.path(tempdir(), "perfil_042.gpkg"),
-  report_html     = file.path(tempdir(), "perfil_042.html")
+  file            = "perfil_042.gpkg",
+  report_html     = "perfil_042.html"
 )
 ```
 

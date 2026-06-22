@@ -74,7 +74,7 @@
 # ---- Internal helpers ---------------------------------------------------
 
 #' Coerce a LUCAS character cell to numeric, treating "< LOD" / "" as NA
-#' @keywords internal
+#' @noRd
 .lucas_numeric <- function(x) {
   s <- trimws(as.character(x))
   s[s %in% c("", "< LOD", "<LOD", "NA", "n.d.", "ND")] <- NA_character_
@@ -83,7 +83,7 @@
 
 
 #' Build a single PedonRecord from one LUCAS chemistry row + optional BD row
-#' @keywords internal
+#' @noRd
 .build_lucas_pedon_2018 <- function(chem_row, bd_row = NULL) {
   # Unit conversions:
   #   OC, N, CaCO3, Ox_Al, Ox_Fe : g/kg     -> %        (* 0.1)
@@ -163,7 +163,7 @@
 #' Reads the canonical European Soil Data Centre (ESDAC) release of
 #' LUCAS Soil 2018 Topsoil chemistry as published in the JRC report
 #' (ESDAC dataset
-#' \url{https://esdac.jrc.ec.europa.eu/content/lucas-2018-topsoil-data}).
+#' \code{https://esdac.jrc.ec.europa.eu/content/lucas-2018-topsoil-data}).
 #' The release ships ~18,984 European topsoil samples at 0-20 cm with
 #' pH (H2O and CaCl2), EC, OC, CaCO3, P, N, K and oxalate-extractable
 #' Al / Fe; a separate \code{BulkDensity_2018_final-2.csv} carries
@@ -226,14 +226,12 @@
 #'          \code{\link{lookup_esdb}},
 #'          \code{\link{lookup_soilgrids}}.
 #' @examples
-#' \donttest{
-#' path <- file.path(tempdir(), "LUCAS-SOIL-2018-v2")
-#' if (dir.exists(path)) {
-#'   pedons <- load_lucas_soil_2018(path, countries = c("ES", "PT"),
-#'                                    max_n = 100)
-#'   length(pedons)
-#'   pedons[[1]]
-#' }
+#' \dontrun{
+#' path <- "soil_data/eu_lucas/LUCAS-SOIL-2018-data-report-readme-v2/LUCAS-SOIL-2018-v2"
+#' pedons <- load_lucas_soil_2018(path, countries = c("ES", "PT"),
+#'                                  max_n = 100)
+#' length(pedons)
+#' pedons[[1]]
 #' }
 #' @export
 load_lucas_soil_2018 <- function(path,
@@ -339,7 +337,7 @@ load_lucas_soil_2018 <- function(path,
 #' Test injection: pass \code{lookup_fn = function(...) value} to
 #' bypass the network when unit-testing.
 #'
-#' @keywords internal
+#' @noRd
 .fill_horizon_from_soilgrids <- function(pedon,
                                             horizon_idx,
                                             properties,
@@ -580,18 +578,16 @@ attach_lucas_spectra <- function(pedons,
 #'   }
 #'
 #' @examples
-#' \donttest{
-#' lucas_dir <- file.path(tempdir(), "LUCAS-SOIL-2018-v2")
-#' esdb_dir  <- file.path(tempdir(), "ESDB-Raster-Library-1k-GeoTIFF-20240507")
-#' if (dir.exists(lucas_dir) && dir.exists(esdb_dir)) {
-#'   pedons <- load_lucas_soil_2018(lucas_dir, countries = "ES", max_n = 50)
-#'   bench <- benchmark_lucas_2018(
-#'     pedons,
-#'     esdb_root = esdb_dir,
-#'     fill_texture_from = "soilgrids")
-#'   bench$accuracy
-#'   bench$per_rsg
-#' }
+#' \dontrun{
+#' pedons <- load_lucas_soil_2018(
+#'   "soil_data/eu_lucas/LUCAS-SOIL-2018-data-report-readme-v2/LUCAS-SOIL-2018-v2",
+#'   countries = c("ES"), max_n = 50)
+#' bench <- benchmark_lucas_2018(
+#'   pedons,
+#'   esdb_root = "soil_data/eu_lucas/ESDB-Raster-Library-1k-GeoTIFF-20240507",
+#'   fill_texture_from = "soilgrids")
+#' bench$accuracy
+#' bench$per_rsg
 #' }
 #' @seealso \code{\link{load_lucas_soil_2018}},
 #'          \code{\link{lookup_esdb}},

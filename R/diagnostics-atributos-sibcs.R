@@ -32,7 +32,7 @@
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 1, "Atividade da fracao
 #'   argila", p. 30.
 #' @param min_ta Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 atividade_argila_alta <- function(pedon, min_ta = 27) {
   h <- pedon$horizons
   layers_b_c <- which(!is.na(h$designation) &
@@ -89,6 +89,7 @@ atividade_argila_alta <- function(pedon, min_ta = 27) {
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_v Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 eutrofico <- function(pedon, min_v = 50) {
   h <- pedon$horizons
@@ -122,6 +123,7 @@ eutrofico <- function(pedon, min_v = 50) {
 #' horizonte diagnostico subsuperficial.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param max_v Numeric threshold or option (see Details).
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 distrofico <- function(pedon, max_v = 50) {
   e <- eutrofico(pedon, min_v = max_v)
@@ -148,7 +150,7 @@ distrofico <- function(pedon, max_v = 50) {
 #' @param min_al Numeric threshold or option (see Details).
 #' @param min_al_sat Numeric threshold or option (see Details).
 #' @param max_v Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 carater_alitico <- function(pedon, min_al = 4, min_al_sat = 50, max_v = 50) {
   h <- pedon$horizons
   candidates <- which(!is.na(h$designation) &
@@ -169,7 +171,9 @@ carater_alitico <- function(pedon, min_al = 4, min_al_sat = 50, max_v = 50) {
     al_sat <- if (!is.na(s) && (s + al) > 0) 100 * al / (s + al) else NA_real_
     if (is.na(al_sat) && !is.na(h$al_sat_pct[i])) al_sat <- h$al_sat_pct[i]
     if (is.na(al_sat)) { missing <- c(missing, "al_sat_pct"); next }
-    layer_pass <- al >= min_al && al_sat >= min_al_sat && v < max_v
+    # SiBCS 2018 Cap 1 p32: Al >= 4 cmolc/kg solo E (Al-sat >= 50% E/OU V < 50%).
+    # The two saturation conditions are OR-ed (was AND -- too restrictive).
+    layer_pass <- al >= min_al && (al_sat >= min_al_sat || v < max_v)
     details[[as.character(i)]] <- list(
       idx = i, al_cmol = al, al_sat_pct = al_sat, bs_pct = v,
       threshold_al = min_al, threshold_al_sat = min_al_sat,
@@ -202,7 +206,7 @@ carater_alitico <- function(pedon, min_al = 4, min_al_sat = 50, max_v = 50) {
 #' @param max_depth_cm Profundidade maxima (\code{top_cm}) em que
 #'        camadas qualificam (default \code{NULL} = sem restricao).
 #'        SiBCS Cap 14 Subgrupos usam \code{max_depth_cm = 150}.
-#' @export
+#' @noRd
 carater_carbonatico <- function(pedon, min_caco3_pct = 15,
                                    max_depth_cm = NULL) {
   h <- pedon$horizons
@@ -229,7 +233,7 @@ carater_carbonatico <- function(pedon, min_caco3_pct = 15,
 #'        (default \code{NULL} = sem restricao). SiBCS Cap 14 Subgrupos
 #'        de Organossolos Haplicos Sapricos usam
 #'        \code{max_depth_cm = 150}.
-#' @export
+#' @noRd
 carater_hipocarbonatico <- function(pedon, max_depth_cm = NULL) {
   h <- pedon$horizons
   passing <- integer(0); missing <- character(0); details <- list()
@@ -264,7 +268,7 @@ carater_hipocarbonatico <- function(pedon, max_depth_cm = NULL) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_pH Numeric threshold or option (see Details).
 #' @param min_s Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 carater_eutrico <- function(pedon, min_pH = 5.7, min_s = 2.0) {
   h <- pedon$horizons
   passing <- integer(0); missing <- character(0); details <- list()
@@ -299,7 +303,7 @@ carater_eutrico <- function(pedon, min_pH = 5.7, min_s = 2.0) {
 #' Carater fluvico (SiBCS Cap 1, p 35-36): camadas estratificadas +
 #' distribuicao irregular de C organico. Reuso de fluvic_material (WRB).
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @export
+#' @noRd
 carater_fluvico <- function(pedon) {
   res <- fluvic_material(pedon)
   DiagnosticResult$new(
@@ -315,7 +319,7 @@ carater_fluvico <- function(pedon) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_plinthite_pct Numeric threshold or option (see Details).
 #' @param max_plinthite_pct Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 carater_plintico <- function(pedon, min_plinthite_pct = 5,
                                  max_plinthite_pct = 15) {
   h <- pedon$horizons
@@ -345,7 +349,7 @@ carater_plintico <- function(pedon, min_plinthite_pct = 5,
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_redox_pct Numeric threshold or option (see Details).
 #' @param max_top_cm Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 carater_redoxico <- function(pedon, min_redox_pct = 5, max_top_cm = 150) {
   h <- pedon$horizons
   layers_in_section <- which(!is.na(h$top_cm) & h$top_cm <= max_top_cm)
@@ -371,7 +375,7 @@ carater_redoxico <- function(pedon, min_redox_pct = 5, max_top_cm = 150) {
 #' @param min_pst PST minimo (\%) (default 15).
 #' @param max_depth_cm Profundidade maxima em que camadas qualificam
 #'        (default \code{NULL}). SiBCS Cap 14 Subgrupos usam 150.
-#' @export
+#' @noRd
 carater_sodico <- function(pedon, min_pst = 15, max_depth_cm = NULL) {
   h <- pedon$horizons
   passing <- integer(0); missing <- character(0); details <- list()
@@ -406,7 +410,7 @@ carater_sodico <- function(pedon, min_pst = 15, max_depth_cm = NULL) {
 #' @param max_pst PST maximo (\%) (default 15).
 #' @param max_depth_cm Profundidade maxima em que camadas qualificam
 #'        (default \code{NULL}). SiBCS Cap 14 Subgrupos usam 150.
-#' @export
+#' @noRd
 carater_solodico <- function(pedon, min_pst = 6, max_pst = 15,
                                 max_depth_cm = NULL) {
   h <- pedon$horizons
@@ -440,7 +444,7 @@ carater_solodico <- function(pedon, min_pst = 6, max_pst = 15,
 #' @param min_ec Limite de CE em dS/m (default 7).
 #' @param max_depth_cm Profundidade maxima em que camadas qualificam
 #'        (default \code{NULL}). SiBCS Cap 14 Subgrupos usam 150.
-#' @export
+#' @noRd
 carater_salico <- function(pedon, min_ec = 7, max_depth_cm = NULL) {
   h <- pedon$horizons
   res <- test_ec_concentration(h, min_dS_m = min_ec)
@@ -466,7 +470,7 @@ carater_salico <- function(pedon, min_ec = 7, max_depth_cm = NULL) {
 #' @param max_ec Limite superior (exclusivo) (default 7).
 #' @param max_depth_cm Profundidade maxima em que camadas qualificam
 #'        (default \code{NULL}). SiBCS Cap 14 Subgrupos usam 150.
-#' @export
+#' @noRd
 carater_salino <- function(pedon, min_ec = 4, max_ec = 7,
                               max_depth_cm = NULL) {
   h <- pedon$horizons
@@ -508,6 +512,7 @@ carater_salino <- function(pedon, min_ec = 4, max_ec = 7,
 #' Reuso de \code{\link{abrupt_textural_difference}} (WRB Ch 3.2.1)
 #' que ja codifica criterios essencialmente equivalentes.
 #' @param pedon A \code{\link{PedonRecord}}.
+#' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 mudanca_textural_abrupta <- function(pedon) {
   res <- abrupt_textural_difference(pedon)
@@ -529,7 +534,7 @@ mudanca_textural_abrupta <- function(pedon) {
 #' @param max_depth_cm Profundidade maxima do contato (default
 #'        \code{NULL}). SiBCS Cap 14 Subgrupos liticos de Folicos usam
 #'        \code{max_depth_cm = 50}.
-#' @export
+#' @noRd
 contato_litico <- function(pedon, max_depth_cm = NULL) {
   h <- pedon$horizons
   res <- continuous_rock(pedon)
@@ -553,7 +558,7 @@ contato_litico <- function(pedon, max_depth_cm = NULL) {
 #' @param max_depth_cm Profundidade maxima do contato (default
 #'        \code{NULL}). SiBCS Cap 14 Subgrupos fragmentarios de Folicos
 #'        usam \code{max_depth_cm = 50}.
-#' @export
+#' @noRd
 contato_litico_fragmentario <- function(pedon, max_depth_cm = NULL) {
   h <- pedon$horizons
   res <- test_pattern_match(h, "designation", "^Cr|^Crf|^R/Cr|fragm")
@@ -617,7 +622,7 @@ contato_litico_fragmentario <- function(pedon, max_depth_cm = NULL) {
 #' exactly TRUE; NA if no FALSE but at least one NA. Used inside SiBCS
 #' pendente diagnostics that combine per-layer tests with proper
 #' propagation.
-#' @keywords internal
+#' @noRd
 .three_valued_all <- function(x) {
   if (length(x) == 0L) return(NA)
   if (any(x %in% FALSE)) return(FALSE)
@@ -636,7 +641,7 @@ contato_litico_fragmentario <- function(pedon, max_depth_cm = NULL) {
 #'   Hemico:   17-40\% fibras            ou  von Post H5-H6
 #'   Fibrico:  >= 40\% fibras            ou  von Post H1-H4
 #'
-#' @keywords internal
+#' @noRd
 .classify_decomposition <- function(fiber_pct, von_post) {
   out <- rep(NA_character_, length(fiber_pct))
   for (i in seq_along(fiber_pct)) {
@@ -767,7 +772,7 @@ fibrico <- function(pedon) {
 #'         pelo menos um horizonte B satisfaz ambos os criterios.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 1, p 31; Cap 10
 #'             (Latossolos), pp 173-176.
-#' @export
+#' @noRd
 carater_acrico <- function(pedon,
                               max_ecec_clay = 1.5,
                               min_delta_ph  = 0) {
@@ -794,7 +799,11 @@ carater_acrico <- function(pedon,
     }
     delta_ph  <- pkcl - ph2o
     ecec_clay <- ecec * 100 / clay   # cmolc/kg argila
-    pass <- delta_ph >= min_delta_ph && ecec_clay <= max_ecec_clay
+    # SiBCS 2018 Cap 1 p31: (bases+Al) <= 1.5 cmolc/kg argila E (pH-KCl >= 5.0
+    # OU delta-pH >= 0). The pH-KCl >= 5.0 alternative was missing (code
+    # required delta-pH >= 0 only).
+    pass <- (pkcl >= 5.0 || delta_ph >= min_delta_ph) &&
+      ecec_clay <= max_ecec_clay
     details[[as.character(i)]] <- list(
       idx = i, ph_h2o = ph2o, ph_kcl = pkcl, delta_ph = delta_ph,
       ecec_cmol = ecec, clay_pct = clay, ecec_per_kg_clay = ecec_clay,
@@ -834,7 +843,7 @@ carater_acrico <- function(pedon,
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 1; Cap 7
 #'             (Chernossolos), pp 144-148; Cap 17 (Vertissolos),
 #'             pp 271-274.
-#' @export
+#' @noRd
 carater_ebanico <- function(pedon,
                                max_value  = 3,
                                max_chroma = 2,
@@ -908,7 +917,7 @@ carater_ebanico <- function(pedon,
 #'        slickensides+cracks (default 1).
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 1, p 33.
-#' @export
+#' @noRd
 carater_retratil <- function(pedon,
                                 min_cole        = 0.06,
                                 min_crack_width = 1) {
@@ -961,7 +970,7 @@ carater_retratil <- function(pedon,
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 1, p 35; Cap 8
 #'             (Espodossolos), pp 156-160.
-#' @export
+#' @noRd
 carater_espodico <- function(pedon,
                                 min_thickness = 2.5,
                                 min_oc_pct    = 0.5) {
@@ -1026,6 +1035,8 @@ carater_espodico <- function(pedon,
 #' @return Ki molar (numeric); NA se algum input for NA ou Al2O3 \eqn{\le} 0.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 1, p 32; Embrapa Manual
 #'             de Metodos de Analise de Solo (3a ed., 2017).
+#' @examples
+#' compute_ki(sio2_pct = 18, al2o3_pct = 20)  # ~1.53, abaixo do limite latossolico
 #' @export
 compute_ki <- function(sio2_pct, al2o3_pct) {
   ifelse(is.na(sio2_pct) | is.na(al2o3_pct) | al2o3_pct <= 0,
@@ -1048,6 +1059,8 @@ compute_ki <- function(sio2_pct, al2o3_pct) {
 #' @return Kr molar (numeric); NA se algum input for NA ou denominador
 #'         \eqn{\le} 0.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 1, p 32.
+#' @examples
+#' compute_kr(sio2_pct = 18, al2o3_pct = 20, fe2o3_pct = 12)
 #' @export
 compute_kr <- function(sio2_pct, al2o3_pct, fe2o3_pct) {
   denom <- al2o3_pct / 101.96 + fe2o3_pct / 159.69
@@ -1064,7 +1077,7 @@ compute_kr <- function(sio2_pct, al2o3_pct, fe2o3_pct) {
 #' \eqn{\le} max_ki em todos os horizontes B avaliados, e Kr
 #' \eqn{\le} max_kr quando Fe2O3 estiver disponivel. Sub-classes
 #' acricas (Latossolos Acricos) e acriferricas adicionalmente exigem
-#' \code{\link{carater_acrico}}.
+#' \code{carater_acrico}.
 #'
 #' Quando os campos de ataque sulfurico
 #' (\code{sio2_sulfuric_pct}, \code{al2o3_sulfuric_pct},
@@ -1078,7 +1091,7 @@ compute_kr <- function(sio2_pct, al2o3_pct, fe2o3_pct) {
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 10 (Latossolos),
 #'             pp 173-176.
-#' @export
+#' @noRd
 latossolo_ki_kr <- function(pedon, max_ki = 2.2, max_kr = 1.7) {
   h <- pedon$horizons
   b_layers <- which(!is.na(h$designation) & grepl("^B", h$designation))
@@ -1278,7 +1291,7 @@ cerosidade <- function(pedon,
 #'         \code{min_thickness_cm}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 14, p 246
 #'             (subgrupos terricos de Organossolos).
-#' @export
+#' @noRd
 carater_terrico <- function(pedon,
                                min_thickness_cm = 30,
                                within_depth_cm  = 100) {
@@ -1371,7 +1384,7 @@ carater_terrico <- function(pedon,
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 1; Cap 6, p 142;
 #'             Cap 10 (Latossolos Perferricos).
-#' @export
+#' @noRd
 carater_perferrico <- function(pedon,
                                   min_fe2o3_pct = 36,
                                   max_depth_cm  = 100) {
@@ -1422,7 +1435,7 @@ carater_perferrico <- function(pedon,
 #' Cambissolos Carbonaticos / Eutroficos / Tb Eutroferricos
 #' (Cap 6 CY 3.1.3, 3.6.2, CX 4.1.5, 4.7.7, 4.11.4).
 #'
-#' Implementacao: passa se \code{\link{horizonte_vertico}} retornar
+#' Implementacao: passa se \code{horizonte_vertico} retornar
 #' TRUE em ao menos uma camada com \code{top_cm} \eqn{<}
 #' \code{max_depth_cm}. SiBCS estrito requer "posicao nao
 #' diagnostica para Vertissolos" -- aproximamos isso confiando no
@@ -1434,7 +1447,7 @@ carater_perferrico <- function(pedon,
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 6, pp 146-153;
 #'             Cap 17 (Vertissolos).
-#' @export
+#' @noRd
 carater_vertissolico <- function(pedon, max_depth_cm = 150) {
   res <- horizonte_vertico(pedon)
   layers <- res$layers
@@ -1471,7 +1484,7 @@ carater_vertissolico <- function(pedon, max_depth_cm = 150) {
 #' @param max_depth_cm Default 150 cm.
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 1; Cap 6, p 153.
-#' @export
+#' @noRd
 carater_argiluvico <- function(pedon, max_depth_cm = 150) {
   bt <- B_textural(pedon)
   layers <- bt$layers
@@ -1481,7 +1494,37 @@ carater_argiluvico <- function(pedon, max_depth_cm = 150) {
                   h$top_cm[layers] < max_depth_cm
     layers <- layers[in_depth]
   }
+  # SiBCS 2018 Cap 1 p33: argiluvico also requires the B to have prismatic
+  # structure (any grade) OR blocky structure of at least moderate grade
+  # (B_textural already supplies the B/A >= 1.4 ratio). Enforced where
+  # structure is recorded; absent -> ratio alone (refine-when-present).
+  if (length(layers) > 0L) {
+    stype <- tolower(h$structure_type[layers] %||% NA_character_)
+    sgrade <- tolower(h$structure_grade[layers] %||% NA_character_)
+    prismatic <- !is.na(stype) & grepl("prism", stype)
+    blocky_mod <- !is.na(stype) & grepl("block|bloco", stype) &
+                    !is.na(sgrade) & sgrade %in% c("moderate", "strong")
+    struct_ok <- is.na(stype) | prismatic | blocky_mod
+    layers <- layers[struct_ok]
+  }
   passed <- length(layers) > 0L
+  # SiBCS Cap 1: o caráter argilúvico exige B TEXTURAL, que por sua vez exige a
+  # RELAÇÃO TEXTURAL (item h: > 1.5 / 1.7 / 1.8 conforme a argila do A).
+  # B_textural une o incremento argílico (ratio >= 1.4), MAIS permissivo que a
+  # relação textural; sem este gate o gradiente latossólico suave (ex. A 38% ->
+  # B 59%, ratio ~1.55 na faixa que exige > 1.7) era rotulado argissólico em
+  # Latossolos que a referência chama típico. Exigimos a relação textural
+  # QUANDO há dado de argila (refine-when-present -> byte-idêntico sem argila).
+  # Mudança restrita ao nível de SUBGRUPO (carater_argiluvico só aparece em
+  # subgrupos/*.yaml), logo ordem/grande-grupo ficam inalterados.
+  if (passed) {
+    rt <- test_ratio_textural_sibcs(h)
+    clay_present <- !("clay_pct" %in% (rt$missing %||% character(0)))
+    if (clay_present && !isTRUE(rt$passed)) {
+      passed <- FALSE
+      layers <- integer(0)
+    }
+  }
   DiagnosticResult$new(
     name = "carater_argiluvico", passed = passed, layers = layers,
     evidence = list(B_textural = bt, max_depth_cm = max_depth_cm),
@@ -1518,7 +1561,7 @@ carater_argiluvico <- function(pedon, max_depth_cm = 150) {
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 1; Cap 5 PV 4.2.6,
 #'             p 130 (Lunardi Neto, 2012, perfil PVa).
-#' @export
+#' @noRd
 carater_sombrico <- function(pedon,
                                 max_value    = 4,
                                 max_chroma   = 3,
@@ -1579,7 +1622,7 @@ carater_sombrico <- function(pedon,
 #' @param min_solum_cm Default 80.
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 11, p 214.
-#' @export
+#' @noRd
 carater_palico <- function(pedon, min_solum_cm = 80) {
   h <- pedon$horizons
   # Solum = A, AB, BA, B*, E (excluido BC e B/C, e qualquer C, R, Cr).
@@ -1644,7 +1687,7 @@ carater_palico <- function(pedon, min_solum_cm = 80) {
 #' @param max_depth_cm Default 100.
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 1; Cap 10 LB, p 199-200.
-#' @export
+#' @noRd
 carater_rubrico <- function(pedon, min_chroma = 4, max_depth_cm = 100) {
   h <- pedon$horizons
   b_layers <- which(!is.na(h$designation) & grepl("^B", h$designation))
@@ -1702,7 +1745,7 @@ carater_rubrico <- function(pedon, min_chroma = 4, max_depth_cm = 100) {
 #' @param max_depth_cm Default 150 cm.
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 10 LA, p 203.
-#' @export
+#' @noRd
 carater_psamitico <- function(pedon,
                                 max_clay_pct = 20,
                                 max_depth_cm = 150) {
@@ -1749,7 +1792,7 @@ carater_psamitico <- function(pedon,
 
 #' Carater tionico (SiBCS Cap 9; Cap 1 thionic-related)
 #'
-#' Solos com horizonte sulfurico (\code{\link{horizonte_sulfurico}})
+#' Solos com horizonte sulfurico (\code{horizonte_sulfurico})
 #' OU materiais sulfidricos a profundidades entre \code{min_depth_cm}
 #' e \code{max_depth_cm} (default 100-150 cm). Discrimina os Subgrupos
 #' tionicos de Gleissolos (Cap 9 GZsd, GMtal, GMtd, GXte) -- variante
@@ -1760,7 +1803,7 @@ carater_psamitico <- function(pedon,
 #' @param max_depth_cm Default 150 cm.
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 9, pp 180-191.
-#' @export
+#' @noRd
 carater_tionico <- function(pedon,
                               min_depth_cm = 100,
                               max_depth_cm = 150) {
@@ -1810,7 +1853,7 @@ carater_tionico <- function(pedon,
 #' Discrimina os Grandes Grupos Hiperespessos / Hidro-hiperespessos
 #' de Espodossolos (Cap 8 1.1, 1.3, 2.1, 2.3, 3.1, 3.3).
 #'
-#' Implementacao: chama \code{\link{carater_espodico}} e filtra por
+#' Implementacao: chama \code{carater_espodico} e filtra por
 #' \code{top_cm} no intervalo [\code{min_top_cm}, \code{max_top_cm}].
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
@@ -1818,7 +1861,7 @@ carater_tionico <- function(pedon,
 #' @param max_top_cm Default 400.
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 8, pp 165-168.
-#' @export
+#' @noRd
 carater_espodico_profundo <- function(pedon,
                                          min_top_cm = 200,
                                          max_top_cm = 400) {
@@ -1855,16 +1898,16 @@ carater_espodico_profundo <- function(pedon,
 #'
 #' Solos saturados com agua em camada(s) dentro de \code{max_depth_cm}
 #' (default 100 cm), evidenciado por horizonte glei
-#' (\code{\link{horizonte_glei}}) OU caracter redoxico
-#' (\code{\link{carater_redoxico}}) OU horizonte Eg na designation OU
+#' (\code{horizonte_glei}) OU caracter redoxico
+#' (\code{carater_redoxico}) OU horizonte Eg na designation OU
 #' acumulacao de Mn em horizonte E ou B espodico. Discrimina os
 #' Grandes Grupos Hidromorficos / Hidro-hiperespessos de Espodossolos
 #' (Cap 8 1.1, 1.2, 2.1, 2.2, 3.1, 3.2).
 #'
 #' Implementacao v0.7.5 (aproximacao):
 #' \itemize{
-#'   \item \code{\link{horizonte_glei}} dentro de max_depth_cm, OR
-#'   \item \code{\link{carater_redoxico}} ate max_depth_cm, OR
+#'   \item \code{horizonte_glei} dentro de max_depth_cm, OR
+#'   \item \code{carater_redoxico} ate max_depth_cm, OR
 #'   \item designation pattern \code{Eg} dentro de max_depth_cm.
 #' }
 #'
@@ -1872,7 +1915,7 @@ carater_espodico_profundo <- function(pedon,
 #' @param max_depth_cm Default 100 cm.
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 8, pp 165-168.
-#' @export
+#' @noRd
 carater_hidromorfico <- function(pedon, max_depth_cm = 100) {
   gl <- horizonte_glei(pedon)
   rx <- carater_redoxico(pedon, max_top_cm = max_depth_cm)
@@ -1919,7 +1962,7 @@ carater_hidromorfico <- function(pedon, max_depth_cm = 100) {
 
 #' Carater gleissolico (SiBCS Cap 5; horizonte_glei em posicao nao-Gleissolo)
 #'
-#' Solos com horizonte glei (\code{\link{horizonte_glei}}) em posicao
+#' Solos com horizonte glei (\code{horizonte_glei}) em posicao
 #' nao diagnostica para Gleissolos (i.e., dentro de
 #' \code{max_depth_cm} mas NAO satisfazendo os requisitos completos de
 #' Gleissolo). Discrimina os Subgrupos gleissolicos de Argissolos
@@ -1931,7 +1974,7 @@ carater_hidromorfico <- function(pedon, max_depth_cm = 100) {
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 5, p 126; Cap 9
 #'             (Gleissolos).
-#' @export
+#' @noRd
 carater_gleissolico <- function(pedon, max_depth_cm = 150) {
   res <- horizonte_glei(pedon)
   layers <- res$layers
@@ -1959,7 +2002,7 @@ carater_gleissolico <- function(pedon, max_depth_cm = 150) {
 #' mais de fragmentos de rocha (\code{coarse_fragments_pct}) no
 #' horizonte B (exclusive BC ou B/C), dentro de \code{max_depth_cm}.
 #' Discrimina os Subgrupos cambissolicos de Argissolos PA (Cap 5,
-#' p 126) -- DISTINTO do \code{\link{carater_cambissolico}} (Cap 14
+#' p 126) -- DISTINTO do \code{carater_cambissolico} (Cap 14
 #' Organossolos Folicos: B incipiente abaixo de histico/A).
 #'
 #' Implementacao v0.7.4 (aproximacao): apenas \code{coarse_fragments_pct}
@@ -1973,7 +2016,7 @@ carater_gleissolico <- function(pedon, max_depth_cm = 150) {
 #' @param max_depth_cm Default 150 cm.
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 5, p 126.
-#' @export
+#' @noRd
 carater_cambissolico_arg <- function(pedon,
                                         min_coarse_pct = 5,
                                         max_depth_cm   = 150) {
@@ -2031,7 +2074,7 @@ carater_cambissolico_arg <- function(pedon,
 #' @param max_depth_cm Default 150 cm.
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 5, p 125.
-#' @export
+#' @noRd
 carater_placico <- function(pedon, max_depth_cm = 150) {
   h <- pedon$horizons
   passing <- integer(0); missing <- character(0)
@@ -2076,7 +2119,7 @@ carater_placico <- function(pedon, max_depth_cm = 150) {
 #'
 #' Textura arenosa (clay\% < \code{max_clay_pct}) da superficie ate
 #' boundary em [100, 200] cm. Variante "espessa" do
-#' \code{\link{carater_arenico}}.
+#' \code{carater_arenico}.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param max_clay_pct Limite superior de \% argila (default 15).
@@ -2084,7 +2127,7 @@ carater_placico <- function(pedon, max_depth_cm = 150) {
 #' @param max_depth_cm Profundidade maxima do boundary (default 200).
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 5, pp 130-131.
-#' @export
+#' @noRd
 carater_espessarenico <- function(pedon,
                                      max_clay_pct = 15,
                                      min_depth_cm = 100,
@@ -2107,8 +2150,8 @@ carater_espessarenico <- function(pedon,
 #' Discrimina os Subgrupos petroplinticos de Argissolos (Cap 5: PA, PVA,
 #' PV).
 #'
-#' Implementacao: passa se \code{\link{horizonte_concrecionario}} OU
-#' \code{\link{horizonte_litoplintico}} retornarem TRUE em ao menos
+#' Implementacao: passa se \code{horizonte_concrecionario} OU
+#' \code{horizonte_litoplintico} retornarem TRUE em ao menos
 #' uma camada com top < max_depth_cm.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
@@ -2116,7 +2159,7 @@ carater_espessarenico <- function(pedon,
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 5; Cap 16
 #'             (Plintossolos).
-#' @export
+#' @noRd
 carater_petroplintico <- function(pedon, max_depth_cm = 150) {
   conc <- horizonte_concrecionario(pedon)
   lito <- horizonte_litoplintico(pedon)
@@ -2153,7 +2196,7 @@ carater_petroplintico <- function(pedon, max_depth_cm = 150) {
 #'
 #' Implementacao v0.7.4: aproxima como
 #' \code{\link{B_planico}} OR (\code{\link{mudanca_textural_abrupta}} AND
-#' \code{\link{carater_sodico}}). SiBCS Cap 1 estritamente define
+#' \code{carater_sodico}). SiBCS Cap 1 estritamente define
 #' caracter planico via mudanca textural abrupta + horizonte/caracter
 #' sodico em B + cores neutras.
 #'
@@ -2162,7 +2205,7 @@ carater_petroplintico <- function(pedon, max_depth_cm = 150) {
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 5; Cap 1, p 36;
 #'             Cap 15 (Planossolos).
-#' @export
+#' @noRd
 carater_planossolico <- function(pedon, max_depth_cm = 150) {
   bp  <- B_planico(pedon)
   if (isTRUE(bp$passed)) {
@@ -2218,7 +2261,7 @@ carater_planossolico <- function(pedon, max_depth_cm = 150) {
 #' @param max_depth_cm Profundidade maxima do B avaliado (default 150).
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 5, pp 129-131; Cap 13.
-#' @export
+#' @noRd
 carater_nitossolico <- function(pedon,
                                    max_b_a_ratio = 1.5,
                                    max_depth_cm  = 150) {
@@ -2265,7 +2308,7 @@ carater_nitossolico <- function(pedon,
 
 #' Carater leptico (SiBCS Cap 5; contato litico em 50-100 cm)
 #'
-#' Solos com contato litico (\code{\link{contato_litico}}) a profundidade
+#' Solos com contato litico (\code{contato_litico}) a profundidade
 #' entre 50 e 100 cm. Discrimina os Subgrupos lepticos de Argissolos
 #' (Cap 5: PA, PV, PVA).
 #'
@@ -2277,7 +2320,7 @@ carater_nitossolico <- function(pedon,
 #' @param max_depth_cm Default 100.
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 5, pp 127, 132.
-#' @export
+#' @noRd
 carater_leptico <- function(pedon,
                               min_depth_cm = 50,
                               max_depth_cm = 100) {
@@ -2313,7 +2356,7 @@ carater_leptico <- function(pedon,
 #' @param max_depth_cm Default 100.
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 5, pp 127, 132.
-#' @export
+#' @noRd
 carater_leptofragmentario <- function(pedon,
                                          min_depth_cm = 50,
                                          max_depth_cm = 100) {
@@ -2347,13 +2390,13 @@ carater_leptofragmentario <- function(pedon,
 #'
 #' Implementacao: requer (a) designation pattern \code{Cr}/\code{Crf}
 #' (sem \code{R} continuo) em camada com \code{top < max_depth_cm}, e
-#' (b) \code{\link{contato_litico}}\code{(pedon)} retorna FALSE.
+#' (b) \code{contato_litico}\code{(pedon)} retorna FALSE.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param max_depth_cm Default 100.
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 5, pp 122, 132.
-#' @export
+#' @noRd
 carater_saprolitico <- function(pedon, max_depth_cm = 100) {
   h <- pedon$horizons
   # Detecta R (rocha continua, NAO Cr/Crf brando) explicitamente para
@@ -2410,7 +2453,7 @@ carater_saprolitico <- function(pedon, max_depth_cm = 100) {
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 5, p 134; Cap 11
 #'             (Luvissolos).
-#' @export
+#' @noRd
 carater_luvissolico <- function(pedon,
                                    min_ta       = 20,
                                    min_s        = 5,
@@ -2468,7 +2511,7 @@ carater_luvissolico <- function(pedon,
 #' Carater chernossolico (SiBCS Cap 5; A chernozemico + Ta alta)
 #'
 #' Solos com horizonte A chernozemico
-#' (\code{\link{horizonte_A_chernozemico}}) E atividade da argila
+#' (\code{horizonte_A_chernozemico}) E atividade da argila
 #' \eqn{\ge} \code{min_ta} (default 20 cmolc/kg argila) na maior parte
 #' dos primeiros 100 cm do B (inclusive BA). Discrimina os Subgrupos
 #' chernossolicos de Argissolos (Cap 5: PV, PVA).
@@ -2478,7 +2521,7 @@ carater_luvissolico <- function(pedon,
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 5, p 134; Cap 7
 #'             (Chernossolos).
-#' @export
+#' @noRd
 carater_chernossolico <- function(pedon, min_ta = 20) {
   ach <- horizonte_A_chernozemico(pedon)
   if (!isTRUE(ach$passed)) {
@@ -2532,7 +2575,7 @@ carater_chernossolico <- function(pedon, min_ta = 20) {
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 5 (Argissolos),
 #'             pp 120-138.
-#' @export
+#' @noRd
 carater_arenico <- function(pedon,
                               max_clay_pct = 15,
                               min_depth_cm = 50,
@@ -2622,7 +2665,7 @@ carater_arenico <- function(pedon,
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 1; Cap 5 (Argissolos
 #'             Acinzentados Distrocoesos abrupticos duricos), p 120.
-#' @export
+#' @noRd
 carater_durico <- function(pedon, max_depth_cm = 150) {
   h <- pedon$horizons
   weak_or_mod <- c("weakly", "moderately")
@@ -2676,7 +2719,7 @@ carater_durico <- function(pedon, max_depth_cm = 150) {
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 5 (Argissolos),
 #'             pp 121-138.
-#' @export
+#' @noRd
 carater_latossolico <- function(pedon, max_depth_cm = 150) {
   bt <- B_textural(pedon)
   if (!isTRUE(bt$passed)) {
@@ -2737,7 +2780,7 @@ carater_latossolico <- function(pedon, max_depth_cm = 150) {
 #' (Cap 5 PBAC 1.1.2) -- camadas humosas espessas tipicas de
 #' Argissolos do RS.
 #'
-#' Implementacao: requer (1) \code{\link{horizonte_A_humico}} passa
+#' Implementacao: requer (1) \code{horizonte_A_humico} passa
 #' AND (2) ha camada com \code{oc_pct} >= \code{min_oc_pct} cuja
 #' \code{bottom_cm} >= \code{min_depth_cm}.
 #'
@@ -2748,7 +2791,7 @@ carater_latossolico <- function(pedon, max_depth_cm = 150) {
 #'        (default 80 cm).
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 5 (Argissolos), p 119.
-#' @export
+#' @noRd
 carater_humico_espesso <- function(pedon,
                                        min_oc_pct   = 1.0,
                                        min_depth_cm = 80) {
@@ -2825,7 +2868,7 @@ carater_humico_espesso <- function(pedon,
 #'         criterios de consistencia.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 1, pp 32-33;
 #'             Cap 5 (Argissolos), pp 117-119.
-#' @export
+#' @noRd
 carater_coeso <- function(pedon, max_depth_cm = 150) {
   h <- pedon$horizons
   hard_dry      <- c("very hard", "extremely hard")
@@ -2895,7 +2938,7 @@ carater_coeso <- function(pedon, max_depth_cm = 150) {
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 1, p 35; Cap 5
 #'             (Argissolos Eutroferricos, p 118); Cap 10 (Latossolos).
-#' @export
+#' @noRd
 carater_ferrico <- function(pedon,
                               min_fe2o3_pct = 18,
                               max_fe2o3_pct = 36,
@@ -2960,7 +3003,7 @@ carater_ferrico <- function(pedon,
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return \code{\link{DiagnosticResult}}.
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 14, pp 247-248.
-#' @export
+#' @noRd
 carater_cambissolico <- function(pedon) {
   h <- pedon$horizons
   if (nrow(h) == 0L) {

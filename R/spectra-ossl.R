@@ -283,14 +283,7 @@ ossl_library_template <- function(wavelengths = 350:2500,
 #' @param n_horizons Integer number of horizons (default 5).
 #' @param wavelengths Integer vector of wavelengths (default
 #'        \code{350:2500}).
-#' @param seed Integer applied through \code{\link[withr]{with_seed}}
-#'        so the synthetic spectra are reproducible \emph{without}
-#'        mutating the caller's global RNG state (the prior stream is
-#'        restored on exit). Pass \code{NULL} to draw from the current
-#'        RNG stream untouched. Default \code{1L} keeps the
-#'        bit-for-bit identical output that earlier soilKey releases
-#'        produced, but does so via \code{with_seed()} (CRAN policy:
-#'        never call \code{set.seed()} on the caller's RNG).
+#' @param seed Integer seed for the RNG used to generate the spectra.
 #' @return A \code{\link{PedonRecord}} with a \code{$spectra$vnir}
 #'         matrix attached.
 #' @export
@@ -299,28 +292,18 @@ make_synthetic_pedon_with_spectra <- function(n_horizons  = 5L,
                                                 seed        = 1L) {
   n_horizons  <- as.integer(n_horizons)
   wavelengths <- as.integer(wavelengths)
+  set.seed(seed)
 
   # Generate physically plausible-ish reflectance: a smooth baseline
-  # with a few absorption features that vary by horizon. Wrapped so
-  # withr::with_seed() can replay it deterministically without ever
-  # calling set.seed() on the caller's global RNG (CRAN policy).
-  build_spectra <- function() {
-    base <- 0.25 + 0.0001 * (wavelengths - 350)
-    noise <- matrix(rnorm(n_horizons * length(wavelengths), 0, 0.005),
-                      nrow = n_horizons)
-    feature <- outer(seq_len(n_horizons),
-                       wavelengths,
-                       function(i, w) 0.08 *
-                         exp(-((w - 1400 - 30 * i)^2) / 1e4))
-    out <- sweep(noise + feature, 2, base, `+`)
-    colnames(out) <- as.character(wavelengths)
-    out
-  }
-  vnir <- if (!is.null(seed)) {
-    withr::with_seed(as.integer(seed), build_spectra())
-  } else {
-    build_spectra()
-  }
+  # with a few absorption features that vary by horizon.
+  base <- 0.25 + 0.0001 * (wavelengths - 350)
+  noise <- matrix(rnorm(n_horizons * length(wavelengths), 0, 0.005),
+                    nrow = n_horizons)
+  feature <- outer(seq_len(n_horizons),
+                     wavelengths,
+                     function(i, w) 0.08 * exp(-((w - 1400 - 30 * i)^2) / 1e4))
+  vnir <- sweep(noise + feature, 2, base, `+`)
+  colnames(vnir) <- as.character(wavelengths)
 
   hz <- data.table::data.table(
     top_cm    = seq.int(0, by = 20, length.out = n_horizons),

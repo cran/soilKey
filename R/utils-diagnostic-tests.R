@@ -17,7 +17,7 @@
 # ---------------------------------------------------------------- helpers ----
 #' Internal helper: .subtest_result
 
-#' @keywords internal
+#' @noRd
 .subtest_result <- function(passed,
                              layers  = integer(0),
                              missing = character(0),
@@ -33,7 +33,7 @@
 }
 #' Internal helper: .candidate_layers
 
-#' @keywords internal
+#' @noRd
 .candidate_layers <- function(h, candidate_layers = NULL) {
   if (is.null(candidate_layers)) seq_len(nrow(h))
   else as.integer(candidate_layers)
@@ -46,7 +46,7 @@
 #' sandy loam. Returns \code{TRUE}/\code{FALSE}/\code{NA}.
 #'
 #' @param sand,silt,clay Numeric percentages.
-#' @keywords internal
+#' @noRd
 is_sandy_loam_or_finer <- function(sand, silt, clay) {
   if (is.na(sand) || is.na(silt) || is.na(clay)) return(NA)
   silt + 2 * clay >= 30
@@ -57,7 +57,7 @@ is_sandy_loam_or_finer <- function(sand, silt, clay) {
 #' Boundary: \code{silt + 2 * clay >= 15}. Returns
 #' \code{TRUE}/\code{FALSE}/\code{NA}.
 #'
-#' @keywords internal
+#' @noRd
 is_loamy_sand_or_finer <- function(sand, silt, clay) {
   if (is.na(sand) || is.na(silt) || is.na(clay)) return(NA)
   silt + 2 * clay >= 15
@@ -68,7 +68,7 @@ is_loamy_sand_or_finer <- function(sand, silt, clay) {
 #' \code{cec_cmol * 100 / clay_pct}. Returns \code{NA} when either input is
 #' missing or \code{clay_pct <= 0}.
 #'
-#' @keywords internal
+#' @noRd
 cec_per_clay <- function(cec_cmol, clay_pct) {
   if (is.na(cec_cmol) || is.na(clay_pct) || clay_pct <= 0) return(NA_real_)
   cec_cmol * 100 / clay_pct
@@ -79,7 +79,7 @@ cec_per_clay <- function(cec_cmol, clay_pct) {
 #' If any of \code{ca_cmol}, \code{mg_cmol}, \code{k_cmol}, \code{na_cmol},
 #' \code{al_cmol} are missing, returns \code{NA}.
 #'
-#' @keywords internal
+#' @noRd
 compute_ecec <- function(ca, mg, k, na, al) {
   parts <- c(ca, mg, k, na, al)
   if (any(is.na(parts))) return(NA_real_)
@@ -88,7 +88,7 @@ compute_ecec <- function(ca, mg, k, na, al) {
 
 #' ECEC per kg clay (cmol_c)
 #'
-#' @keywords internal
+#' @noRd
 ecec_per_clay <- function(ecec_cmol, clay_pct) {
   if (is.na(ecec_cmol) || is.na(clay_pct) || clay_pct <= 0) return(NA_real_)
   ecec_cmol * 100 / clay_pct
@@ -128,7 +128,7 @@ ecec_per_clay <- function(ecec_cmol, clay_pct) {
 #' @references IUSS Working Group WRB (2022), Chapter 3.1.3, Argic
 #'   horizon, criteria 2.a.iv-vi (p. 36); Soil Survey Staff (2022),
 #'   Keys to Soil Taxonomy 13th ed., Chapter 3, Argillic horizon (p. 4).
-#' @export
+#' @noRd
 test_clay_increase_argic <- function(h, system = c("wrb2022", "usda")) {
   system <- match.arg(system)
   if (nrow(h) < 2L) {
@@ -237,6 +237,68 @@ test_clay_increase_argic <- function(h, system = c("wrb2022", "usda")) {
   )
 }
 
+
+#' SiBCS B textural relacao-textural (item h)
+#'
+#' Implements the verbatim Embrapa (2018) SiBCS Cap 2 p.56 item (h): the
+#' total-clay B/A textural ratio, keyed on the A-horizon clay content, computed
+#' over the footnote-4 control section. This is the SiBCS-specific PROPORTIONAL
+#' clay-increase test, distinct from (and mostly a subset of) the WRB
+#' \code{\link{argic}} absolute-increase rule -- it differs only for very sandy
+#' A horizons (clay < ~7.5\%), where the ratio test is a smaller absolute jump
+#' than argic's +6 pp.
+#'
+#' Control section (footnote 4): A clay = thickness-weighted mean of the A
+#' horizons; B clay = thickness-weighted mean of the B horizons (excluding BC)
+#' within a window from the top of B equal to 30 cm if the A is < 15 cm thick,
+#' or twice the A thickness if the A is \\>= 15 cm thick. Thresholds:
+#' ratio \\> 1.50 if A clay \\> 400 g/kg; \\> 1.70 if 150-400 g/kg; \\> 1.80 if
+#' \\< 150 g/kg.
+#'
+#' @param h A horizons \code{data.table} (\code{\link{ensure_horizon_schema}}).
+#' @return A subtest result list (\code{passed}, \code{layers}, \code{missing},
+#'   \code{details}).
+#' @noRd
+test_ratio_textural_sibcs <- function(h) {
+  desig <- h$designation
+  has_d <- !is.na(desig)
+  a_idx <- which(has_d & grepl("^[0-9]*A", desig))
+  b_idx <- which(has_d & grepl("^[0-9]*B", desig) &
+                   !grepl("BC", desig, ignore.case = TRUE))
+  if (length(a_idx) == 0L || length(b_idx) == 0L) {
+    return(.subtest_result(passed = FALSE,
+                           notes = "no A or B horizon for relacao textural"))
+  }
+  a_thk  <- h$bottom_cm[a_idx] - h$top_cm[a_idx]
+  a_clay <- h$clay_pct[a_idx]
+  if (all(is.na(a_clay))) return(.subtest_result(passed = FALSE, missing = "clay_pct"))
+  a_mean <- stats::weighted.mean(a_clay, a_thk, na.rm = TRUE)
+  a_thick_total <- sum(a_thk, na.rm = TRUE)
+  # B control section per footnote 4.
+  b_top  <- min(h$top_cm[b_idx], na.rm = TRUE)
+  window <- if (is.finite(a_thick_total) && a_thick_total >= 15) 2 * a_thick_total else 30
+  b_ctrl <- b_idx[!is.na(h$top_cm[b_idx]) & h$top_cm[b_idx] < b_top + window]
+  if (length(b_ctrl) == 0L) b_ctrl <- b_idx
+  b_clay <- h$clay_pct[b_ctrl]
+  if (all(is.na(b_clay))) return(.subtest_result(passed = FALSE, missing = "clay_pct"))
+  b_mean <- stats::weighted.mean(b_clay,
+                                 pmax(h$bottom_cm[b_ctrl] - h$top_cm[b_ctrl], 0),
+                                 na.rm = TRUE)
+  if (is.na(a_mean) || is.na(b_mean) || a_mean <= 0) {
+    return(.subtest_result(passed = FALSE, missing = "clay_pct"))
+  }
+  ratio <- b_mean / a_mean
+  thr <- if (a_mean > 40) 1.50 else if (a_mean >= 15) 1.70 else 1.80
+  passed <- ratio > thr
+  .subtest_result(
+    passed = passed,
+    layers = if (passed) b_ctrl else integer(0),
+    details = list(a_mean_clay = a_mean, b_mean_clay = b_mean, ratio = ratio,
+                    threshold = thr, a_thickness_cm = a_thick_total,
+                    control_window_cm = window)
+  )
+}
+
 #' Test minimum horizon thickness
 #'
 #' For each candidate layer, checks \code{bottom_cm - top_cm >= min_cm}.
@@ -246,7 +308,7 @@ test_clay_increase_argic <- function(h, system = c("wrb2022", "usda")) {
 #' @param min_cm Minimum thickness in cm.
 #' @param candidate_layers Integer vector of horizon indices to test.
 #'                         If NULL, all layers are tested.
-#' @export
+#' @noRd
 test_minimum_thickness <- function(h, min_cm = 7.5, candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
   if (length(cl) == 0L) {
@@ -289,7 +351,7 @@ test_minimum_thickness <- function(h, min_cm = 7.5, candidate_layers = NULL) {
 #'
 #' @param h Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_texture_argic <- function(h, candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
   if (length(cl) == 0L) {
@@ -333,7 +395,7 @@ test_texture_argic <- function(h, candidate_layers = NULL) {
 #' would inspect tongue features, fragic properties, and morphological
 #' descriptions; that is scheduled for v0.2.
 #'
-#' @keywords internal
+#' @noRd
 test_not_albeluvic <- function(h) {
   flags <- grepl("glossic|albeluvic|retic", h$designation,
                  ignore.case = TRUE)
@@ -386,7 +448,7 @@ test_not_albeluvic <- function(h) {
 #' @param h Numeric threshold or option (see Details).
 #' @param max_cmol_per_kg_clay Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_cec_per_clay <- function(h, max_cmol_per_kg_clay = 16,
                                 candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -457,7 +519,7 @@ test_cec_per_clay <- function(h, max_cmol_per_kg_clay = 16,
 #' @param h Numeric threshold or option (see Details).
 #' @param max_cmol_per_kg_clay Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_ecec_per_clay <- function(h, max_cmol_per_kg_clay = 12,
                                  candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -502,12 +564,12 @@ test_ecec_per_clay <- function(h, max_cmol_per_kg_clay = 12,
 
 #' Ferralic minimum thickness >= 30 cm (WRB 2022)
 #'
-#' Wraps \code{\link{test_minimum_thickness}}.
+#' Wraps \code{test_minimum_thickness}.
 #'
 #' @param h Numeric threshold or option (see Details).
 #' @param min_cm Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_ferralic_thickness <- function(h, min_cm = 30, candidate_layers = NULL) {
   test_minimum_thickness(h, min_cm = min_cm,
                           candidate_layers = candidate_layers)
@@ -538,7 +600,7 @@ test_ferralic_thickness <- function(h, min_cm = 30, candidate_layers = NULL) {
 #'
 #' @param h Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_ferralic_texture <- function(h, candidate_layers = NULL) {
   res <- test_texture_argic(h, candidate_layers = candidate_layers)
   if (!is.na(res$passed)) return(res)
@@ -590,7 +652,7 @@ test_ferralic_texture <- function(h, candidate_layers = NULL) {
 #' @param allow_oc_inference If \code{TRUE} (default), accept OC \\>=
 #'        1.5 \% in a surface A horizon as evidence of dark colour
 #'        when both moist and dry Munsell are missing.
-#' @export
+#' @noRd
 test_mollic_color <- function(h,
                                 max_value_moist  = 3,
                                 max_chroma_moist = 3,
@@ -696,7 +758,7 @@ test_mollic_color <- function(h,
 #' @param h Numeric threshold or option (see Details).
 #' @param min_pct Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_mollic_organic_carbon <- function(h, min_pct = 0.6,
                                          candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -737,7 +799,7 @@ test_mollic_organic_carbon <- function(h, min_pct = 0.6,
 #' @param allow_inference If \code{TRUE} (default), fall back to
 #'        sum-of-cations / CEC arithmetic OR \code{al_sat_pct < 20}
 #'        OR \code{ph_h2o >= 5.8} when \code{bs_pct} is missing.
-#' @export
+#' @noRd
 test_mollic_base_saturation <- function(h, min_pct = 50,
                                           candidate_layers = NULL,
                                           allow_inference = TRUE) {
@@ -838,7 +900,7 @@ test_mollic_base_saturation <- function(h, min_pct = 50,
 #' @param h Numeric threshold or option (see Details).
 #' @param min_cm Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_mollic_thickness <- function(h, min_cm = 20, candidate_layers = NULL) {
   test_minimum_thickness(h, min_cm = min_cm,
                           candidate_layers = candidate_layers)
@@ -852,7 +914,7 @@ test_mollic_thickness <- function(h, min_cm = 20, candidate_layers = NULL) {
 #'
 #' @param h Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_mollic_structure <- function(h, candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
   passing <- integer(0)
@@ -904,7 +966,7 @@ test_mollic_structure <- function(h, candidate_layers = NULL) {
 #' @param h Numeric threshold or option (see Details).
 #' @param min_pct Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_caco3_concentration <- function(h, min_pct = 15,
                                        candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -930,6 +992,70 @@ test_caco3_concentration <- function(h, min_pct = 15,
 }
 
 
+#' Test secondary-carbonate enrichment for a calcic horizon
+#'
+#' The verbatim calcic-horizon criterion in all three systems requires, beyond
+#' the absolute CaCO3 threshold, an ENRICHMENT signature distinguishing a
+#' pedogenic calcic horizon from inherited calcareous parent material:
+#' \itemize{
+#'   \item WRB 2022 (3.1.4, crit 2b): CaCO3-equiv \\>= 5\% (absolute) higher than
+#'         an underlying layer, with no lithic discontinuity between them
+#'         (OR protocalcic properties -- a morphological alternative);
+#'   \item USDA KST: 5\% (absolute) more than an underlying horizon
+#'         (OR 5\% by-volume identifiable secondary carbonates);
+#'   \item SiBCS Cap 2 p.71: \\>= 50 g/kg more than the subjacent layer.
+#' }
+#' The morphological OR-alternatives (protocalcic / by-volume secondary
+#' carbonates) are not measurable from the schema, so this test encodes only the
+#' measurable +5\% (absolute) enrichment vs an underlying layer, REFINE-WHEN-
+#' PRESENT: a candidate layer passes unless it can be DISPROVEN -- i.e. it passes
+#' when (a) it is the deepest measured layer, or (b) an underlying layer is
+#' highly calcareous (\\>= \code{substrate_pct}, the marble/marl substrate
+#' exemption), or (c) it has \\>= \code{min_delta_pct} more CaCO3 than the
+#' minimum among the underlying measured layers. Only a candidate whose CaCO3
+#' fails to exceed every deeper measured layer by \code{min_delta_pct} (uniform
+#' calcareous profile, no substrate exemption) is dropped.
+#'
+#' @param h A horizons \code{data.table}.
+#' @param candidate_layers Integer indices already meeting the absolute test.
+#' @param min_delta_pct Required absolute CaCO3 increase vs an underlying layer
+#'   (default 5, i.e. 50 g/kg).
+#' @param substrate_pct Highly-calcareous substrate exemption (default 40).
+#' @return A subtest result list (\code{passed}, \code{layers}, \code{details}).
+#' @noRd
+test_caco3_enrichment <- function(h, candidate_layers,
+                                    min_delta_pct = 5, substrate_pct = 40) {
+  cl <- candidate_layers
+  # No candidate layers (e.g. CaCO3 absent / below threshold): return NA so the
+  # aggregate preserves the prior "insufficient data" semantics rather than
+  # forcing a FALSE.
+  if (length(cl) == 0L) return(.subtest_result(passed = NA))
+  ord  <- order(h$top_cm, na.last = NA)
+  rank <- match(seq_len(nrow(h)), ord)        # depth rank (NA for NA-top rows)
+  passing <- integer(0); details <- list()
+  for (i in cl) {
+    if (is.na(rank[i])) { passing <- c(passing, i); next }    # cannot order -> keep
+    deeper <- which(!is.na(rank) & rank > rank[i] & !is.na(h$caco3_pct))
+    if (length(deeper) == 0L) {
+      # No underlying measured layer to exceed: WRB crit 2b is inapplicable and
+      # only the (unmeasured) protocalcic alternative could qualify it -> drop.
+      ok <- FALSE; why <- "no underlying measured layer"
+    } else if (any(h$caco3_pct[deeper] >= substrate_pct)) {
+      ok <- TRUE; why <- "over highly-calcareous substrate"
+    } else {
+      ok <- (h$caco3_pct[i] - min(h$caco3_pct[deeper])) >= min_delta_pct
+      why <- sprintf("delta=%.1f vs min-deeper=%.1f",
+                       h$caco3_pct[i] - min(h$caco3_pct[deeper]),
+                       min(h$caco3_pct[deeper]))
+    }
+    details[[as.character(i)]] <- list(idx = i, passed = ok, reason = why)
+    if (ok) passing <- c(passing, i)
+  }
+  .subtest_result(passed = length(passing) > 0L, layers = passing,
+                   details = details)
+}
+
+
 #' Test for CaSO4 (gypsum) concentration above threshold (per layer)
 #'
 #' Default 5\% (gypsic horizon, WRB 2022 Chapter 3). Used by
@@ -938,7 +1064,7 @@ test_caco3_concentration <- function(h, min_pct = 15,
 #' @param h Numeric threshold or option (see Details).
 #' @param min_pct Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_caso4_concentration <- function(h, min_pct = 5,
                                        candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -972,7 +1098,7 @@ test_caso4_concentration <- function(h, min_pct = 5,
 #' @param h Numeric threshold or option (see Details).
 #' @param min_pct Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_plinthite_concentration <- function(h, min_pct = 15,
                                            candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -1006,7 +1132,7 @@ test_plinthite_concentration <- function(h, min_pct = 15,
 #' @param h Numeric threshold or option (see Details).
 #' @param min_pct Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_spodic_aluminum_iron <- function(h, min_pct = 0.5,
                                         candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -1043,7 +1169,7 @@ test_spodic_aluminum_iron <- function(h, min_pct = 0.5,
 #' @param h Numeric threshold or option (see Details).
 #' @param max_ph Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_ph_below <- function(h, max_ph = 5.9, candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
   passing <- integer(0); missing <- character(0); details <- list()
@@ -1071,7 +1197,7 @@ test_ph_below <- function(h, max_ph = 5.9, candidate_layers = NULL) {
 #' Gleyic Munsell hue patterns (WRB 2022, Ch 3.1.13 redoximorphic features)
 #'
 #' Hues consistent with Fe reduction (gleyic / reductimorphic). Used by
-#' \code{\link{test_gleyic_features}} as a secondary evidence path when
+#' \code{test_gleyic_features} as a secondary evidence path when
 #' \code{redoximorphic_features_pct} is not reported (e.g. BDsolos
 #' perfis where the surveyor recorded Munsell colors but not mottle
 #' percent). Per WRB 2022 Ch 3.1.13: hues N (neutral), 10Y, 5GY, 10GY,
@@ -1113,7 +1239,7 @@ test_ph_below <- function(h, max_ph = 5.9, candidate_layers = NULL) {
 #' @param candidate_layers Numeric threshold or option (see Details).
 #' @param max_chroma Numeric threshold; gleyic-hue path requires
 #'        \code{munsell_chroma_moist <= max_chroma} (default 2).
-#' @export
+#' @noRd
 test_gleyic_features <- function(h, max_top_cm = 50, min_redox_pct = 5,
                                    candidate_layers = NULL,
                                    max_chroma = 2) {
@@ -1173,7 +1299,7 @@ test_gleyic_features <- function(h, max_top_cm = 50, min_redox_pct = 5,
 #' @param h Numeric threshold or option (see Details).
 #' @param min_pct Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_clay_above <- function(h, min_pct = 30, candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
   passing <- integer(0); missing <- character(0); details <- list()
@@ -1207,7 +1333,7 @@ test_clay_above <- function(h, min_pct = 30, candidate_layers = NULL) {
 #' @param h Numeric threshold or option (see Details).
 #' @param levels Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_slickensides_present <- function(h,
                                         levels = c("common", "many",
                                                     "continuous"),
@@ -1253,7 +1379,7 @@ test_slickensides_present <- function(h,
 #' @param alkaline_min_pH Required pH(H2O) for the alkaline path
 #'        (default 8.5; only used when \code{alkaline_min_dS_m} is set).
 #' @param candidate_layers Optional layer index restriction.
-#' @export
+#' @noRd
 test_ec_concentration <- function(h, min_dS_m = 15,
                                     alkaline_min_dS_m = NA_real_,
                                     alkaline_min_pH   = 8.5,
@@ -1307,7 +1433,7 @@ test_ec_concentration <- function(h, min_dS_m = 15,
 #'         (EC \\>= 8 with pH(H2O) \\>= 8.5).
 #' }
 #' The path used per layer is taken from a prior
-#' \code{\link{test_ec_concentration}} result (its \code{details[[i]]\\$path}
+#' \code{test_ec_concentration} result (its \code{details[[i]]\\$path}
 #' field). When no prior is supplied, every candidate is treated as
 #' "primary" and the 450 threshold is applied uniformly.
 #'
@@ -1321,7 +1447,7 @@ test_ec_concentration <- function(h, min_dS_m = 15,
 #'        \code{test_ec_concentration(...)\\$details}.
 #' @param candidate_layers Layer index restriction (typically the layers
 #'        that already passed the primary EC gate).
-#' @export
+#' @noRd
 test_salic_product <- function(h, min_product = 450,
                                 alkaline_min_product = 240,
                                 ec_path_lookup = NULL,
@@ -1368,7 +1494,7 @@ test_salic_product <- function(h, min_product = 450,
 #' Returns \code{al_cmol / (ca + mg + k + na + al) * 100}, or NA if any
 #' input is missing or the sum (ECEC) is non-positive.
 #'
-#' @keywords internal
+#' @noRd
 compute_al_saturation <- function(ca, mg, k, na, al) {
   parts <- c(ca, mg, k, na, al)
   if (any(is.na(parts))) return(NA_real_)
@@ -1387,7 +1513,7 @@ compute_al_saturation <- function(ca, mg, k, na, al) {
 #' @param h Numeric threshold or option (see Details).
 #' @param min_cmol_per_kg_clay Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_cec_per_clay_above <- function(h, min_cmol_per_kg_clay = 24,
                                        candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -1423,7 +1549,7 @@ test_cec_per_clay_above <- function(h, min_cmol_per_kg_clay = 24,
 #' @param h Numeric threshold or option (see Details).
 #' @param min_pct Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_bs_above <- function(h, min_pct = 50, candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
   passing <- integer(0); missing <- character(0); details <- list()
@@ -1455,7 +1581,7 @@ test_bs_above <- function(h, min_pct = 50, candidate_layers = NULL) {
 #' @param h Numeric threshold or option (see Details).
 #' @param max_pct Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_bs_below <- function(h, max_pct = 50, candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
   passing <- integer(0); missing <- character(0); details <- list()
@@ -1489,7 +1615,7 @@ test_bs_below <- function(h, max_pct = 50, candidate_layers = NULL) {
 #' @param h Numeric threshold or option (see Details).
 #' @param min_pct Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_al_saturation_above <- function(h, min_pct = 50,
                                        candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -1529,7 +1655,7 @@ test_al_saturation_above <- function(h, min_pct = 50,
 #' @param h Numeric threshold or option (see Details).
 #' @param max_pct Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_al_saturation_below <- function(h, max_pct = 50,
                                        candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -1571,7 +1697,7 @@ test_al_saturation_below <- function(h, max_pct = 50,
 #' @param h Numeric threshold or option (see Details).
 #' @param min_pct Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_carbonates_present <- function(h, min_pct = 0.01,
                                       candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -1606,7 +1732,7 @@ test_carbonates_present <- function(h, min_pct = 0.01,
 #' @param max_top_cm Numeric threshold or option (see Details).
 #' @param max_chroma Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_chernic_color <- function(h, max_top_cm = 20, max_chroma = 2,
                                   candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -1642,7 +1768,7 @@ test_chernic_color <- function(h, max_top_cm = 20, max_chroma = 2,
 #' @param h Numeric threshold or option (see Details).
 #' @param min_pct Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_oc_above <- function(h, min_pct = 12, candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
   passing <- integer(0); missing <- character(0); details <- list()
@@ -1675,7 +1801,7 @@ test_oc_above <- function(h, min_pct = 12, candidate_layers = NULL) {
 #' @param h Numeric threshold or option (see Details).
 #' @param max_top_cm Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_top_at_or_above <- function(h, max_top_cm = 0,
                                     candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -1711,7 +1837,7 @@ test_top_at_or_above <- function(h, max_top_cm = 0,
 #' @param pattern A regex (case-insensitive).
 #' @param h Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_designation_pattern <- function(h, pattern,
                                        candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -1747,7 +1873,7 @@ test_designation_pattern <- function(h, pattern,
 #' @param h Numeric threshold or option (see Details).
 #' @param max_top_cm Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_coarse_texture_throughout <- function(h, max_top_cm = 100,
                                               candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -1798,7 +1924,7 @@ test_coarse_texture_throughout <- function(h, max_top_cm = 100,
 #' @param h Numeric threshold or option (see Details).
 #' @param min_pct Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_andic_alfe <- function(h, min_pct = 2.0, candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
   passing <- integer(0); missing <- character(0); details <- list()
@@ -1833,7 +1959,7 @@ test_andic_alfe <- function(h, min_pct = 2.0, candidate_layers = NULL) {
 #' @param h Numeric threshold or option (see Details).
 #' @param max_g_cm3 Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_bulk_density_below <- function(h, max_g_cm3 = 0.9,
                                        candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -1867,7 +1993,7 @@ test_bulk_density_below <- function(h, max_g_cm3 = 0.9,
 #' @param min_pct Numeric threshold or option (see Details).
 #' @param max_top_cm Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_artefacts_concentration <- function(h, min_pct = 20, max_top_cm = 100,
                                             candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -1902,7 +2028,7 @@ test_artefacts_concentration <- function(h, min_pct = 20, max_top_cm = 100,
 #' @param h Numeric threshold or option (see Details).
 #' @param min_pct Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_duripan_concentration <- function(h, min_pct = 10,
                                           candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
@@ -1939,7 +2065,7 @@ test_duripan_concentration <- function(h, min_pct = 10,
 #' @param h Numeric threshold or option (see Details).
 #' @param max_top_cm Numeric threshold or option (see Details).
 #' @param min_clay_swing Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_fluvic_stratification <- function(h, max_top_cm = 100,
                                           min_clay_swing = 8) {
   cl <- which(!is.na(h$top_cm) & h$top_cm < max_top_cm)
@@ -1959,11 +2085,42 @@ test_fluvic_stratification <- function(h, max_top_cm = 100,
                             missing = "clay_pct"))
   }
 
+  # Stratification (fluvic) = ERRATIC clay with depth -- a depositional
+  # peak/valley, NOT a monotonic pedogenic trend (e.g. an A->Bt clay increase is
+  # NOT stratification). Require an interior layer where the clay swing reverses
+  # direction, both adjacent swings >= min_clay_swing. The old
+  # `any(swings >= min_clay_swing)` fired on any single clay change, so under an
+  # OR it wrongly made every textural-B soil fluvic (v0.9.135).
   swings <- abs(diff(clays))
-  texture_alternates <- any(swings >= min_clay_swing)
+  d <- diff(clays)
+  texture_alternates <- FALSE
+  if (length(d) >= 2L) {
+    for (i in seq_len(length(d) - 1L)) {
+      if (abs(d[i]) >= min_clay_swing && abs(d[i + 1]) >= min_clay_swing &&
+            sign(d[i]) != 0 && sign(d[i + 1]) != 0 &&
+            sign(d[i]) != sign(d[i + 1])) {
+        texture_alternates <- TRUE; break
+      }
+    }
+  }
 
-  oc_irregular <- if (any(is.na(ocs))) NA
-                   else any(diff(ocs) > 0.1)   # any increase with depth
+  # "Irregular decrease of OC with depth" (fluvic) = a GENUINE erratic reversal,
+  # not pedogenic noise: a deeper layer whose OC exceeds an overlying layer by
+  # >= 0.2% absolute AND >= 1.25x relative (e.g. a buried organic-rich layer /
+  # sedimentary stratification). The old `any(diff > 0.1)` proxy fired on any
+  # tiny bump, which over-fired once OR-ed with texture (v0.9.135).
+  oc_irregular <- if (any(is.na(ocs))) NA else {
+    shallower <- ocs[-length(ocs)]; deeper <- ocs[-1]
+    rev <- deeper >= shallower + 0.2 & deeper >= 1.25 * shallower
+    # Exclude OC increases INTO a spodic illuvial horizon (Bh/Bs/Bhs): that is
+    # podzolization (pedogenic), not fluvic sedimentation -- the SiBCS criterion
+    # requires the irregular OC to be "nao relacionada a processos
+    # pedogeneticos". Without this, every Espodossolo's E->Bh OC jump would read
+    # as fluvic.
+    desig_deeper <- h$designation[cl][-1]
+    spodic_illuv <- !is.na(desig_deeper) & grepl("B[a-z]*[hs]", desig_deeper)
+    any(rev & !spodic_illuv)
+  }
 
   if (is.na(oc_irregular)) {
     # We can still flag based on texture alone, but mark missing
@@ -1977,6 +2134,13 @@ test_fluvic_stratification <- function(h, max_top_cm = 100,
     }
   }
 
+  # SiBCS (carater fluvico, Cap 1 p35) and WRB fluvic material are verbatim an
+  # OR (stratified texture AND/OR irregular OC). Kept as AND for now: with the
+  # OR, an erratic-OC-only Chernozem keys as a Neossolo Fluvico because the
+  # package's SiBCS key reaches the Neossolos branch before the stronger orders
+  # for it -- a key-ordering issue to fix before the OR is safe. The tightened
+  # proxies (reversal-based texture; erratic, non-spodic OC) below still improve
+  # accuracy under AND (fewer false-fluvic Argissolos).
   passed <- texture_alternates && oc_irregular
   .subtest_result(
     passed  = passed,
@@ -1997,7 +2161,7 @@ test_fluvic_stratification <- function(h, max_top_cm = 100,
 #'
 #' \code{na_cmol / cec_cmol * 100}, returning NA on missing/zero CEC.
 #'
-#' @keywords internal
+#' @noRd
 compute_esp <- function(na_cmol, cec_cmol) {
   if (is.na(na_cmol) || is.na(cec_cmol) || cec_cmol <= 0) return(NA_real_)
   na_cmol / cec_cmol * 100
@@ -2011,7 +2175,7 @@ compute_esp <- function(na_cmol, cec_cmol) {
 #' @param h Numeric threshold or option (see Details).
 #' @param min_pct Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_esp_above <- function(h, min_pct = 15, candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
   passing <- integer(0); missing <- character(0); details <- list()
@@ -2045,7 +2209,7 @@ test_esp_above <- function(h, min_pct = 15, candidate_layers = NULL) {
 #' @param h Numeric threshold or option (see Details).
 #' @param min_pct Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_fe_dcb_above <- function(h, min_pct = 4, candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
   passing <- integer(0); missing <- character(0); details <- list()
@@ -2079,7 +2243,7 @@ test_fe_dcb_above <- function(h, min_pct = 4, candidate_layers = NULL) {
 #' @param h Numeric threshold or option (see Details).
 #' @param min_ratio Numeric threshold or option (see Details).
 #' @param require_abrupt_boundary Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_abrupt_textural_change <- function(h, min_ratio = 2.0,
                                           require_abrupt_boundary = TRUE) {
   if (nrow(h) < 2L) {
@@ -2135,7 +2299,7 @@ test_abrupt_textural_change <- function(h, min_ratio = 2.0,
 #' @param max_top_cm Numeric threshold or option (see Details).
 #' @param min_redox_pct Numeric threshold or option (see Details).
 #' @param decay_factor Numeric threshold or option (see Details).
-#' @export
+#' @noRd
 test_stagnic_pattern <- function(h, max_top_cm = 100, min_redox_pct = 5,
                                     decay_factor = 3) {
   cl <- which(!is.na(h$top_cm) & h$top_cm <= max_top_cm)
@@ -2188,7 +2352,7 @@ test_stagnic_pattern <- function(h, max_top_cm = 100, min_redox_pct = 5,
 #' could be evaluated and missing attributes were reported, and
 #' \code{FALSE} otherwise.
 #'
-#' @keywords internal
+#' @noRd
 aggregate_subtests <- function(tests, layer_tests = NULL,
                                   exclusions = character(0)) {
   if (is.null(layer_tests)) layer_tests <- names(tests)

@@ -42,7 +42,7 @@ A list of \code{\link{PedonRecord}} objects (one per LUCAS
 Reads the canonical European Soil Data Centre (ESDAC) release of
 LUCAS Soil 2018 Topsoil chemistry as published in the JRC report
 (ESDAC dataset
-\url{https://esdac.jrc.ec.europa.eu/content/lucas-2018-topsoil-data}).
+\code{https://esdac.jrc.ec.europa.eu/content/lucas-2018-topsoil-data}).
 The release ships ~18,984 European topsoil samples at 0-20 cm with
 pH (H2O and CaCl2), EC, OC, CaCO3, P, N, K and oxalate-extractable
 Al / Fe; a separate \code{BulkDensity_2018_final-2.csv} carries
@@ -84,14 +84,12 @@ cells and \code{"n.d."} / \code{"ND"} are converted to \code{NA}
 before numeric coercion.
 }
 \examples{
-\donttest{
-path <- file.path(tempdir(), "LUCAS-SOIL-2018-v2")
-if (dir.exists(path)) {
-  pedons <- load_lucas_soil_2018(path, countries = c("ES", "PT"),
-                                   max_n = 100)
-  length(pedons)
-  pedons[[1]]
-}
+\dontrun{
+path <- "soil_data/eu_lucas/LUCAS-SOIL-2018-data-report-readme-v2/LUCAS-SOIL-2018-v2"
+pedons <- load_lucas_soil_2018(path, countries = c("ES", "PT"),
+                                 max_n = 100)
+length(pedons)
+pedons[[1]]
 }
 }
 \seealso{

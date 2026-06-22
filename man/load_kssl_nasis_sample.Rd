@@ -52,19 +52,19 @@ on subsoil samples NASIS often lacks.
 
 Beaudette, D., Skovlin, J., Roecker, S., Brown, A. (2024). aqp:
 Algorithms for Quantitative Pedology. R package version 2.x.
-\url{https://github.com/ncss-tech/aqp}.
+\code{https://github.com/ncss-tech/aqp}.
 }
 
 \examples{
-\donttest{
-s <- try(load_kssl_nasis_sample(), silent = TRUE)
-if (!inherits(s, "try-error")) {
-  length(s$pedons)
-  # Munsell now populated (KSSL-only sample had 0\%):
-  mean(vapply(s$pedons,
-              function(p) any(!is.na(p$horizons$munsell_hue_moist)),
-              logical(1)))
-}
+\dontrun{
+s <- load_kssl_nasis_sample()
+length(s$pedons)
+#> 99
+# Munsell now populated (KSSL-only sample had 0\%):
+mean(vapply(s$pedons,
+            function(p) any(!is.na(p$horizons$munsell_hue_moist)),
+            logical(1)))
+#> 0.99
 }
 
 }
