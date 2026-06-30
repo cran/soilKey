@@ -2,8 +2,8 @@ Package: soilKey
 Type: Package
 Title: Automated Soil Profile Classification per WRB 2022, 'SiBCS' 5
         and USDA Soil Taxonomy 13
-Version: 0.9.155
-Date: 2026-06-21
+Version: 0.9.157
+Date: 2026-06-30
 Authors@R: 
     person("Hugo", "Rodrigues",
            email = "rodrigues.machado.hugo@gmail.com",
@@ -38,9 +38,9 @@ Suggests: aqp, SoilTaxonomy, mpspline2, terra, foreign, sf, chromote,
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2026-06-21 21:40:44 UTC; rodrigues.h
+Packaged: 2026-06-30 05:11:47 UTC; rodrigues.h
 Author: Hugo Rodrigues [aut, cre] (ORCID:
     <https://orcid.org/0000-0002-8070-8126>)
 Maintainer: Hugo Rodrigues <rodrigues.machado.hugo@gmail.com>
 Repository: CRAN
-Date/Publication: 2026-06-22 06:50:02 UTC
+Date/Publication: 2026-06-30 13:20:02 UTC

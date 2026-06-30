@@ -1,7 +1,7 @@
-a1c9dd7590ed34cd280fc644f08ed09a *DESCRIPTION
+fe361a272a3160a87c2f648085d52d52 *DESCRIPTION
 b1312316b7efccdcdcda8f5e13cd002d *LICENSE
 0e8c9ec82fb5567f23d3ae3747764a7c *NAMESPACE
-6327093241c73422f0a0ec0af8a5d448 *NEWS.md
+df7bcfd263d9d17104958091198e0f0f *NEWS.md
 e6d7fb6ff7e1a57876a7caaa7af07659 *R/afsp.R
 629f20f781d59cdd7d2172db820d0641 *R/aqp-interop-v0962.R
 7babb96c7ceeba8de7f985b476739d20 *R/aqp-interop.R
@@ -103,7 +103,7 @@ e28f845f19a62a29711894ad2583773d *R/spatial-soilgrids.R
 a020de0f24e2d33c14c5c3d582b6e34c *R/spectra-fetch-labels.R
 7434d7b4cccb1de7b27b1a9996702c28 *R/spectra-fetch.R
 6d9acf41ec6da5d3e8663097c1f035a2 *R/spectra-ingest.R
-f5a87a7a90a063b7056be5cacf3702f5 *R/spectra-munsell.R
+5cb105434f3d4c18639e3aa932e9a8d7 *R/spectra-munsell.R
 9717b06f3d75d00646f693ca0e8ab9a5 *R/spectra-neighbours.R
 46e2f609267263e0175fae7fc2fa30fa *R/spectra-ossl.R
 35430d285eaccbb8094c90554f6d496c *R/spectra-predict.R
@@ -129,8 +129,8 @@ ad20895a48d9cad08541d03fc51b9b5b *R/vlm-validate.R
 be132ba96fcaed8dcf077fb25370f68f *R/wosis-cache.R
 6e73e35dc8970d89758d8aeb658e2b7e *R/zzz.R
 fce0e5c65da8549d46f60aa9d6d905e7 *README.md
-533839446f70bde34a1050627ce80586 *build/partial.rdb
-fccf8b40b504d33f6c10f02ea85d9abd *build/vignette.rds
+21c9401b8c07f38d762ade4612fc4ffe *build/partial.rdb
+ef77d3e2266eabfa5e3c883ee9b61988 *build/vignette.rds
 0ca74d32822544ecaedd6f2a3798a52b *data/ossl_demo_sa.rda
 b3e6d81a25a86bc4ad8838256c7a8577 *demo/00Index
 177f893a1e68647a743e89b5ae32d412 *demo/classify_gallery.R
@@ -276,7 +276,7 @@ a037e0516c5f25c4a91ab8ec60abd46c *inst/doc/v07_end_to_end_pipeline.Rmd
 046e3ef944b6ff83964aa8eb6d66a598 *inst/doc/v08_kssl_nasis_multilevel.html
 3d30ca7b5fac14e5f48a642dc9b7035b *inst/doc/v09_perfil_embrapa_pt.R
 1c25b87d4f2ec507bcc3cb3d316039a3 *inst/doc/v09_perfil_embrapa_pt.Rmd
-9445ce097eb6b027fa1ac7e3d4ce1c80 *inst/doc/v09_perfil_embrapa_pt.html
+148abfd877818c083a63b5d3a5411f99 *inst/doc/v09_perfil_embrapa_pt.html
 77831b452c116d576039783626c1d1b9 *inst/doc/v10_shiny_pro.R
 696b091258c1a376f8662f515474d9a0 *inst/doc/v10_shiny_pro.Rmd
 304a37e5c35e0e4e8394b439c292fd72 *inst/doc/v10_shiny_pro.html
@@ -376,7 +376,7 @@ dacb0e5d25b5fcfea0187ac7912e0e85 *inst/rules/usda/key.yaml
 073f773efd0c2a0e61d2763b3cb34f9e *inst/rules/usda/subgroups/entisols.yaml
 5f27098da052d2656aa657a9f3e55f8a *inst/rules/usda/subgroups/gelisols.yaml
 33abf72362fc447123669624b85d3879 *inst/rules/usda/subgroups/histosols.yaml
-6daba4571e0d10eafac1e690e83a0aee *inst/rules/usda/subgroups/inceptisols.yaml
+f9aa900dbf1255a408da358d02fae2cc *inst/rules/usda/subgroups/inceptisols.yaml
 992e9fb8f47e29ecdb78600353a47207 *inst/rules/usda/subgroups/mollisols.yaml
 5fd14673b1ab1003fa662ddf9f8b8982 *inst/rules/usda/subgroups/oxisols.yaml
 db66722d4a616190a362aaa0611ebd53 *inst/rules/usda/subgroups/spodosols.yaml
@@ -673,7 +673,7 @@ f67b4fafa0e1ba0f6ff6736e42a8752a *man/posterior_classify.Rd
 b15090a081b5c961b2a36c809dd2d4e9 *man/predict.soilKey_pls_model.Rd
 a015c0c11c6f7418eb6ee2b64a04f6cd *man/predict_from_spectra.Rd
 ca8873be73a1197b8a64af182dd0a723 *man/predict_lab_from_spectra.Rd
-585b319e6218d2f38bbe629328747931 *man/predict_munsell_from_spectra.Rd
+af816396abf8e91cbb98144f7e053f23 *man/predict_munsell_from_spectra.Rd
 b7e3b1c8e17574fec74f51044468d446 *man/predict_ossl_mbl.Rd
 a5f18935a7663c63792a4fb99c864e29 *man/predict_ossl_plsr_local.Rd
 becaa0293760df758ba54145f2f2ca6b *man/predict_ossl_pretrained.Rd
@@ -897,6 +897,7 @@ ad2817d547d02cd1acaf8f5b2985b718 *tests/testthat/test-v09149-usda-humic-colour.R
 e5a4bab3bd7361a8cb4f9075eda9ea96 *tests/testthat/test-v09150-ossl-fetch-guard.R
 4c0e9583621bd99ff11f4870e6127781 *tests/testthat/test-v09150-shiny-map-servers.R
 e05d30cfeef9ac12673b6bb4d61b6cef *tests/testthat/test-v09151-usda-unique-codes.R
+c40412a32fe1437e3cb33d08395558c3 *tests/testthat/test-v09156-munsell-illuminant.R
 bc673a084a6b838b38514f89eb89914a *tests/testthat/test-v0924-aquic-conditions.R
 924ed47a70be9838e5d67e3356795bbd *tests/testthat/test-v0924-benchmark-levels.R
 6abe39560a4a6a8a8373665c2f2f7c91 *tests/testthat/test-v0925-kst-canonical.R
