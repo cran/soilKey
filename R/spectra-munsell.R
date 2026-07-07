@@ -8,18 +8,20 @@
 #   Y = k * sum( S(lambda) * R(lambda) * ybar(lambda) )
 #   Z = k * sum( S(lambda) * R(lambda) * zbar(lambda) )
 #   k = 100 / sum( S(lambda) * ybar(lambda) )       (so Y = 100 for white)
-#   XYZ --> CIELAB (D65 white)
-#   Munsell HVC = munsellinterpol::LabToMunsell( Lab, white = D65 )
+#   Munsell HVC = munsellinterpol::XYZtoMunsell( XYZ, white = D65 )
 #
 # IMPORTANT (fixed v0.9.148, per G. Davis, munsellinterpol author): the
 # Munsell renotation is anchored to *Illuminant C* (Munsell 1943), not
 # D65. Our colorimetry is computed under D65, so a chromatic adaptation
 # D65 -> C is mandatory before interpolating Munsell -- without it every
 # sample picks up a slight green-yellow tint (a perfect neutral returns
-# Chroma ~ 0.65 instead of 0). We therefore go XYZ -> Lab (D65) and call
-# munsellinterpol::LabToMunsell(), which converts Lab -> XYZ and
-# chromatically adapts D65 -> C internally (via spacesXYZ), hiding the
-# messy details. We do NOT feed D65 xyY straight to xyYtoMunsell().
+# Chroma ~ 0.65 instead of 0). Since v0.9.183 we call the canonical
+# munsellinterpol::XYZtoMunsell( XYZ, white = D65 ) (munsellinterpol
+# >= 3.4-0, published 2026-07-03), which performs that adaptation
+# internally -- the exact path G. Davis documents in its Examples. On
+# older munsellinterpol we fall back to the numerically identical
+# XYZ -> Lab (D65) -> LabToMunsell(). We do NOT feed D65 xyY straight to
+# xyYtoMunsell() (with no white=), which would keep the green-yellow bias.
 #
 # CIE inputs are bundled as internal data .cie_d65_5nm (81 rows from
 # 380 to 780 nm, columns: wavelength, xbar, ybar, zbar, D65) so no
@@ -130,12 +132,21 @@ predict_lab_from_spectra <- function(spectra, wavelengths) {
 #' (0..20) per sample, plus the soilKey fields
 #'
 #' The Munsell renotation is defined under \emph{Illuminant C}, while
-#' the colorimetry here is computed under D65, so the conversion goes
-#' XYZ -> CIELAB (D65) -> \code{munsellinterpol::LabToMunsell()}, which
-#' chromatically adapts D65 -> C internally. Feeding D65 chromaticities
-#' straight to \code{xyYtoMunsell()} would bias every colour toward
-#' green-yellow (a perfect neutral would return Chroma ~ 0.65 rather
-#' than 0); this routine avoids that.
+#' the colorimetry here is computed under D65, so the conversion adapts
+#' D65 -> C. It calls \code{munsellinterpol::XYZtoMunsell(XYZ, white =)}
+#' (munsellinterpol >= 3.4-0), which performs that chromatic adaptation
+#' internally, and falls back to the numerically identical
+#' XYZ -> CIELAB(D65) -> \code{LabToMunsell()} route on older versions.
+#' Feeding D65 chromaticities straight to \code{xyYtoMunsell()} (with no
+#' \code{white}) would bias every colour toward green-yellow (a perfect
+#' neutral would return Chroma ~ 0.65 rather than 0); this routine avoids
+#' that. The D65 reference white is derived from the same bundled CIE
+#' table the colorimetry integrates against (so a constant-reflectance
+#' spectrum maps to an exact neutral, and a perfect reflecting diffuser
+#' to Munsell value 10), and the conversion is vectorised over all rows
+#' of \code{spectra} at once. At zero Chroma the Munsell hue is undefined,
+#' so a neutral is reported with hue \code{"N"} in both the rounded and the
+#' continuous (\code{round_chip = FALSE}) notation.
 #' \code{munsell_hue_moist}, \code{munsell_value_moist},
 #' \code{munsell_chroma_moist} ready to write into a
 #' \code{\link{PedonRecord}} via the pedon's \code{add_measurement}
@@ -173,50 +184,96 @@ predict_munsell_from_spectra <- function(spectra, wavelengths,
          "predict_munsell_from_spectra(). Install with ",
          "`install.packages(\"munsellinterpol\")`.")
   }
-  white_D65 <- c(95.047, 100.000, 108.883)
+  # Self-consistent D65 white point: the CIE colour-matching functions weighted
+  # by the *same* table's D65 SPD that predict_xyz_from_spectra() integrates
+  # against, scaled to Y = 100. Using this rather than the textbook
+  # c(95.047, 100, 108.883) makes a constant-reflectance spectrum map to an exact
+  # neutral (Chroma 0), because the Lab reference white then matches the white
+  # the XYZ are implicitly relative to. (Suggested by G. Davis; his sketch
+  # omitted the D65 weighting, which would instead give the equal-energy white.)
+  cie <- .cie_d65_5nm
+  white_D65 <- colSums(cbind(cie$xbar, cie$ybar, cie$zbar) * cie$D65)
+  white_D65 <- 100 * white_D65 / white_D65[2L]
+
   xyz <- predict_xyz_from_spectra(spectra, wavelengths)
-  lab <- .cielab_from_xyz(xyz$X, xyz$Y, xyz$Z, white = white_D65)
+  n   <- nrow(xyz)
 
-  na_row <- list(hue = NA_character_, V = NA_real_, C = NA_real_,
-                 ms = NA_character_)
-  rows <- lapply(seq_len(nrow(xyz)), function(i) {
-    if (!is.finite(xyz$Y[i]) || xyz$Y[i] <= 0) return(na_row)
-    Lab <- c(lab$L[i], lab$a[i], lab$b[i])
-    if (!all(is.finite(Lab))) return(na_row)
-    # Lab (D65) -> Munsell. LabToMunsell adapts D65 -> Illuminant C.
-    out <- tryCatch(munsellinterpol::LabToMunsell(Lab, white = white_D65),
+  hue <- rep(NA_character_, n); value <- rep(NA_real_, n)
+  chroma <- rep(NA_real_, n);   ms <- rep(NA_character_, n)
+
+  # Evaluate only rows with a usable colour (finite XYZ, positive Y). All the
+  # munsellinterpol conversions are vectorised over a matrix of rows, so the
+  # whole batch is a handful of calls rather than one-per-spectrum.
+  valid <- is.finite(xyz$X) & is.finite(xyz$Y) & is.finite(xyz$Z) & xyz$Y > 0
+  if (any(valid)) {
+    XYZm <- cbind(xyz$X[valid], xyz$Y[valid], xyz$Z[valid])
+    # Direct XYZ -> Munsell. munsellinterpol (>= 3.4-0) performs the mandatory
+    # D65 -> Illuminant-C chromatic adaptation internally, given white=; this is
+    # the canonical path documented in munsellinterpol::XYZtoMunsell() (G. Davis,
+    # 2026). It is numerically identical to the older XYZ -> CIELAB(D65) ->
+    # LabToMunsell() route, which is kept as a fallback for munsellinterpol
+    # < 3.4-0 (where XYZtoMunsell() has no white= argument).
+    hvc <- tryCatch(munsellinterpol::XYZtoMunsell(XYZm, white = white_D65),
                     error = function(e) NULL)
-    if (is.null(out)) return(na_row)
-    H <- out[1L, "H"]; V <- out[1L, "V"]; C <- out[1L, "C"]
-    if (!all(is.finite(c(H, V, C)))) return(na_row)
-
-    if (isTRUE(round_chip)) {
-      # Snap to the nearest chip in the *soil* Munsell book. roundHVC()
-      # returns the rounded chip as the `MunsellRounded` string (its HVC
-      # column keeps the precise value), so we read that and parse it
-      # back to numeric H/V/C. books= has no default, hence "soil".
-      rr <- tryCatch(munsellinterpol::roundHVC(c(H, V, C), books = "soil"),
-                     error = function(e) NULL)
-      mr <- if (!is.null(rr)) rr$MunsellRounded else NULL
-      if (!is.null(mr) && length(mr) == 1L && !is.na(mr) && nzchar(mr)) {
-        hue <- strsplit(trimws(mr), "\\s+")[[1L]][1L]
-        p   <- tryCatch(munsellinterpol::HVCfromMunsellName(mr),
-                        error = function(e) c(NA_real_, V, C))
-        return(list(hue = hue, V = p[2L], C = p[3L], ms = mr))
-      }
-      # rounding failed -> fall through to the continuous notation
+    if (is.null(hvc)) {
+      lab <- .cielab_from_xyz(XYZm[, 1], XYZm[, 2], XYZm[, 3], white = white_D65)
+      hvc <- tryCatch(munsellinterpol::LabToMunsell(
+                        cbind(lab$L, lab$a, lab$b), white = white_D65),
+                      error = function(e) NULL)
     }
-    hue <- tryCatch(munsellinterpol::HueStringFromNumber(H),
-                    error = function(e) NA_character_)
-    ms  <- if (is.na(hue)) NA_character_ else sprintf("%s %g/%g", hue, V, C)
-    list(hue = hue, V = V, C = C, ms = ms)
-  })
+    if (!is.null(hvc)) {
+      Hk <- hvc[, "H"]; Vk <- hvc[, "V"]; Ck <- hvc[, "C"]
+      fin <- is.finite(Hk) & is.finite(Vk) & is.finite(Ck)
+      idx <- which(valid)[fin]
+      if (length(idx) > 0L) {
+        Hk <- Hk[fin]; Vk <- Vk[fin]; Ck <- Ck[fin]
+        done <- FALSE
+        if (isTRUE(round_chip)) {
+          # Snap to the nearest *soil* Munsell book chip (one vectorised call).
+          # roundHVC() returns the chip as the `MunsellRounded` string; parse
+          # hue / value / chroma back out. books= has no default, hence "soil".
+          rr <- tryCatch(munsellinterpol::roundHVC(cbind(Hk, Vk, Ck),
+                                                     books = "soil"),
+                         error = function(e) NULL)
+          mr <- if (!is.null(rr)) as.character(rr$MunsellRounded) else NULL
+          if (!is.null(mr) && length(mr) == length(idx)) {
+            hue[idx]    <- sub("^[[:space:]]*([0-9.]*[A-Z]+|N).*", "\\1", mr)
+            value[idx]  <- as.numeric(sub(".* ([0-9.]+)/.*$", "\\1", mr))
+            cr <- sub(".*/([0-9.]*)$", "\\1", mr); cr[cr == ""] <- "0"
+            chroma[idx] <- as.numeric(cr)
+            ms[idx]     <- mr
+            done <- TRUE
+          }
+        }
+        if (!done) {
+          # Continuous notation (or round-chip fall-through if rounding failed).
+          hs <- tryCatch(munsellinterpol::HueStringFromNumber(Hk),
+                         error = function(e) rep(NA_character_, length(Hk)))
+          # Hue is undefined at Chroma 0 (G. Davis, munsellinterpol author): a
+          # flat/neutral spectrum yields H = 0, which HueStringFromNumber() spells
+          # "10RP" -- a spurious reddish-purple on a grey. Collapse those to the
+          # neutral axis "N", exactly as roundHVC(books = "soil") already does on
+          # the rounded path, so the continuous output -- and the WRB/USDA/SiBCS
+          # hue-threshold predicates it can feed -- never sees a bogus hue on a
+          # chroma-0 sample.
+          neutral <- is.finite(Ck) & Ck < 1e-4
+          hs[neutral] <- "N"
+          hue[idx]    <- hs
+          value[idx]  <- Vk
+          chroma[idx] <- Ck
+          ms[idx]     <- ifelse(is.na(hs), NA_character_,
+                                ifelse(neutral, sprintf("N %g/", Vk),
+                                       sprintf("%s %g/%g", hs, Vk, Ck)))
+        }
+      }
+    }
+  }
 
   data.frame(
-    munsell_hue_moist    = vapply(rows, `[[`, character(1L), "hue"),
-    munsell_value_moist  = vapply(rows, `[[`, numeric(1L),   "V"),
-    munsell_chroma_moist = vapply(rows, `[[`, numeric(1L),   "C"),
-    munsell_string       = vapply(rows, `[[`, character(1L), "ms"),
+    munsell_hue_moist    = hue,
+    munsell_value_moist  = value,
+    munsell_chroma_moist = chroma,
+    munsell_string       = ms,
     X                    = xyz$X,
     Y                    = xyz$Y,
     Z                    = xyz$Z,

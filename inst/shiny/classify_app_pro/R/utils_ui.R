@@ -177,7 +177,17 @@ pro_profile_plot <- function(hz_df, attribute) {
 # wavelength (nm, parsed from the column names), Y = reflectance. The matrix is
 # horizons x wavelengths (the shape fill_from_spectra() expects). Returns a
 # plotly htmlwidget, with graceful placeholders when nothing is attached.
-pro_spectrum_plot <- function(mat, designations = NULL) {
+# Round every numeric column of a data.frame to `digits` (default 2) for
+# display -- so shown values never carry more than 2 decimal places.
+.sk_round2 <- function(df, digits = 2L) {
+  df <- as.data.frame(df)
+  if (!ncol(df)) return(df)
+  num <- vapply(df, is.numeric, logical(1))
+  df[num] <- lapply(df[num], function(x) round(x, digits))
+  df
+}
+
+pro_spectrum_plot <- function(mat, designations = NULL, y_label = NULL) {
   if (is.null(mat) || !is.matrix(mat) || nrow(mat) == 0L || ncol(mat) == 0L) {
     return(plotly::plotly_empty(type = "scatter", mode = "lines") |>
              plotly::layout(title = list(
@@ -199,7 +209,7 @@ pro_spectrum_plot <- function(mat, designations = NULL) {
   plotly::layout(
     p,
     xaxis  = list(title = i18n("ui.wavelength_nm")),
-    yaxis  = list(title = i18n("ui.reflectance")),
+    yaxis  = list(title = y_label %||% i18n("ui.reflectance")),
     legend = list(orientation = "h", y = -0.2),
     margin = list(l = 60, r = 20, t = 20, b = 60)
   )
@@ -212,4 +222,87 @@ pro_no_pedon_msg <- function() {
     shiny::icon("circle-info"), " ",
     i18n("ui.build_pedon_on"), shiny::strong(i18n("ui.pedon_tab")), i18n("ui.tab_first")
   )
+}
+
+
+# =============================================================================
+# v0.9.162 design-system helpers -- consistent sections, labels + tooltips.
+# All three are used across every module so the app reads as one product.
+# =============================================================================
+
+# A small info "i" that reveals `text` on hover / keyboard focus. Place it after
+# a control label so every input carries a one-line, plain-English explanation.
+sk_tip <- function(text, placement = "top") {
+  bslib::tooltip(
+    shiny::icon("circle-info", class = "sk-tip"),
+    text, placement = placement
+  )
+}
+
+# A control label with an inline help tooltip (returns a tagList for `label=`).
+sk_label <- function(label, help = NULL) {
+  if (is.null(help) || !nzchar(help)) return(label)
+  shiny::tagList(label, " ", sk_tip(help))
+}
+
+# A titled panel: icon + title, an optional one-line description, then content.
+# Gives every sidebar block a clear, professional header.
+sk_section <- function(title, ..., desc = NULL, icon = NULL) {
+  shiny::div(
+    class = "sk-section",
+    shiny::div(
+      class = "sk-section-head",
+      if (!is.null(icon)) shiny::icon(icon, class = "sk-section-ic"),
+      shiny::span(class = "sk-section-title", title)
+    ),
+    if (!is.null(desc)) shiny::p(class = "sk-section-desc", desc),
+    ...
+  )
+}
+
+# A centred empty-state / hero panel (icon, heading, explanation, extra tags).
+sk_empty <- function(icon, title, body = NULL, ...) {
+  bslib::card(
+    class = "sk-empty-state",
+    bslib::card_body(shiny::div(
+      class = "text-center",
+      shiny::icon(icon, class = "fa-2x text-secondary mb-2"),
+      shiny::tags$h5(class = "mb-2", title),
+      if (!is.null(body))
+        shiny::p(class = "text-body-secondary mx-auto",
+                 style = "max-width: 54ch;", body),
+      ...
+    ))
+  )
+}
+
+# Resolve a bundled www/ asset (demo photo, demo spectrum) to an on-disk path,
+# working both when the app runs from its installed location (cwd = app dir) and
+# from source. Returns NULL if the asset cannot be found.
+.pro_demo_asset <- function(name) {
+  cands <- c(
+    file.path("www", name),                                       # cwd = app dir
+    system.file("shiny", "classify_app_pro", "www", name,
+                package = "soilKey"))                              # installed
+  for (p in cands) if (nzchar(p) && file.exists(p))
+    return(normalizePath(p, mustWork = FALSE))
+  NULL
+}
+
+# Build an n-row Vis-NIR demo-spectrum matrix by recycling the bundled 5-row
+# demo, so it ALWAYS matches the current pedon's horizon count (a pedon can have
+# any number of horizons -- e.g. a photo extraction may add some). Returns NULL
+# if the bundled demo cannot be read.
+.pro_demo_spectrum <- function(n_horizons) {
+  path <- .pro_demo_asset("demo_spectrum.csv")
+  if (is.null(path)) return(NULL)
+  m <- tryCatch({
+    mm <- as.matrix(utils::read.csv(path, check.names = FALSE))
+    storage.mode(mm) <- "double"
+    mm
+  }, error = function(e) NULL)
+  if (is.null(m) || nrow(m) == 0L) return(NULL)
+  n   <- max(1L, as.integer(n_horizons))
+  idx <- ((seq_len(n) - 1L) %% nrow(m)) + 1L      # recycle rows to length n
+  m[idx, , drop = FALSE]
 }

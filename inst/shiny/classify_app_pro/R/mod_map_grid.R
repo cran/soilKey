@@ -54,6 +54,98 @@
                             quantile = "mean")
 }
 
+# SoilGrids /vsicurl COGs are slow to OPEN (~30-60s each) because GDAL lists the
+# remote directory by default. These settings skip that and enable HTTP/2 +
+# caching, roughly halving each open.
+.grid_set_gdal_fast <- function() {
+  if (!requireNamespace("terra", quietly = TRUE)) return(invisible())
+  for (cfg in c("GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR",
+                "GDAL_HTTP_VERSION=2", "GDAL_HTTP_MULTIPLEX=YES",
+                "VSI_CACHE=TRUE", "GDAL_HTTP_TIMEOUT=45",
+                "CPL_VSIL_CURL_ALLOWED_EXTENSIONS=.vrt,.tif"))
+    try(terra::setGDALconfig(cfg), silent = TRUE)
+  invisible()
+}
+
+# SoilGrids integer -> conventional-unit scale (matches lookup_soilgrids, so the
+# parallel path returns the same units). Covariate properties are all 0.1; the
+# others are kept for correctness if the covariate map changes.
+.GRID_SG_SCALE <- c(clay = 0.1, sand = 0.1, silt = 0.1, phh2o = 0.1,
+                    soc = 0.1, cec = 0.1, bdod = 0.01, nitrogen = 0.01,
+                    cfvo = 0.1, ocd = 0.1, ocs = 0.1)
+
+# Sample the (property x depth) SoilGrids layers over the whole grid IN PARALLEL
+# (PSOCK): the reads are independent and each ~30s, so serial takes minutes.
+# The worker uses ONLY terra (NOT soilKey) so PSOCK workers start fast and do
+# not thrash the machine loading the full package; it re-implements the thin
+# /vsicurl read + conventional-unit scaling of lookup_soilgrids(). Returns a
+# list of numeric vectors in `tasks` row order (conventional units), or NULL if
+# a cluster cannot be created / the run fails. PSOCK (not fork) because
+# terra/GDAL is not fork-safe.
+.grid_sample_parallel <- function(coords, tasks, depths) {
+  if (!requireNamespace("parallel", quietly = TRUE) ||
+      !requireNamespace("terra", quietly = TRUE)) return(NULL)
+  base  <- "https://files.isric.org/soilgrids/latest/data"
+  urls  <- sprintf("/vsicurl/%s/%s/%s_%s_mean.vrt", base, tasks$pn, tasks$pn,
+                   vapply(tasks$dn, function(d) depths[[d]], character(1)))
+  scl   <- unname(.GRID_SG_SCALE[tasks$pn]); scl[is.na(scl)] <- 0.1
+  cdf   <- as.data.frame(coords)                       # cols x (lon), y (lat)
+  names(cdf)[1:2] <- c("x", "y")
+  jobs  <- lapply(seq_len(nrow(tasks)),
+                  function(i) list(url = urls[i], scale = scl[i]))
+  n_work <- min(nrow(tasks), max(2L, min(6L, parallel::detectCores() - 1L)))
+  cl <- tryCatch(parallel::makeCluster(n_work, type = "PSOCK"),
+                 error = function(e) NULL)
+  if (is.null(cl)) return(NULL)
+  on.exit(try(parallel::stopCluster(cl), silent = TRUE), add = TRUE)
+  worker <- function(job, cdf) {
+    if (!requireNamespace("terra", quietly = TRUE))
+      return(rep(NA_real_, nrow(cdf)))
+    for (cfg in c("GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR",
+                  "GDAL_HTTP_VERSION=2", "VSI_CACHE=TRUE",
+                  "GDAL_HTTP_TIMEOUT=45",
+                  "CPL_VSIL_CURL_ALLOWED_EXTENSIONS=.vrt,.tif"))
+      try(terra::setGDALconfig(cfg), silent = TRUE)
+    r <- tryCatch(terra::rast(job$url), error = function(e) NULL)
+    if (is.null(r)) return(rep(NA_real_, nrow(cdf)))
+    pts <- terra::project(
+      terra::vect(cdf, geom = c("x", "y"), crs = "EPSG:4326"), terra::crs(r))
+    suppressWarnings(as.numeric(terra::extract(r, pts)[[2]])) * job$scale
+  }
+  tryCatch(parallel::parLapply(cl, jobs, worker, cdf = cdf),
+           error = function(e) NULL)
+}
+
+# Sample all properties x depths into samp[[pn]][[dn]] (conventional units x the
+# covariate-map scale). The live SoilGrids sampler is read in PARALLEL; a custom
+# injected sampler (tests) runs serially and offline.
+.grid_sample_all <- function(coords, cmap, depths,
+                             sampler = .grid_soilgrids_sampler, bump = NULL) {
+  tasks <- expand.grid(pn = names(cmap), dn = names(depths),
+                       stringsAsFactors = FALSE)
+  vals <- NULL
+  if (identical(sampler, .grid_soilgrids_sampler)) {
+    .grid_set_gdal_fast()
+    if (is.function(bump)) bump(0.05, i18n("mgrid.progress_sampling"))
+    vals <- .grid_sample_parallel(coords, tasks, depths)     # NULL on failure
+  }
+  if (is.null(vals)) {                                       # serial (tests / fallback)
+    vals <- lapply(seq_len(nrow(tasks)), function(i) {
+      v <- suppressWarnings(as.numeric(
+        sampler(coords, tasks$pn[i], depths[[tasks$dn[i]]])))
+      if (is.function(bump))
+        bump(i / nrow(tasks) * 0.5, i18n("mgrid.progress_sampling"))
+      v
+    })
+  }
+  samp <- stats::setNames(vector("list", length(cmap)), names(cmap))
+  for (i in seq_len(nrow(tasks))) {
+    pn <- tasks$pn[i]; dn <- tasks$dn[i]
+    samp[[pn]][[dn]] <- as.numeric(vals[[i]]) * cmap[[pn]]$scale
+  }
+  samp
+}
+
 # Method 1: classify SoilGrids covariates with the deterministic key.
 # `sampler(coords, property, depth)` is injectable so this is testable offline.
 .grid_classify_covariates <- function(coords, system = "wrb2022",
@@ -61,17 +153,10 @@
                                       bump = NULL) {
   cmap   <- .grid_covariate_map()
   depths <- c(top = "5-15cm", sub = "60-100cm")
-  # Sample every property at both depths (each call covers the whole grid).
-  samp <- list(); i <- 0L; total <- length(cmap) * length(depths)
-  for (pn in names(cmap)) {
-    samp[[pn]] <- list()
-    for (dn in names(depths)) {
-      v <- suppressWarnings(as.numeric(sampler(coords, pn, depths[[dn]])))
-      samp[[pn]][[dn]] <- v * cmap[[pn]]$scale
-      i <- i + 1L
-      if (is.function(bump)) bump(i / total * 0.5, i18n("mgrid.progress_sampling"))
-    }
-  }
+  # Sample every property x depth over the whole grid. The live SoilGrids reads
+  # run in parallel (each ~30s; serial would take minutes); an injected sampler
+  # (tests) runs serially and offline.
+  samp <- .grid_sample_all(coords, cmap, depths, sampler = sampler, bump = bump)
   classify_fun <- switch(system,
     wrb2022 = soilKey::classify_wrb2022,
     sibcs   = soilKey::classify_sibcs,
@@ -118,19 +203,48 @@
   as.character(pts[[class_col]][idx])
 }
 
+# Full WRB Reference Soil Group name -> 2-letter code. The live ISRIC raster is
+# categorical and its extract returns the RSG name (incl. the legacy
+# "Albeluvisols" == Retisols), so we map names, not integers. Unknown labels
+# pass through unchanged so nothing is silently dropped.
+.wrb_name_to_code <- function(x) {
+  m <- c(Acrisols = "AC", Albeluvisols = "RT", Retisols = "RT", Alisols = "AL",
+         Andosols = "AN", Arenosols = "AR", Calcisols = "CL", Cambisols = "CM",
+         Chernozems = "CH", Cryosols = "CR", Durisols = "DU", Ferralsols = "FR",
+         Fluvisols = "FL", Gleysols = "GL", Gypsisols = "GY", Histosols = "HS",
+         Kastanozems = "KS", Leptosols = "LP", Lixisols = "LX", Luvisols = "LV",
+         Nitisols = "NT", Phaeozems = "PH", Planosols = "PL", Plinthosols = "PT",
+         Podzols = "PZ", Regosols = "RG", Solonchaks = "SC", Solonetz = "SN",
+         Stagnosols = "ST", Technosols = "TC", Umbrisols = "UM", Vertisols = "VR")
+  x <- as.character(x)
+  out <- unname(m[x])
+  keep <- is.na(out) & !is.na(x) & nzchar(x)
+  out[keep] <- x[keep]
+  out
+}
+
 # Method 3: sample the SoilGrids MostProbable WRB raster on the grid.
+# Handles BOTH the offline demo (plain integer raster -> numeric LUT) and the
+# live ISRIC raster (categorical -> extract returns the RSG label -> name map).
 .grid_overlay <- function(coords, source_url = NULL) {
   src <- source_url
   if (is.null(src) || !nzchar(src))
     src <- getOption("soilKey.test_raster", default = NULL)
   if (is.null(src) || !nzchar(src))
     stop(i18n("mgrid.err_no_raster_source"))
+  if (grepl("vsicurl|^http", src)) .grid_set_gdal_fast()   # fast remote open
   r   <- terra::rast(src)
   pts <- terra::vect(coords, type = "points", crs = "EPSG:4326")
   pp  <- terra::project(pts, terra::crs(r))
-  vals <- suppressWarnings(as.numeric(terra::extract(r, pp)[[2]]))
-  lut <- soilKey::soilgrids_wrb_lut()
-  unname(lut[as.character(round(vals))])
+  raw <- terra::extract(r, pp)[[2]]
+  if (terra::is.factor(r) || is.factor(raw) || is.character(raw)) {
+    # live categorical raster: labels are the RSG names
+    .wrb_name_to_code(raw)
+  } else {
+    lut  <- soilKey::soilgrids_wrb_lut()
+    vals <- suppressWarnings(as.numeric(raw))
+    unname(lut[as.character(round(vals))])
+  }
 }
 
 # Reduce a vector of class codes over a grid to a categorical SpatRaster + LUT.
@@ -145,48 +259,135 @@
 }
 
 
+# Recode a CROPPED SoilGrids WRB raster to contiguous integer class ids + a LUT
+# (id -> RSG code), for direct addRasterImage rendering (continuous patches).
+# Handles BOTH the live categorical raster (factor RAT; labels = RSG names ->
+# .wrb_name_to_code, incl. Albeluvisols == RT) AND the offline demo (plain
+# integer -> soilgrids_wrb_lut). Only classes present in the crop are kept, so
+# the legend stays tight. Returns the same list(raster, lut) shape as
+# .grid_to_raster so add_overlay's palette/legend code is unchanged.
+.overlay_recode <- function(rc) {
+  if (terra::is.factor(rc)) {
+    rat      <- terra::levels(rc)[[1]]           # col 1 = value, last = label
+    map_from <- suppressWarnings(as.integer(rat[[1]]))
+    map_code <- .wrb_name_to_code(as.character(rat[[ncol(rat)]]))
+    ri       <- rc; terra::levels(ri) <- NULL    # drop RAT -> plain integer grid
+  } else {
+    lut0     <- soilKey::soilgrids_wrb_lut()
+    map_from <- suppressWarnings(as.integer(names(lut0)))
+    map_code <- unname(lut0)
+    ri       <- rc
+  }
+  present <- sort(unique(suppressWarnings(
+    as.integer(terra::values(ri, mat = FALSE)))))
+  present <- present[is.finite(present)]
+  if (!length(present)) return(NULL)
+  sel  <- match(present, map_from)
+  ok   <- !is.na(sel) & !is.na(map_code[sel]) & nzchar(map_code[sel] %||% "")
+  from <- present[ok]; code <- map_code[sel][ok]
+  if (!length(from)) return(NULL)
+  uniq   <- sort(unique(code))                   # RSG codes present in the crop
+  new_id <- match(code, uniq)
+  ri <- terra::subst(ri, from = from, to = new_id, others = NA)  # exact remap
+  list(raster = ri,
+       lut    = data.frame(id = seq_along(uniq), class = uniq,
+                           stringsAsFactors = FALSE))
+}
+
+
 map_grid_ui <- function(id) {
   ns <- shiny::NS(id)
   bslib::layout_sidebar(
     sidebar = bslib::sidebar(
       width = 340,
-      shiny::h5(i18n("mgrid.grid_prediction")),
-      shinyWidgets::radioGroupButtons(
-        ns("method"), i18n("mgrid.method"),
-        choices = stats::setNames(
-          c("covariates", "interpolate", "overlay"),
-          c(i18n("mgrid.method_covariates"),
-            i18n("mgrid.method_interpolate"),
-            i18n("mgrid.method_overlay"))),
-        selected = "overlay", direction = "vertical", size = "sm"),
-      shiny::selectInput(ns("system"), i18n("mgrid.classification_system"),
-                         choices = c("WRB 2022"  = "wrb2022",
-                                     "SiBCS 5"    = "sibcs",
-                                     "USDA ST 13" = "usda"),
-                         selected = "wrb2022"),
-      shiny::div(class = "small text-muted mb-1", i18n("mgrid.area_of_interest")),
-      shiny::fluidRow(
-        shiny::column(6, shiny::numericInput(ns("lat_max"), i18n("mgrid.lat_max"), -5, step = 1)),
-        shiny::column(6, shiny::numericInput(ns("lat_min"), i18n("mgrid.lat_min"), -30, step = 1))),
-      shiny::fluidRow(
-        shiny::column(6, shiny::numericInput(ns("lon_min"), i18n("mgrid.lon_min"), -60, step = 1)),
-        shiny::column(6, shiny::numericInput(ns("lon_max"), i18n("mgrid.lon_max"), -40, step = 1))),
-      shiny::actionButton(ns("use_view"), i18n("mgrid.use_current_view"),
-                          icon = shiny::icon("crop"),
-                          class = "btn-outline-secondary btn-sm w-100 mb-2"),
-      shiny::sliderInput(ns("res"), i18n("mgrid.cells_per_side"), min = 8, max = 40,
-                         value = 24, step = 1),
-      shiny::uiOutput(ns("ncell_note")),
-      shiny::conditionalPanel(
-        sprintf("input['%s'] != 'interpolate'", ns("method")),
-        shiny::textInput(ns("source_url"), i18n("mgrid.soilgrids_raster"),
-                         placeholder = i18n("mgrid.raster_placeholder"))),
-      shiny::actionButton(ns("run"), i18n("mgrid.predict_grid"),
-                          icon = shiny::icon("table-cells"),
-                          class = "btn-primary w-100"),
-      shiny::downloadButton(ns("export"), i18n("mgrid.export_geotiff"),
-                            class = "btn-outline-secondary w-100 mt-2"),
-      shiny::uiOutput(ns("method_help"))
+
+      sk_section(
+        i18n("mgrid.grid_prediction"),
+        desc = "Predict a soil-class map over an area, then review it on the map and in the summary table.",
+        icon = "map-location-dot",
+        shinyWidgets::radioGroupButtons(
+          ns("method"),
+          sk_label(i18n("mgrid.method"),
+                   "How each grid cell gets its class: from SoilGrids covariates run through the key, interpolated from your classified points, or read off the SoilGrids overlay."),
+          choices = stats::setNames(
+            c("covariates", "interpolate", "overlay"),
+            c(i18n("mgrid.method_covariates"),
+              i18n("mgrid.method_interpolate"),
+              i18n("mgrid.method_overlay"))),
+          selected = "overlay", direction = "vertical", size = "sm"),
+        shiny::selectInput(
+          ns("system"),
+          sk_label(i18n("mgrid.classification_system"),
+                   "Which soil taxonomy the predicted classes are named in: WRB 2022, SiBCS, or USDA Soil Taxonomy."),
+          choices = c("WRB 2022"  = "wrb2022",
+                      "SiBCS 5"    = "sibcs",
+                      "USDA ST 13" = "usda"),
+          selected = "wrb2022")
+      ),
+
+      sk_section(
+        i18n("mgrid.area_of_interest"),
+        desc = "Set the latitude / longitude bounding box to map, or grab it from the current map view.",
+        icon = "location-dot",
+        shiny::fluidRow(
+          shiny::column(6, shiny::numericInput(
+            ns("lat_max"),
+            sk_label(i18n("mgrid.lat_max"), "Northern edge of the area, in decimal degrees (must be above the minimum latitude)."),
+            -5, step = 1)),
+          shiny::column(6, shiny::numericInput(
+            ns("lat_min"),
+            sk_label(i18n("mgrid.lat_min"), "Southern edge of the area, in decimal degrees (must be below the maximum latitude)."),
+            -30, step = 1))),
+        shiny::fluidRow(
+          shiny::column(6, shiny::numericInput(
+            ns("lon_min"),
+            sk_label(i18n("mgrid.lon_min"), "Western edge of the area, in decimal degrees (must be left of the maximum longitude)."),
+            -60, step = 1)),
+          shiny::column(6, shiny::numericInput(
+            ns("lon_max"),
+            sk_label(i18n("mgrid.lon_max"), "Eastern edge of the area, in decimal degrees (must be right of the minimum longitude)."),
+            -40, step = 1))),
+        bslib::tooltip(
+          shiny::actionButton(ns("use_view"), i18n("mgrid.use_current_view"),
+                              icon = shiny::icon("crop"),
+                              class = "btn-outline-secondary btn-sm w-100 mb-2"),
+          "Fill the bounding box from what is currently shown in the map viewport.")
+      ),
+
+      sk_section(
+        i18n("mgrid.cells_per_side"),
+        desc = "Grid resolution. Finer grids sample more cells, so prediction takes longer.",
+        icon = "table-cells",
+        shiny::sliderInput(
+          ns("res"),
+          sk_label(i18n("mgrid.cells_per_side"),
+                   "Number of cells along each side of the grid; the total cell count is this squared and is capped for speed."),
+          min = 8, max = 40, value = 24, step = 1),
+        shiny::uiOutput(ns("ncell_note")),
+        shiny::conditionalPanel(
+          sprintf("input['%s'] != 'interpolate'", ns("method")),
+          shiny::textInput(
+            ns("source_url"),
+            sk_label(i18n("mgrid.soilgrids_raster"),
+                     "Optional URL of a SoilGrids raster to sample; leave blank to use the default source for the chosen method."),
+            placeholder = i18n("mgrid.raster_placeholder")))
+      ),
+
+      sk_section(
+        i18n("mgrid.predict_grid"),
+        desc = "Run the prediction, then export the resulting class raster.",
+        icon = "play",
+        bslib::tooltip(
+          shiny::actionButton(ns("run"), i18n("mgrid.predict_grid"),
+                              icon = shiny::icon("table-cells"),
+                              class = "btn-primary w-100"),
+          "Predict the soil class for every grid cell and draw it as a raster on the map."),
+        bslib::tooltip(
+          shiny::downloadButton(ns("export"), i18n("mgrid.export_geotiff"),
+                                class = "btn-outline-secondary w-100 mt-2"),
+          "Download the predicted class grid as a categorical GeoTIFF for use in GIS."),
+        shiny::uiOutput(ns("method_help"))
+      )
     ),
     bslib::layout_column_wrap(
       width = 1, heights_equal = "row",
@@ -196,7 +397,9 @@ map_grid_ui <- function(id) {
                          leaflet::leafletOutput(ns("map"), height = "460px"))),
       bslib::card(
         bslib::card_header(i18n("mgrid.class_summary")),
-        bslib::card_body(DT::DTOutput(ns("summary"))))
+        bslib::card_body(
+          shiny::helpText("Share of grid cells assigned to each predicted soil class."),
+          DT::DTOutput(ns("summary"))))
     )
   )
 }
@@ -326,7 +529,7 @@ map_grid_server <- function(id, rv, settings) {
                                  i18n("mgrid.col_cells"),
                                  i18n("mgrid.col_share")),
                     options = list(dom = "tp", pageLength = 10)) |>
-        DT::formatPercentage("Share", 1)
+        DT::formatPercentage("Share", 2)
     })
 
     # ---- GeoTIFF export -----------------------------------------------------

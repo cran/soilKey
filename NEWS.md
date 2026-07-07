@@ -1,3 +1,596 @@
+# soilKey 0.9.184 (2026-07-07)
+
+Neutral hue is "N" in continuous notation too; Photo-tab colour-route text corrected.
+
+\itemize{
+  \item \strong{A chroma-0 neutral now reports hue \code{"N"} in the continuous
+    (\code{round_chip = FALSE}) notation as well}, not just the rounded chip. At
+    zero Chroma the Munsell hue is undefined (per G. Davis); the numeric hue
+    collapses to 0, which \code{HueStringFromNumber()} spells \code{"10RP"} -- a
+    spurious reddish-purple on a grey. \code{predict_munsell_from_spectra()} now
+    collapses that to \code{"N"}, matching \code{roundHVC(books = "soil")} and
+    keeping the WRB/USDA/SiBCS hue-threshold predicates from ever seeing a bogus
+    hue on a neutral sample.
+  \item \strong{Pro app -- the Photo tab no longer credits munsellinterpol.} The
+    Photo tab reads Munsell by asking a vision model to estimate hue/value/chroma
+    directly from the image; the CIE-anchored \code{munsellinterpol} conversion
+    (reflectance -> XYZ -> Munsell) is the \emph{Spectra} route. The on-screen
+    text (EN + PT) now states this plainly so the two colour routes are not
+    conflated.
+}
+
+# soilKey 0.9.183 (2026-07-07)
+
+Adopt munsellinterpol's canonical XYZ->Munsell path; add the perfect-diffuser test.
+
+\itemize{
+  \item \strong{Spectra->Munsell now calls \code{munsellinterpol::XYZtoMunsell(XYZ, white=)}}
+    (munsellinterpol >= 3.4-0), the canonical conversion that performs the
+    D65 -> Illuminant-C chromatic adaptation internally -- the exact path the
+    munsellinterpol author (G. Davis) documents. The previous
+    XYZ -> CIELAB(D65) -> \code{LabToMunsell()} route is kept as a numerically
+    identical fallback for older munsellinterpol, so nothing changes on the
+    output side (all colour fixtures are byte-identical).
+  \item \strong{New colorimetry sanity test:} a perfect reflecting diffuser
+    (100\% constant reflectance) maps to Munsell value 10 and a pure neutral,
+    on G. Davis' suggestion. It pins the top of the value scale that the
+    lower-reflectance neutral tests only approached.
+}
+
+# soilKey 0.9.182 (2026-07-07)
+
+Uncertainty per-point drill-in; Assistant logo; 2-decimal values.
+
+\itemize{
+  \item \strong{Click a point to see its full uncertainty.} In the Uncertainty
+    group mode, clicking a row in the per-point table now opens that point's full
+    posterior distribution and its per-attribute sensitivity ranking.
+  \item \strong{The soilKey logo is on the Assistant} -- both the floating button
+    and the drawer header during the conversation.
+  \item \strong{Displayed numbers are rounded to two decimal places} throughout
+    (posterior probabilities, entropy, mean confidence, sensitivity importances,
+    the SoilGrids class shares, and the attribute tables).
+}
+
+# soilKey 0.9.181 (2026-07-07)
+
+Photo tab restored; spectra preprocessing made resilient.
+
+\itemize{
+  \item \strong{The Photo tab is back as its own tab} (it is no longer folded
+    into the Assistant). It reads soil colour per horizon from a profile photo
+    and fills only the profile record, with a clear explanation that the sampled
+    colour is converted to Munsell via the \code{munsellinterpol} package (Glenn
+    Davis). A prominent note disambiguates the two colour routes: \strong{this
+    tab reads colour FROM THE PHOTO}, while the Spectra tab has a separate,
+    physics-based route (a Vis-NIR spectrum to colour). The provider is
+    simplified to two clear options -- an offline demo, or a free local model
+    (Ollama) -- dropping the confusing cloud option.
+  \item \strong{Spectra preprocessing no longer errors on an old install.} The
+    Spectra tab resolves \code{apply_spectral_preprocessing} from the loaded
+    namespace defensively; if an older soilKey without the engine is installed
+    it simply shows the raw reflectance instead of the
+    "not an exported object" message. (The engine is exported from 0.9.177 on --
+    the fix is belt-and-braces for a stale install.)
+}
+
+# soilKey 0.9.180 (2026-07-07)
+
+Uncertainty tab -- analyse a whole group of points.
+
+\itemize{
+  \item \strong{Per-point uncertainty for a group.} The Uncertainty tab gains an
+    "Active profile / Group of points" switch. In group mode it runs the
+    Monte-Carlo analysis on every profile of the group entered on the Map tab
+    (Batch mode) and reports, per point, the most-likely class, its posterior
+    probability and the Shannon entropy -- in a ranked table plus summary boxes
+    (number of points, mean confidence, how many are stable). The batch of
+    profiles is now shared app-wide (\code{rv$batch_pedons}) so the two tabs
+    work on the same points.
+}
+
+# soilKey 0.9.179 (2026-07-07)
+
+Pro app -- Assistant becomes a drawer; two chrome fixes.
+
+\itemize{
+  \item \strong{The Assistant is now a right-side drawer available on every tab}
+    (a floating button opens it; the header X, the backdrop or Esc close it),
+    not a separate nav tab -- so you can ask about the current profile without
+    leaving whatever you are doing. The API-key field and the photo upload are
+    removed: the model key comes from \code{GROQ_API_KEY} (else the grounded
+    scripted assistant), and the chat is just a clean conversation box.
+  \item \strong{The browser-tab title now reads "soilKey Pro"} (it was rendering
+    the mangled navbar wordmark markup).
+  \item \strong{The Thanks page scrolls} instead of clipping the credits inside
+    the fillable panel.
+}
+
+# soilKey 0.9.178 (2026-07-07)
+
+Map tab -- five fixes to the point/overlay experience.
+
+\itemize{
+  \item \strong{The classification-system toggle is live again.} In "Explore
+    point", switching WRB <-> SiBCS now re-queries immediately (it was gated on
+    the button, so toggling did nothing). The prior is the SoilGrids WRB layer;
+    WRB is native and SiBCS is an honest WRB->SiBCS crosswalk of the same pixels
+    -- USDA is no longer offered here (there is no USDA SoilGrids layer, so it
+    was mislabelling pixels).
+  \item \strong{The SoilGrids overlay renders as continuous soil-class patches}
+    instead of a few coarse pixels. It now crops the source raster to the view
+    at native resolution and draws it directly (nearest-neighbour, hard class
+    edges) rather than resampling to a 40x40 point grid. The bundled demo raster
+    is finer (~2.2 km) with smaller patches.
+  \item \strong{Legend explanations beside the map.} A "What am I looking at?"
+    panel explains the SoilGrids overlay and the predicted-class raster per mode.
+  \item \strong{The query buffer is drawn} as a ring of the chosen radius,
+    updating live as you change it.
+  \item \strong{Top-N classes are shown ranked with percentages} (rank / class /
+    code / probability, capped at N) plus a persistent popup naming the #1 class
+    and its share.
+}
+
+# soilKey 0.9.177 (2026-07-06)
+
+Spectra tab -- scientific spectral preprocessing, compact status.
+
+\itemize{
+  \item \strong{New \code{apply_spectral_preprocessing()}.} A robust, composable
+    Vis-NIR / MIR pipeline applied in the canonical order reflectance ->
+    absorbance (\eqn{A = \log_{10}(1/R)}) -> Savitzky-Golay smoothing ->
+    Savitzky-Golay 1st/2nd derivative. Reuses \code{prospectr} (with a pure-R
+    Savitzky-Golay fallback), auto-scales percent reflectance to a fraction,
+    clamps against \code{log(0)}, keeps the wavelength axis trimmed in lock-step
+    with each Savitzky-Golay pass, and returns the ordered list of applied
+    steps. Never errors on a valid spectrum -- an infeasible window is skipped
+    and recorded.
+  \item \strong{Pro app -- live preprocessing on the Spectra tab.} Tick
+    Absorbance / Savitzky-Golay smoothing / a 1st or 2nd derivative (window and
+    polynomial under an "advanced" accordion) and the spectrum is re-treated and
+    re-plotted as you go, with the treatment sequence shown as a breadcrumb.
+    This turns the noisy raw reflectance into the clean, analysis-ready form soil
+    spectroscopists actually use.
+  \item \strong{The treatment sequence is saved in the report.} The applied
+    pipeline is recorded and rendered as a "Spectral preprocessing" section in
+    the HTML/PDF report (en/pt).
+  \item \strong{Compact status.} The oversized "Spectrum status" card is
+    replaced by a slim chip in the plot card's header.
+}
+
+# soilKey 0.9.176 (2026-07-06)
+
+Pro app -- the Photo tab becomes "Talk to soilKey Pro" (a chat).
+
+\itemize{
+  \item \strong{One chat, no confusing provider menu.} The old Mock / Local
+    Ollama / Cloud selector is gone. There is now a single conversation box: ask
+    about the current profile, its WRB / SiBCS / USDA classification, missing
+    data, or soil science in general.
+  \item \strong{A free online model, or a built-in demo assistant.} Paste a free
+    Groq API key (or set \code{GROQ_API_KEY}) and it chats with a real open
+    Llama/Qwen model via ellmer -- no paid key, nothing runs on your machine.
+    With no key, a scripted assistant still answers, grounded in the current
+    pedon and its deterministic classification, so the demo is never dead.
+  \item \strong{The model never classifies.} soilKey's deterministic keys do the
+    classification; the assistant only explains the result -- it is instructed
+    never to invent or override a class.
+  \item \strong{Photo -> Munsell, folded in.} Attach a soil photo and "Read
+    colours" to extract its Munsell colours into the profile (a Groq vision
+    model when a key is present, else the offline mock), exactly as the old
+    Photo tab did.
+  \item Bilingual (en/pt) throughout; the transcript announces new replies to
+    screen readers.
+}
+
+# soilKey 0.9.175 (2026-07-06)
+
+Pro app -- fix the things that were visibly broken.
+
+\itemize{
+  \item \strong{The Vis-NIR spectrum now plots.} Root cause was a reactivity
+    bug, not the plot: PedonRecord is an R6 (reference) object, so
+    \code{rv$pedon$spectra <- x; rv$pedon <- rv$pedon} self-assigned the SAME
+    object, which Shiny suppresses as identical -- so the plot/status never
+    re-rendered. The demo/attach/gap-fill handlers now clone to a fresh
+    reference. The same latent bug is fixed in the map's click handler.
+  \item \strong{The Map is no longer squished (and no longer vanishes in
+    Portuguese).} The map card was a flex-fill item that the taller point-mode
+    results panel -- and the longer Portuguese strings -- squeezed to a strip or
+    to zero height. The map now has a fixed, self-contained size (\code{fill =
+    FALSE} + a definite CSS height), so it renders identically in every mode and
+    both languages.
+  \item \strong{The SoilGrids overlay actually shows, with real class variety.}
+    The overlay was invisible because of the same zero-height trap, and the
+    bundled demo raster was ~14 km/pixel and near-uniform (so "predict"
+    collapsed to 1-2 classes). A new, finer, multi-class demo raster
+    (\code{data-raw/make_soilgrids_wrb_demo.R}) makes the overlay and the grid
+    prediction meaningful (~10 classes around the demo point).
+  \item \strong{Live vs demo SoilGrids toggle.} A switch chooses between the
+    real ISRIC SoilGrids server (read by its embedded WRB class labels, so it is
+    not affected by the old numeric-lookup mis-indexing) and the fast offline
+    demo raster; live reads fall back to the demo if the network is unavailable.
+  \item \strong{The welcome tour is back.} It was not broken -- the "seen it"
+    flag in the browser simply never reset. The flag is now versioned (so it
+    reappears) and Help > "Take the tour" clears it to re-arm the auto-open.
+  \item \strong{The brand reads "soilKey Pro"} as one wordmark again (it had
+    rendered as separated chunks); the stylesheet is now cache-busted per
+    version so CSS fixes reach returning users.
+}
+
+# soilKey 0.9.174 (2026-07-03)
+
+Map tab reformulated into one synchronised map (Pro app).
+
+\itemize{
+  \item \strong{One map, three modes.} The three separate, unsynchronised
+    sub-tabs (Point prior / Batch classify / Grid prediction) are replaced by a
+    single square map with a mode selector. Every mode is centred on the same
+    point, so the pedon, its neighbouring demo profiles and the SoilGrids prior
+    are seen together instead of on three disconnected maps.
+  \item \strong{The SoilGrids overlay now shows.} A shared "SoilGrids overlay"
+    toggle draws the WRB class prior for the area around the point. It defaults
+    to a small bundled demo raster (\code{soilgrids_wrb_demo.tif}), so it works
+    with zero configuration; a pasted raster path/URL overrides it.
+  \item \strong{The demo shows point + neighbours + SoilGrids together.} Loading
+    the example profile centres the map on it (Rio de Janeiro), drops the
+    surrounding demo profiles as context, and overlays the SoilGrids classes for
+    that area -- the whole point of the demonstration, on first paint.
+  \item \strong{Squarer, not a wide banner.} The map is capped to a square
+    (max 680 px), addressing the "map is too wide" feedback.
+  \item Robustness: the initial view, points and overlay are baked into the map
+    render (not applied by post-render callbacks that could be dropped before
+    the map exists); the overlay window no longer follows the map bounds (which
+    could re-fire in a loop); neighbour points are shown without a full
+    three-system classification (which had stalled the first paint).
+}
+
+# soilKey 0.9.173 (2026-07-03)
+
+Spectra and Photo tab fixes.
+
+\itemize{
+  \item \strong{The demo spectrum now plots.} Clicking "Use the demo spectrum"
+        showed nothing: the plot lived inside a \code{renderUI} that was torn
+        down and rebuilt every time the spectrum was attached, so the plotly
+        node rendered blank. The result cards are now static, so the plot draws
+        reliably -- one reflectance trace per horizon.
+  \item \strong{Photo: a free local model, no API key.} The provider is now
+        Demo / \strong{Local model (Ollama)} / Cloud, each explained. The Local
+        option runs a free open-source vision model on your own machine via
+        Ollama + \pkg{ellmer} (default \code{llama3.2-vision}); it detects a
+        running server and, if none is found, tells you how to start one. No
+        paid API, and no image leaves the computer.
+  \item \strong{Photo: the demo photo loads with the demo.} When the one-click
+        example profile is loaded, the Photo tab now opens with the illustrative
+        demo photo already in place.
+  \item \strong{Photo: the colour extraction is explained.} A panel states that
+        colour is read per horizon from the matching depth band and converted to
+        Munsell through the CIE-anchored \pkg{munsellinterpol} (Glenn Davis)
+        path, and a new "Where each colour was read" panel lists the photo
+        region each horizon's colour was sampled from.
+}
+
+# soilKey 0.9.172 (2026-07-03)
+
+Classify-tab clarity and a navbar contrast fix.
+
+\itemize{
+  \item \strong{Legible EN/PT selector.} The language toggle (and the new
+        light/dark toggle) were hard to see on the dark navbar; they now use a
+        high-contrast clay pill with light borders, in both themes.
+  \item \strong{You can tell when results are out of date.} A hint under the
+        Classify button says whether the shown results are current, or that a
+        setting changed and you need to press Classify again; a banner marks
+        stale results. The "Complete missing data" and "Deepest level" boxes now
+        say they apply the next time you press Classify.
+  \item \strong{Friendlier key-trace wording.} The decision-trace status column
+        (\emph{criteria}) now reads \dQuote{met} / \dQuote{not met} /
+        \dQuote{needs data} / \dQuote{assigned} instead of the alarming
+        \dQuote{pass} / \dQuote{fail}, and \dQuote{not met} (the normal case for
+        most candidate classes) is a neutral grey rather than red.
+  \item \strong{Clearer Ambiguities and Missing data.} Both now open with an
+        explanation; missing data is grouped by system with readable attribute
+        names (e.g. \code{al_ox_pct} shown as \dQuote{Al ox (\%)}).
+}
+
+# soilKey 0.9.171 (2026-07-03)
+
+App polish and a fix to the gridded SoilGrids prediction.
+
+\itemize{
+  \item \strong{Dark mode.} The Pro app now follows the operating-system colour
+        scheme automatically and adds a sun/moon toggle in the navbar to switch
+        light/dark by hand. The dark palette keeps every text/background pair
+        above WCAG AA (labels and headings ~16:1, secondary text ~8:1).
+  \item \strong{Browser-tab icon.} The soilKey logo is now the app's favicon.
+  \item \strong{Gridded "SoilGrids covariates" prediction fixed.} The method
+        appeared broken because it sampled the six covariates at two depths
+        \emph{serially} over the network -- twelve \code{/vsicurl} reads at
+        ~30-60 s each, i.e. several minutes of apparent freeze. The reads now run
+        in parallel (a PSOCK cluster) with GDAL \code{/vsicurl} tuning, cutting a
+        run to about a minute; an injected sampler (offline tests) still runs
+        serially. The help text sets the expectation that it samples SoilGrids
+        live.
+}
+
+# soilKey 0.9.170 (2026-07-03)
+
+Two small app fixes.
+
+\itemize{
+  \item \strong{The demo spectrum now matches any pedon.} "Use the demo
+        spectrum" failed with \emph{"Spectrum has 5 rows but the pedon has N
+        horizons"} whenever the current pedon did not have exactly five horizons
+        (for example after a photo extraction added horizons). The demo is now
+        built to the current pedon's horizon count (recycling the bundled rows),
+        so it attaches whatever the profile looks like.
+  \item \strong{Acknowledgements: added the Redape curated dataset.} Credited
+        Glauber J. Vaz, Alberto F. Silva Jr and Luis de F. da Silva Neto (2023),
+        "Brazilian soil data for taxonomic classification" (Embrapa Redape) --
+        the ~96 hand-reviewed Brazilian profiles used to benchmark and calibrate
+        the classifiers.
+}
+
+# soilKey 0.9.169 (2026-07-03)
+
+Documentation-site and badge fixes. No code change.
+
+\itemize{
+  \item \strong{Fixed the pkgdown docs deploy}, which had failed on every push
+        since v0.9.160 (leaving the published site stale at 0.9.159). Three
+        exported functions -- \code{classify_csv}, \code{read_pedon_csv} and
+        \code{key_trace_table} -- were missing from the \code{_pkgdown.yml}
+        reference index, so \code{pkgdown::check_pkgdown()} aborted the build.
+        They are now listed and the site rebuilds.
+  \item \strong{Live badges.} The README's hardcoded "CRAN: pending" badge (the
+        package has been on CRAN since v0.9.157) and the stale hardcoded version
+        badge were replaced with self-updating badges: the CRAN version and
+        download-count badges from r-pkg.org / cranlogs, and a dev-version badge
+        driven by the latest Git tag.
+}
+
+# soilKey 0.9.168 (2026-07-03)
+
+A richer, branded report (HTML and PDF), with a locator map and multi-profile
+pagination. No change to the classification engine.
+
+\itemize{
+  \item \strong{Branded header with the soilKey logo.} The HTML report opens
+        with the logo beside the title; the PDF carries the logo in a running
+        page header (every page, including page 1).
+  \item \strong{Locator map.} Both formats now embed a self-contained static map
+        of the profile location(s) -- a world coastline (via the optional
+        \pkg{maps} package) with the point(s) marked. The HTML report inlines it
+        as a base64 image, so it stays a single self-contained file with no
+        external requests.
+  \item \strong{Multi-profile reports.} \code{report()} / \code{report_html()} /
+        \code{report_pdf()} now accept a \emph{list of \code{PedonRecord}s}. The
+        first page shows a map of all profiles plus an overview table; each
+        profile then gets its own page (a page break in print / a new PDF page).
+        The Map tab's batch-classify view gains a "Download report (HTML)"
+        button that produces exactly this.
+  \item Reports force a white background, so they render correctly in dark-mode
+        browsers and email clients.
+  \item New optional dependencies (\code{Suggests}): \pkg{maps} (coastline) and
+        \pkg{base64enc} (image embedding); both degrade gracefully when absent.
+}
+
+# soilKey 0.9.167 (2026-07-02)
+
+One-click demos for the Photo and Spectra tabs, so both can be exercised with
+no user data. No change to the classification engine.
+
+\itemize{
+  \item \strong{Photo tab: "Use the illustrative demo photo".} A bundled,
+        clearly-labelled soil-profile image (drawn in R, not a photograph) that
+        loads into the preview and runs the offline Munsell extraction, so a
+        first-time user sees the Photo pipeline work without uploading anything.
+  \item \strong{Spectra tab: "Use the demo spectrum".} A bundled Vis-NIR
+        spectrum (five horizons, matching the example Ferralsol) that attaches
+        in one click, so the OSSL gap-fill pipeline is demonstrable with no
+        data. A real upload still overrides either demo.
+}
+
+# soilKey 0.9.166 (2026-07-02)
+
+Pro-app usability pass. No change to the classification engine.
+
+\itemize{
+  \item \strong{Spatial tab merged into Map.} The standalone "Spatial" tab
+        duplicated the Map tab's "Point prior" (both sample a SoilGrids class
+        prior at a coordinate), so it was removed; Point prior covers it and
+        more (click-to-place, three systems, typical attributes). The map now
+        \strong{defaults to satellite} imagery.
+  \item \strong{Support actually does something.} The navbar "Support" item now
+        opens an in-app dialog (with a "Compose email" button and a link to
+        GitHub Issues) instead of a bare mail link that silently did nothing in
+        some browsers. The address is still assembled in JavaScript at click
+        time, so it never appears as visible text or a hoverable link.
+  \item \strong{New "Thanks" tab} -- an Acknowledgements & references page
+        crediting the classification standards (WRB 2022, Keys to Soil Taxonomy
+        13, SiBCS 5), the R packages soilKey builds on, the data sources that
+        test it, and reviewers, each with the specific contribution.
+  \item \strong{Richer footer.} Replaced the single-line tagline with version,
+        a short descriptor, and links (Docs, GitHub, CRAN, licence).
+  \item \strong{Fuller blank profile.} The blank horizon template grew from 10
+        to 26 attributes (Munsell colour moist + dry, the exchange complex,
+        bulk density, structure, lower boundary), so data entry no longer stops
+        at \code{bs_pct}. Loading a fixture still exposes the full schema.
+}
+
+# soilKey 0.9.165 (2026-07-02)
+
+Bug fix for the decision-trace display, plus a small new helper.
+
+\itemize{
+  \item \strong{Fixed: the key trace crashed for SiBCS and USDA.} The decision
+        trace has a system-dependent shape -- a flat list of steps for WRB 2022,
+        but a nested list of phases (orders, suborders, great groups, ...) for
+        the hierarchical SiBCS and USDA keys, whose leaves include assigned-taxon
+        records, family attributes and bare labels. Consumers that walked the
+        trace as a flat list of steps therefore errored with
+        \code{"$ operator is invalid for atomic vectors"} (the Shiny app's Key
+        trace tab and \code{report_pdf()} for SiBCS) or rendered garbled
+        \code{"?? -- NA"} rows (\code{report_html()} and \code{print()}).
+  \item \strong{New \code{key_trace_table()}.} A single helper normalises any
+        trace shape into one ordered data frame (columns \code{phase}, \code{code},
+        \code{name}, \code{status}, \code{missing}, \code{n_missing}). All four
+        consumers -- \code{print()}, the HTML and PDF reports, and the app -- now
+        render the trace through it, so none special-cases a system. The app's
+        Key trace tab gains a \emph{level} column for the hierarchical systems and
+        marks assigned taxa distinctly. WRB output (including the reports) is
+        byte-identical to before.
+}
+
+# soilKey 0.9.164 (2026-07-02)
+
+Four usability features for the Pro app (\code{run_classify_app()}), aimed at
+first-time and field users. No change to the classification engine.
+
+\itemize{
+  \item \strong{Complete a partial profile before classifying.} The Classify tab
+        gains a "Complete missing data" section: tick any of
+        \emph{interpolation within the profile}, \emph{SoilGrids at the
+        coordinates}, or \emph{attached Vis-NIR spectra} to fill blank
+        attributes before the key runs. Filling is applied to a copy of the
+        pedon (entered values are never overwritten) and is flagged as
+        predicted, so the evidence grade drops honestly. If gap-fill cannot run
+        (no internet for SoilGrids, no spectra), the tab classifies as-is
+        instead of erroring.
+  \item \strong{Save / open a working session.} The Pedon tab can export the
+        whole profile (site + horizon table) to a JSON file and reopen it later
+        to pick up exactly where you left off. The file uses the canonical
+        \code{\{site, horizons\}} shape, so it is also accepted by
+        \code{validate_pedon_json()}; reopening repopulates every field and
+        rebuilds the pedon.
+  \item \strong{Download-a-template on every upload.} The batch-classify upload
+        now offers a ready-made long-format template CSV (mirroring the Pedon
+        tab's starter file), and CSV read errors are reported with a clear
+        message instead of a raw parse fault.
+  \item \strong{Welcome tour on first open.} A dependency-free, four-step guided
+        tour introduces the workflow the first time the app is opened (gated by
+        the browser's \code{localStorage} so it shows once), and can be replayed
+        any time from the Help menu. The final step offers the two on-ramps:
+        load the example and classify, or start a blank profile.
+}
+
+# soilKey 0.9.163 (2026-06-30)
+
+\itemize{
+  \item \strong{The Spatial tab always shows a map.} A location map (base tiles +
+        the profile point and its sampling buffer) now renders whenever a pedon
+        exists, independent of any SoilGrids raster. The optional "no raster"
+        note shrank to a small caption beneath the map, so the tab is never a
+        blank / error-only screen.
+  \item \strong{Support / report-a-problem.} A new "Support" item in the navbar
+        opens the user's mail client, pre-addressed to the maintainer with a
+        template. The address is assembled client-side so it is never rendered
+        as visible text or a hoverable link.
+}
+
+# soilKey 0.9.162 (2026-06-30)
+
+A full professional redesign of the Pro app (\code{run_classify_app()}) so it is
+ready to share with the community. No change to the classification engine.
+
+\itemize{
+  \item \strong{Refined design system.} A new earth-tone palette (topsoil brown,
+        terracotta subsoil, moss, plus a slate accent for data cues), clearer
+        typographic hierarchy, softer cards, and a consistent look across every
+        tab (\code{www/soilkey.css} + the \code{bs_theme()} palette).
+  \item \strong{Every control is explained.} A shared set of UI helpers
+        (\code{sk_section()}, \code{sk_label()}, \code{sk_tip()}) groups each tab
+        into titled sections with one-line descriptions and adds an info tooltip
+        to every input and action button, in plain English.
+  \item \strong{All 11 modules redesigned} - Pedon, Classify, Photo, Spectra,
+        Spatial, Map (Point / Batch / Grid), Uncertainty, Report and Settings -
+        with tidy, professional layouts and panel intros.
+  \item The soilKey logo sits in the navbar; the active tab is underlined.
+}
+
+# soilKey 0.9.161 (2026-06-30)
+
+Pro app (\code{run_classify_app()}) UX fixes.
+
+\itemize{
+  \item \strong{Demo map points no longer fall on a line.} The batch-map demo
+        scattered points via a golden-ratio pair (\code{0.618} / \code{0.382 =
+        1 - 0.618}) whose two dimensions are perfectly anti-correlated, so every
+        point landed on a single diagonal. Switched to the R2 low-discrepancy
+        sequence (plastic-number multipliers \code{1/g}, \code{1/g^2}), giving a
+        genuine 2-D scatter across Brazil.
+  \item \strong{The soilKey logo} now appears in the navbar.
+  \item \strong{Friendlier "no raster" states.} The Spatial and Map/Grid tabs
+        used to show a red error when no (optional) SoilGrids raster is
+        configured. They now show a calm empty-state that explains the feature
+        is optional, that the raster is not bundled (the global grid is large),
+        how to enable it, and that the classification key and Batch classify
+        work without it. The raw technical message is tucked into a collapsible
+        detail. (EN + PT.)
+}
+
+# soilKey 0.9.160 (2026-06-30)
+
+The "**one file, one line**" onboarding release - making the simplest path
+obvious so new users do not have to hand-build a \code{PedonRecord}.
+
+\itemize{
+  \item \strong{\code{read_pedon_csv(file)}} reads a horizon spreadsheet
+        (one row per horizon, canonical column names) into a
+        \code{\link{PedonRecord}}; site metadata is an optional \code{site =}
+        argument.
+  \item \strong{\code{classify_csv(file)}} goes all the way from a CSV/TSV file
+        to a one-row \code{data.frame} of the WRB 2022 / SiBCS / USDA names -
+        the shortest path from a spreadsheet to an answer. The full
+        \code{ClassificationResult} objects and the parsed pedon are attached as
+        attributes.
+  \item \strong{Bundled template} \code{inst/extdata/perfil_exemplo.csv} (a real
+        red Latossolo) to copy and edit: \code{classify_csv(system.file(
+        "extdata", "perfil_exemplo.csv", package = "soilKey"))}.
+  \item The example script \code{inst/examples/exemplo_soilKey.R} now leads with
+        this one-line path (and \code{run_classify_app()} for the no-code route);
+        building a pedon by hand is demoted to an optional "under the hood" step.
+}
+
+# soilKey 0.9.159 (2026-06-30)
+
+\itemize{
+  \item \strong{New runnable example script} \code{inst/examples/exemplo_soilKey.R}
+        (PT-BR): a linear, loop-free, self-verifying tour of the main user-facing
+        functions -- build a \code{PedonRecord}, validate horizon geometry,
+        classify in WRB 2022 / SiBCS / USDA (single and combined), read the
+        evidence grade and key trace, per-attribute provenance, canonical
+        reference profiles, USDA/SiBCS family, within-pedon gap-fill, Vis-NIR ->
+        Munsell, cross-system correlation, coverage and an HTML report. Locate it
+        after install with \code{system.file("examples", "exemplo_soilKey.R",
+        package = "soilKey")}. Documentation only; no code or classification
+        change.
+}
+
+# soilKey 0.9.158 (2026-06-30)
+
+Follow-up refinements to the v0.9.156 Munsell-from-spectra fix, on further
+suggestions from Glenn Davis (\pkg{munsellinterpol} author).
+
+\itemize{
+  \item \strong{Self-consistent white point.} \code{predict_munsell_from_spectra()}
+        now derives its D65 reference white from the \emph{same} bundled CIE
+        table that the colorimetry integrates against (the colour-matching
+        functions weighted by the table's D65 column, scaled to Y = 100) rather
+        than the textbook \code{c(95.047, 100, 108.883)}. A perfectly
+        constant-reflectance spectrum now maps to an \emph{exact} neutral
+        (Chroma 0), instead of leaving a ~0.0007 residual. (Only near-neutral
+        greys, Chroma ~ 1, can shift by one adjacent hue chip; chromatic colours
+        are unchanged.)
+  \item \strong{Vectorised conversion.} The Lab -> Munsell step (and the
+        soil-book rounding) is now a handful of matrix calls over all rows of
+        \code{spectra} at once instead of one call per spectrum -- about 2x
+        faster end-to-end, with the Munsell renotation no longer the bottleneck.
+  \item +13 tests (constant-reflectance neutrality at several levels;
+        batch-vs-row equivalence; NA handling).
+}
+
 # soilKey 0.9.157 (2026-06-30)
 
 The "**Humic Dystrudepts colour-value**" consistency fix.

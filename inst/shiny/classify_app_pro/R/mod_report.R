@@ -12,20 +12,35 @@ report_ui <- function(id) {
   bslib::layout_sidebar(
     sidebar = bslib::sidebar(
       width = 300,
-      shiny::h5(i18n("report.title")),
-      shiny::textInput(ns("title"), i18n("report.report_title_label"), "soilKey classification"),
-      shiny::helpText(
-        i18n("report.help_runs_all_keys")
+      sk_section(
+        i18n("report.title"),
+        desc = "Build a shareable report of the classification and download it.",
+        icon = "file-arrow-down",
+        shiny::textInput(
+          ns("title"),
+          sk_label(
+            i18n("report.report_title_label"),
+            "A heading printed at the top of the report -- use the site, profile, or project name."),
+          "soilKey classification"),
+        shiny::helpText(i18n("report.help_runs_all_keys"))
       ),
-      shiny::tags$hr(),
-      shiny::downloadButton(ns("html"), i18n("report.download_html"),
-                            icon = shiny::icon("file-code"),
-                            class = "btn-primary w-100"),
-      shiny::tags$br(), shiny::tags$br(),
-      shiny::downloadButton(ns("pdf"), i18n("report.download_pdf"),
-                            icon = shiny::icon("file-pdf"),
-                            class = "btn-secondary w-100"),
-      shiny::helpText(i18n("report.pdf_needs_latex"))
+      sk_section(
+        "Download",
+        desc = "HTML opens in any browser; PDF needs a LaTeX install.",
+        icon = "download",
+        bslib::tooltip(
+          shiny::downloadButton(ns("html"), i18n("report.download_html"),
+                                icon = shiny::icon("file-code"),
+                                class = "btn-primary w-100"),
+          "Build and download a self-contained HTML report: the WRB / SiBCS / USDA names, key trace, and evidence grade."),
+        shiny::tags$br(), shiny::tags$br(),
+        bslib::tooltip(
+          shiny::downloadButton(ns("pdf"), i18n("report.download_pdf"),
+                                icon = shiny::icon("file-pdf"),
+                                class = "btn-secondary w-100"),
+          "Build and download the same report as a PDF. Requires a LaTeX installation (e.g. the tinytex package)."),
+        shiny::helpText(i18n("report.pdf_needs_latex"))
+      )
     ),
     shiny::uiOutput(ns("body"))
   )
@@ -50,14 +65,27 @@ report_server <- function(id, rv, settings) {
       )
     }
 
+    # The Spectra tab records its preprocessing pipeline in rv$spectra_pp (kept
+    # off rv$pedon to avoid cross-tab churn); inject it into the pedon copy so
+    # the report shows the treatment sequence that was applied.
+    report_pedon <- function() {
+      p <- rv$pedon
+      pp <- tryCatch(rv$spectra_pp, error = function(e) NULL)
+      if (!is.null(p) && !is.null(pp) && !is.null(p$spectra$vnir)) {
+        p <- p$clone(deep = TRUE)
+        p$spectra$preprocessing <- pp
+      }
+      p
+    }
+
     output$html <- shiny::downloadHandler(
       filename = function() sprintf("soilKey_report_%s.html", safe_id()),
       content  = function(file) {
         shiny::req(rv$pedon)
         cf <- cfg()
         shiny::withProgress(message = i18n("report.rendering_html"), value = 0.5, {
-          soilKey::report(rv$pedon, file = file, format = "html",
-                          pedon = rv$pedon, title = input$title,
+          soilKey::report(report_pedon(), file = file, format = "html",
+                          pedon = report_pedon(), title = input$title,
                           include_family = cf$include_family,
                           specifiers = cf$specifiers, lang = .sk_app_lang())
         })
@@ -69,8 +97,8 @@ report_server <- function(id, rv, settings) {
         cf <- cfg()
         out <- tryCatch({
           tmp <- tempfile(fileext = ".pdf")
-          soilKey::report(rv$pedon, file = tmp, format = "pdf",
-                          pedon = rv$pedon, title = input$title,
+          soilKey::report(report_pedon(), file = tmp, format = "pdf",
+                          pedon = report_pedon(), title = input$title,
                           include_family = cf$include_family,
                           specifiers = cf$specifiers, lang = .sk_app_lang())
           "pdf"
@@ -83,8 +111,8 @@ report_server <- function(id, rv, settings) {
         cf <- cfg()
         shiny::withProgress(message = i18n("report.rendering_pdf"), value = 0.5, {
           ok <- tryCatch({
-            soilKey::report(rv$pedon, file = file, format = "pdf",
-                            pedon = rv$pedon, title = input$title,
+            soilKey::report(report_pedon(), file = file, format = "pdf",
+                            pedon = report_pedon(), title = input$title,
                             include_family = cf$include_family,
                             specifiers = cf$specifiers, lang = .sk_app_lang())
             TRUE
@@ -93,8 +121,8 @@ report_server <- function(id, rv, settings) {
             shiny::showNotification(
               i18n("report.pdf_failed_fallback"),
               type = "warning", duration = 8)
-            soilKey::report(rv$pedon, file = file, format = "html",
-                            pedon = rv$pedon, title = input$title,
+            soilKey::report(report_pedon(), file = file, format = "html",
+                            pedon = report_pedon(), title = input$title,
                             include_family = cf$include_family,
                             specifiers = cf$specifiers, lang = .sk_app_lang())
           }

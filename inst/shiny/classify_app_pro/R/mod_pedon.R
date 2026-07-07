@@ -7,14 +7,33 @@
 # stores it in the shared rv$pedon.
 # =============================================================================
 
-# Blank horizon template -- one empty row in canonical column order.
+# Blank horizon template -- one empty row spanning the attributes a field
+# description usually records: depth, texture, Munsell colour (moist + dry),
+# the main chemistry, the exchange complex, bulk density, structure and the
+# lower boundary. Built from horizon_column_spec() so every column is valid and
+# correctly typed; the table scrolls horizontally, so entry no longer stops at
+# bs_pct. (Loading a fixture still exposes the full ~110-column schema.)
+.pedon_common_cols <- function() {
+  c("top_cm", "bottom_cm", "designation",
+    "clay_pct", "silt_pct", "sand_pct", "coarse_fragments_pct",
+    "munsell_hue_moist", "munsell_value_moist", "munsell_chroma_moist",
+    "munsell_hue_dry", "munsell_value_dry", "munsell_chroma_dry",
+    "ph_h2o", "ph_kcl", "oc_pct",
+    "cec_cmol", "bs_pct", "al_sat_pct",
+    "ca_cmol", "mg_cmol", "k_cmol", "na_cmol",
+    "bulk_density_g_cm3", "structure_grade", "boundary_distinctness")
+}
+
 .pedon_blank_template <- function() {
-  data.frame(
-    top_cm = 0, bottom_cm = 20, designation = "A",
-    clay_pct = NA_real_, silt_pct = NA_real_, sand_pct = NA_real_,
-    ph_h2o = NA_real_, oc_pct = NA_real_, cec_cmol = NA_real_,
-    bs_pct = NA_real_, stringsAsFactors = FALSE
-  )
+  spec <- soilKey::horizon_column_spec()
+  cols <- intersect(.pedon_common_cols(), names(spec))   # valid columns only
+  row  <- lapply(cols, function(cn)
+    if (identical(spec[[cn]], "character")) NA_character_ else NA_real_)
+  names(row) <- cols
+  df <- as.data.frame(row, stringsAsFactors = FALSE)
+  # Seed the first horizon so the editor is immediately usable.
+  df$top_cm <- 0; df$bottom_cm <- 20; df$designation <- "A"
+  df
 }
 
 .pedon_starter_csv <- paste(
@@ -32,51 +51,107 @@ pedon_ui <- function(id) {
   bslib::layout_sidebar(
     sidebar = bslib::sidebar(
       width = 340,
-      shiny::h5(i18n("pedon.seed_profile")),
-      shinyWidgets::radioGroupButtons(
-        ns("source"), NULL,
-        choices = stats::setNames(
-          c("fixture", "upload", "blank"),
-          c(i18n("pedon.source_fixture"), i18n("pedon.source_upload"),
-            i18n("pedon.source_blank"))),
-        selected = "fixture", justified = TRUE, size = "sm"
-      ),
-      shiny::conditionalPanel(
-        sprintf("input['%s'] == 'fixture'", ns("source")),
-        shinyWidgets::pickerInput(
-          ns("fixture"), i18n("pedon.canonical_profile"),
-          choices  = pro_fixture_catalog(),
-          selected = "make_ferralsol_canonical",
-          options  = list(`live-search` = TRUE)
+      sk_section(
+        i18n("pedon.seed_profile"),
+        icon = "layer-group",
+        desc = "Start from a reference profile, your own CSV, or a blank sheet.",
+        shinyWidgets::radioGroupButtons(
+          ns("source"), NULL,
+          choices = stats::setNames(
+            c("fixture", "upload", "blank"),
+            c(i18n("pedon.source_fixture"), i18n("pedon.source_upload"),
+              i18n("pedon.source_blank"))),
+          selected = "fixture", justified = TRUE, size = "sm"
+        ),
+        shiny::conditionalPanel(
+          sprintf("input['%s'] == 'fixture'", ns("source")),
+          shinyWidgets::pickerInput(
+            ns("fixture"),
+            sk_label(i18n("pedon.canonical_profile"),
+                     "A curated, textbook profile you can load and edit as a starting point."),
+            choices  = pro_fixture_catalog(),
+            selected = "make_ferralsol_canonical",
+            options  = list(`live-search` = TRUE)
+          )
+        ),
+        shiny::conditionalPanel(
+          sprintf("input['%s'] == 'upload'", ns("source")),
+          shiny::fileInput(ns("csv"),
+                           sk_label(i18n("pedon.horizons_csv_tsv"),
+                                    "One row per horizon, with depth and lab columns. Download the starter file to see the expected layout."),
+                           accept = c(".csv", ".tsv", ".txt")),
+          shiny::downloadLink(ns("template"), i18n("pedon.download_starter_csv"))
+        ),
+        bslib::tooltip(
+          shiny::actionButton(ns("load"), i18n("pedon.load_horizons"),
+                              icon = shiny::icon("upload"),
+                              class = "btn-secondary w-100"),
+          "Load the chosen source into the editable horizon table below."
         )
       ),
-      shiny::conditionalPanel(
-        sprintf("input['%s'] == 'upload'", ns("source")),
-        shiny::fileInput(ns("csv"), i18n("pedon.horizons_csv_tsv"),
-                         accept = c(".csv", ".tsv", ".txt")),
-        shiny::downloadLink(ns("template"), i18n("pedon.download_starter_csv"))
+      sk_section(
+        i18n("pedon.site_metadata"),
+        icon = "location-dot",
+        desc = "Where the profile sits and what it formed on — used for regional priors.",
+        shiny::textInput(ns("site_id"),
+                         sk_label(i18n("pedon.profile_id"),
+                                  "A short label for this profile. It names your downloads and appears in the results."),
+                         "demo-pedon-01"),
+        shiny::fluidRow(
+          shiny::column(6, shiny::numericInput(
+            ns("lat"),
+            sk_label(i18n("pedon.latitude"),
+                     "Decimal degrees, from -90 to 90. Optional, but enables the SoilGrids and climate priors."),
+            -22.5, step = 0.01)),
+          shiny::column(6, shiny::numericInput(
+            ns("lon"),
+            sk_label(i18n("pedon.longitude"),
+                     "Decimal degrees, from -180 to 180. Negative is west. Optional but recommended."),
+            -43.7, step = 0.01))
+        ),
+        shiny::fluidRow(
+          shiny::column(6, shiny::textInput(
+            ns("country"),
+            sk_label(i18n("pedon.country_iso2"),
+                     "Two-letter ISO country code, e.g. BR for Brazil. Helps regional defaults."),
+            "BR")),
+          shiny::column(6, shiny::textInput(
+            ns("pm"),
+            sk_label(i18n("pedon.parent_material"),
+                     "The rock or deposit the soil formed on, e.g. gneiss, basalt, alluvium."),
+            "gneiss"))
+        )
       ),
-      shiny::actionButton(ns("load"), i18n("pedon.load_horizons"),
-                          icon = shiny::icon("upload"),
-                          class = "btn-secondary w-100"),
-      shiny::tags$hr(),
-      shiny::h5(i18n("pedon.site_metadata")),
-      shiny::textInput(ns("site_id"), i18n("pedon.profile_id"), "demo-pedon-01"),
-      shiny::fluidRow(
-        shiny::column(6, shiny::numericInput(ns("lat"), i18n("pedon.latitude"), -22.5,
-                                             step = 0.01)),
-        shiny::column(6, shiny::numericInput(ns("lon"), i18n("pedon.longitude"), -43.7,
-                                             step = 0.01))
+      sk_section(
+        i18n("pedon.build_update_pedon"),
+        icon = "hammer",
+        desc = "Assemble the profile so the other tabs can classify it.",
+        bslib::tooltip(
+          shiny::actionButton(ns("build"), i18n("pedon.build_update_pedon"),
+                              icon = shiny::icon("hammer"),
+                              class = "btn-primary w-100"),
+          "Check the horizon geometry and coordinates, then build the pedon used by every other tab."
+        ),
+        shiny::uiOutput(ns("status"))
       ),
-      shiny::fluidRow(
-        shiny::column(6, shiny::textInput(ns("country"), i18n("pedon.country_iso2"), "BR")),
-        shiny::column(6, shiny::textInput(ns("pm"), i18n("pedon.parent_material"), "gneiss"))
-      ),
-      shiny::tags$hr(),
-      shiny::actionButton(ns("build"), i18n("pedon.build_update_pedon"),
-                          icon = shiny::icon("hammer"),
-                          class = "btn-primary w-100"),
-      shiny::uiOutput(ns("status"))
+      # ---- save / reopen the whole working session as one JSON file --------
+      sk_section(
+        i18n("pedon.save_open_session"),
+        icon = "floppy-disk",
+        desc = paste("Export the profile (site + horizons) to a JSON file, or",
+                     "reopen one to pick up exactly where you left off."),
+        bslib::tooltip(
+          shiny::downloadButton(
+            ns("save_session"), i18n("pedon.save_session"),
+            icon = shiny::icon("download"),
+            class = "btn-outline-secondary w-100"),
+          "Save the current site details and horizon table as a portable .json file."),
+        shiny::fileInput(
+          ns("session_file"),
+          sk_label(i18n("pedon.open_session"),
+                   "Load a .json session saved earlier; it repopulates every field and rebuilds the pedon."),
+          accept = ".json")
+      )
     ),
     bslib::layout_column_wrap(
       width = 1,
@@ -87,14 +162,19 @@ pedon_ui <- function(id) {
                      shiny::strong(i18n("pedon.horizons_click_edit")),
                      shiny::div(
                        class = "d-flex gap-2",
-                       shiny::downloadButton(ns("download_hz"), i18n("pedon.csv"),
-                                             icon = shiny::icon("download"),
+                       bslib::tooltip(
+                         shiny::downloadButton(ns("download_hz"), i18n("pedon.csv"),
+                                               icon = shiny::icon("download"),
+                                               class = "btn-sm btn-outline-secondary"),
+                         "Save the current table as a CSV to edit offline or re-upload later."),
+                       bslib::tooltip(
+                         shiny::actionButton(ns("add_row"), i18n("pedon.add_row"),
+                                             icon = shiny::icon("plus"),
                                              class = "btn-sm btn-outline-secondary"),
-                       shiny::actionButton(ns("add_row"), i18n("pedon.add_row"),
-                                           icon = shiny::icon("plus"),
-                                           class = "btn-sm btn-outline-secondary")))
+                         "Append a new horizon below, continuing from the deepest depth.")))
         ),
         bslib::card_body(
+          shiny::helpText("Click any cell to edit it. Depths are in centimetres; leave a lab value blank if unmeasured."),
           DT::DTOutput(ns("hz_table")),
           shiny::uiOutput(ns("geom_status")))
       ),
@@ -102,9 +182,11 @@ pedon_ui <- function(id) {
         bslib::card_header(
           shiny::div(class = "d-flex justify-content-between align-items-center",
                      shiny::strong(i18n("pedon.depth_profile")),
-                     shiny::selectInput(ns("plot_attr"), NULL,
-                                        choices = pro_numeric_attrs(),
-                                        selected = "clay_pct", width = "180px"))
+                     bslib::tooltip(
+                       shiny::selectInput(ns("plot_attr"), NULL,
+                                          choices = pro_numeric_attrs(),
+                                          selected = "clay_pct", width = "180px"),
+                       "Choose which lab attribute to plot against depth."))
         ),
         bslib::card_body(plotly::plotlyOutput(ns("profile"), height = "320px"))
       )
@@ -154,6 +236,104 @@ pedon_server <- function(id, rv) {
         utils::write.csv(cur, file, row.names = FALSE)
       }
     )
+
+    # ---- save / reopen the whole session as JSON --------------------------
+    # The file uses the canonical {site, horizons:[...]} shape so it is also
+    # accepted by soilKey::validate_pedon_json(). Saving captures the live
+    # editor state (site inputs + edited horizon table), so unsaved tweaks are
+    # preserved; reopening repopulates every field and rebuilds rv$pedon.
+    output$save_session <- shiny::downloadHandler(
+      filename = function()
+        sprintf("soilKey_session_%s.json", input$site_id %||% "pedon"),
+      content = function(file) {
+        if (!requireNamespace("jsonlite", quietly = TRUE))
+          stop("Package 'jsonlite' is required to save a session.")
+        df <- hz()
+        shiny::validate(shiny::need(!is.null(df) && nrow(df) > 0L,
+                                    i18n("pedon.no_horizons_download")))
+        horizon_rows <- lapply(seq_len(nrow(df)),
+                               function(i) as.list(df[i, , drop = FALSE]))
+        payload <- list(
+          site = list(
+            id              = input$site_id %||% "pedon",
+            lat             = suppressWarnings(as.numeric(input$lat)),
+            lon             = suppressWarnings(as.numeric(input$lon)),
+            country         = input$country %||% NA_character_,
+            parent_material = input$pm %||% NA_character_
+          ),
+          horizons = horizon_rows
+        )
+        jsonlite::write_json(payload, file, pretty = TRUE, auto_unbox = TRUE,
+                             null = "null", na = "null", digits = NA)
+      }
+    )
+
+    shiny::observeEvent(input$session_file, {
+      f <- input$session_file
+      if (is.null(f)) return(invisible())
+      if (!requireNamespace("jsonlite", quietly = TRUE)) {
+        shiny::showNotification(
+          i18n("pedon.session_load_failed", "package 'jsonlite' not available"),
+          type = "error", duration = 8)
+        return(invisible())
+      }
+      parsed <- tryCatch(
+        jsonlite::fromJSON(f$datapath, simplifyVector = TRUE,
+                           simplifyDataFrame = TRUE),
+        error = function(e) e)
+      if (inherits(parsed, "error") || is.null(parsed$horizons) ||
+          NROW(parsed$horizons) == 0L) {
+        msg <- if (inherits(parsed, "error")) conditionMessage(parsed)
+               else "no horizons found in file"
+        shiny::showNotification(i18n("pedon.session_load_failed", msg),
+                                type = "error", duration = 8)
+        return(invisible())
+      }
+      hzdf <- as.data.frame(parsed$horizons, stringsAsFactors = FALSE)
+      # Keep only columns soilKey understands, in canonical order.
+      spec  <- names(soilKey::horizon_column_spec())
+      keep  <- intersect(spec, names(hzdf))
+      extra <- setdiff(names(hzdf), spec)
+      hzdf  <- hzdf[, c(keep, extra), drop = FALSE]
+
+      site <- parsed$site %||% list()
+      shiny::updateTextInput(session, "site_id", value = site$id %||% "pedon")
+      if (!is.null(site$lat))
+        shiny::updateNumericInput(session, "lat",
+                                  value = suppressWarnings(as.numeric(site$lat)))
+      if (!is.null(site$lon))
+        shiny::updateNumericInput(session, "lon",
+                                  value = suppressWarnings(as.numeric(site$lon)))
+      shiny::updateTextInput(session, "country", value = site$country %||% "")
+      shiny::updateTextInput(session, "pm",
+                             value = site$parent_material %||% "")
+      hz(hzdf)
+      hz_reload(hz_reload() + 1L)
+
+      # Try to rebuild the pedon immediately so every tab is usable on reopen;
+      # if geometry is off, leave the editor populated and ask for a Build.
+      built <- tryCatch({
+        h_dt <- soilKey::ensure_horizon_schema(data.table::as.data.table(hzdf))
+        soilKey::PedonRecord$new(
+          site = list(
+            id              = site$id %||% "pedon",
+            lat             = site$lat,
+            lon             = site$lon,
+            country         = site$country,
+            parent_material = site$parent_material),
+          horizons = h_dt)
+      }, error = function(e) NULL)
+      if (!is.null(built)) {
+        rv$pedon <- built
+        shiny::showNotification(
+          i18n("pedon.session_loaded_built", site$id %||% "pedon", nrow(hzdf)),
+          type = "message", duration = 6)
+      } else {
+        shiny::showNotification(
+          i18n("pedon.session_loaded", nrow(hzdf)),
+          type = "message", duration = 6)
+      }
+    })
 
     # ---- one-click example profile (bumped by the Help modal / ribbon) -----
     # The canonical Ferralsol fixture is a complete PedonRecord; loading it

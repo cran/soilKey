@@ -2,8 +2,8 @@ Package: soilKey
 Type: Package
 Title: Automated Soil Profile Classification per WRB 2022, 'SiBCS' 5
         and USDA Soil Taxonomy 13
-Version: 0.9.157
-Date: 2026-06-30
+Version: 0.9.184
+Date: 2026-07-07
 Authors@R: 
     person("Hugo", "Rodrigues",
            email = "rodrigues.machado.hugo@gmail.com",
@@ -27,20 +27,20 @@ BugReports: https://github.com/HugoMachadoRodrigues/soilKey/issues
 Encoding: UTF-8
 LazyData: true
 LazyDataCompression: xz
-RoxygenNote: 7.3.3
 Depends: R (>= 4.1)
 Imports: R6, data.table, yaml, cli, rlang
 Suggests: aqp, SoilTaxonomy, mpspline2, terra, foreign, sf, chromote,
         munsellinterpol, pls, prospectr, resemble, ellmer, httr,
         jsonlite, jsonvalidate, pdftools, magick, shiny (>= 1.7.0), DT,
         bslib, shinyWidgets, plotly, leaflet, htmltools, withr, DBI,
-        RSQLite, testthat (>= 3.0.0), knitr, rmarkdown
+        RSQLite, base64enc, maps, testthat (>= 3.0.0), knitr, rmarkdown
 Config/testthat/edition: 3
 VignetteBuilder: knitr
+Config/roxygen2/version: 8.0.0
 NeedsCompilation: no
-Packaged: 2026-06-30 05:11:47 UTC; rodrigues.h
+Packaged: 2026-07-07 17:54:30 UTC; rodrigues.h
 Author: Hugo Rodrigues [aut, cre] (ORCID:
     <https://orcid.org/0000-0002-8070-8126>)
 Maintainer: Hugo Rodrigues <rodrigues.machado.hugo@gmail.com>
 Repository: CRAN
-Date/Publication: 2026-06-30 13:20:02 UTC
+Date/Publication: 2026-07-07 19:40:02 UTC

@@ -190,8 +190,10 @@ report <- function(x,
     '<meta name="viewport" content="width=device-width, initial-scale=1">\n',
     '<title>', .html_escape(title), '</title>\n',
     '<style>\n',
+    ':root{color-scheme:light;}\n',
     'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;',
-    'max-width:880px;margin:2rem auto;padding:0 1.5rem;color:#222;line-height:1.55;}\n',
+    'max-width:880px;margin:2rem auto;padding:0 1.5rem;color:#222;background:#ffffff;line-height:1.55;}\n',
+    'td{background:#ffffff;}\n',
     'h1{border-bottom:3px solid #FF6B35;padding-bottom:.4rem;font-size:1.8rem;}\n',
     'h2{margin-top:2rem;color:#3a3a3a;font-size:1.35rem;border-left:4px solid #FF6B35;padding-left:.6rem;}\n',
     'h3{margin-top:1.4rem;color:#555;font-size:1.05rem;}\n',
@@ -218,8 +220,20 @@ report <- function(x,
     'padding:.1rem .45rem;border-radius:3px;margin:0 .25rem .25rem 0;font-size:.85rem;}\n',
     '.qual-pill.suppl{background:#fff3e0;color:#7a4a00;border-color:#f0d6a8;}\n',
     'footer{margin-top:3rem;padding-top:1rem;border-top:1px solid #eee;color:#999;font-size:.85rem;}\n',
+    # v0.9.168: branded header, locator map, and per-profile page breaks.
+    '.report-header{display:flex;align-items:center;gap:.9rem;border-bottom:3px solid #B5652E;',
+    'padding-bottom:.55rem;margin-bottom:.2rem;}\n',
+    '.report-header img{height:50px;width:auto;}\n',
+    '.report-header .rh-title{font-size:1.7rem;font-weight:700;color:#3a2a1e;line-height:1.15;}\n',
+    '.map-card{margin:1rem 0;border:1px solid #e3ddd0;border-radius:8px;overflow:hidden;}\n',
+    '.map-card img{display:block;width:100%;height:auto;}\n',
+    '.map-card .cap{padding:.4rem .7rem;background:#faf6ef;color:#6b5c4d;font-size:.85rem;}\n',
+    '.profile-page{margin-top:1.6rem;padding-top:.4rem;}\n',
+    '.profile-page h2:first-child{border-left:none;padding-left:0;color:#4A3226;',
+    'border-bottom:2px solid #e3ddd0;}\n',
     '@media print{body{max-width:none;margin:0;}h2{page-break-after:avoid;}',
-    '.system-card{page-break-inside:avoid;}}\n',
+    '.system-card,.map-card{page-break-inside:avoid;}',
+    '.profile-page{page-break-before:always;}}\n',
     '</style>\n',
     '</head>\n<body>\n'
   )
@@ -242,34 +256,33 @@ report <- function(x,
         character(1))
   )
 
-  trace_rows <- if (length(res$trace) == 0) {
+  # v0.9.165: normalise the system-dependent trace (flat for WRB, nested phases
+  # for SiBCS/USDA) into one ordered table, then render the decision steps.
+  # `info` rows (family attributes / bare labels) are not key steps, so they
+  # are dropped here; assigned-taxon rows render like a passing step. WRB output
+  # is byte-identical to the previous flat rendering.
+  tt <- .flatten_key_trace(res$trace)
+  tt <- tt[tt$status != "info", , drop = FALSE]
+  trace_rows <- if (nrow(tt) == 0) {
     sprintf("<tr><td colspan=\"4\" class=\"muted\">%s</td></tr>",
             .report_msg("report.no_trace"))
   } else {
-    paste0(vapply(seq_along(res$trace), function(i) {
-      t <- res$trace[[i]]
-      # v0.9.11: tolerate atomic / non-list trace entries (some
-      # diagnostics return a bare logical when no metadata is
-      # available). Promote to a minimal list so the field accesses
-      # below are uniform.
-      if (!is.list(t)) {
-        t <- list(passed = if (is.logical(t)) t else NA,
-                  code = NA_character_, name = NA_character_,
-                  missing = character(0))
-      }
-      passed <- t$passed
-      sym <- if (isTRUE(passed))      paste0('class="passed">', .report_msg("report.trace_passed"))
-             else if (isFALSE(passed)) paste0('class="failed">', .report_msg("report.trace_failed"))
-             else                      paste0('class="indeterminate">', .report_msg("report.trace_indeterminate"))
+    paste0(vapply(seq_len(nrow(tt)), function(i) {
+      st  <- tt$status[i]
+      sym <- if (st %in% c("passed", "selected"))
+               paste0('class="passed">', .report_msg("report.trace_passed"))
+             else if (st == "failed")
+               paste0('class="failed">', .report_msg("report.trace_failed"))
+             else
+               paste0('class="indeterminate">', .report_msg("report.trace_indeterminate"))
       sprintf(
         '<tr><td>%d</td><td><code>%s</code></td><td>%s</td><td><span %s</span>%s</td></tr>',
         i,
-        .html_escape(t$code %||% "?"),
-        .html_escape(t$name %||% ""),
+        .html_escape(if (nzchar(tt$code[i])) tt$code[i] else "?"),
+        .html_escape(tt$name[i]),
         sym,
-        if (!isTRUE(passed) && length(t$missing %||% character()) > 0)
-          sprintf(.report_msg("report.attrs_missing"),
-                    length(t$missing))
+        if (st %in% c("failed", "indeterminate") && tt$n_missing[i] > 0)
+          sprintf(.report_msg("report.attrs_missing"), tt$n_missing[i])
         else "")
     }, character(1)), collapse = "\n")
   }
@@ -419,6 +432,24 @@ report <- function(x,
   )
 }
 
+#' Render the spectral preprocessing sequence, if one was recorded.
+#'
+#' The Pro app stores the applied Vis-NIR treatment pipeline in
+#' \code{pedon$spectra$preprocessing$steps} (an ordered character vector).
+#' Returns an empty string when no spectrum/pipeline is present.
+#' @noRd
+.html_spectra_preprocess <- function(pedon) {
+  pp <- tryCatch(pedon$spectra$preprocessing, error = function(e) NULL)
+  steps <- pp$steps
+  if (is.null(steps) || !length(steps)) return("")
+  seq_html <- paste(vapply(as.character(steps), .html_escape, character(1)),
+                    collapse = ' <span class="seq-arrow">&rarr;</span> ')
+  paste0(
+    sprintf("<h2>%s</h2>\n", .report_msg("report.spectra_preprocess")),
+    sprintf("<p>%s</p>\n", .report_msg("report.spectra_preprocess_desc")),
+    sprintf('<p class="spectra-seq">%s</p>\n', seq_html))
+}
+
 #' Render site metadata header.
 #' @noRd
 #' @param pedon A \code{\link{PedonRecord}}.
@@ -444,6 +475,106 @@ report <- function(x,
            "<table><tbody>",
            paste(rows, collapse = "\n"),
            "</tbody></table>\n")
+}
+
+
+# ---- v0.9.168: branded header, locator map, multi-profile support -----------
+
+#' Branded report header: the soilKey logo (data: URI) beside the title.
+#' @noRd
+.html_report_header <- function(title, logo_uri) {
+  logo_html <- if (nzchar(logo_uri %||% ""))
+    sprintf('<img src="%s" alt="soilKey">', logo_uri) else ""
+  sprintf('<div class="report-header">%s<div class="rh-title">%s</div></div>\n',
+          logo_html, .html_escape(title))
+}
+
+#' A locator-map card (self-contained base64 image + caption). Empty when no
+#' finite coordinate is available.
+#' @noRd
+.html_map_card <- function(map_uri, caption) {
+  if (is.null(map_uri) || !nzchar(map_uri)) return("")
+  sprintf(paste0('<div class="map-card"><img src="%s" alt="%s">',
+                 '<div class="cap">%s</div></div>\n'),
+          map_uri, .html_escape(caption), .html_escape(caption))
+}
+
+#' TRUE when x is a (non-empty) list of PedonRecords -> a multi-profile report.
+#' @noRd
+.report_multi_pedons <- function(x) {
+  is.list(x) && !inherits(x, "PedonRecord") && length(x) >= 1L &&
+    all(vapply(x, inherits, logical(1), "PedonRecord"))
+}
+
+#' Overview table for a multi-profile report: one row per profile with its
+#' coordinates and the name it received in each system.
+#' @noRd
+.html_multi_summary <- function(pedons, per_results) {
+  name_for <- function(res, sys) {
+    r <- Find(function(z) identical(tolower(z$system %||% ""), sys) ||
+                grepl(sys, tolower(z$system %||% ""), fixed = TRUE), res)
+    if (is.null(r)) "--" else (r$name %||% "--")
+  }
+  rows <- vapply(seq_along(pedons), function(i) {
+    p <- pedons[[i]]; res <- per_results[[i]]
+    coord <- if (!is.null(p$site$lat) && !is.null(p$site$lon))
+      sprintf("%.3f, %.3f", as.numeric(p$site$lat), as.numeric(p$site$lon)) else "--"
+    sprintf("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
+            .html_escape(p$site$id %||% sprintf("profile %d", i)),
+            .html_escape(coord),
+            .html_escape(name_for(res, "wrb")),
+            .html_escape(name_for(res, "sibcs")),
+            .html_escape(name_for(res, "usda")))
+  }, character(1))
+  paste0(
+    sprintf("<h2>%s</h2>\n", .report_msg("report.profiles_overview")),
+    sprintf(.report_msg("report.overview_table"),
+            paste(rows, collapse = "\n")))
+}
+
+#' Render a multi-profile HTML report: a first-page overview (map of all points
+#' + summary table) followed by one page per profile.
+#' @noRd
+.report_html_multi <- function(pedons, file, title, include_family,
+                               specifiers) {
+  if (is.null(title))
+    title <- sprintf(.report_msg("report.n_profiles_title"), length(pedons))
+  logo    <- .report_logo_data_uri()
+  map_uri <- .report_map_data_uri(pedons)
+  per <- lapply(pedons, function(p)
+    .normalise_results(p, pedon = p, include_family = include_family,
+                       specifiers = specifiers)$results)
+
+  pages <- vapply(seq_along(pedons), function(i) {
+    p <- pedons[[i]]; res <- per[[i]]
+    paste0(
+      '<section class="profile-page">\n',
+      sprintf("<h2>%s</h2>\n",
+              .html_escape(p$site$id %||% sprintf("profile %d", i))),
+      .html_site_header(p),
+      paste(vapply(res, .html_classification_card, character(1)),
+            collapse = "\n"),
+      .html_horizons_table(p),
+      "</section>\n")
+  }, character(1))
+
+  body <- paste0(
+    .html_head(title),
+    .html_report_header(title, logo),
+    sprintf(.report_msg("report.generated_by"),
+            format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"),
+            .soilkey_version()),
+    .html_map_card(map_uri, .report_msg("report.map_caption")),
+    .html_multi_summary(pedons, per),
+    sprintf("<h2>%s</h2>\n", .report_msg("report.per_profile_reports")),
+    paste(pages, collapse = "\n"),
+    "<footer>\n", .report_msg("report.footer"), "</footer>\n",
+    "</body></html>\n")
+
+  dir.create(dirname(normalizePath(file, mustWork = FALSE)),
+             recursive = TRUE, showWarnings = FALSE)
+  writeLines(body, file, useBytes = TRUE)
+  invisible(file)
 }
 
 
@@ -481,6 +612,11 @@ report_html <- function(x,
   old_lang <- getOption("soilKey.report_lang")
   options(soilKey.report_lang = lang)
   on.exit(options(soilKey.report_lang = old_lang), add = TRUE)
+  # A list of PedonRecords -> multi-profile report (overview map + one page each).
+  if (.report_multi_pedons(x))
+    return(.report_html_multi(x, file = file, title = title,
+                              include_family = include_family,
+                              specifiers = specifiers))
   norm <- .normalise_results(x, pedon = pedon,
                              include_family = include_family,
                              specifiers = specifiers)
@@ -495,16 +631,19 @@ report_html <- function(x,
 
   body <- paste0(
     .html_head(title),
-    sprintf("<h1>%s</h1>\n", .html_escape(title)),
+    .html_report_header(title, .report_logo_data_uri()),
     sprintf(.report_msg("report.generated_by"),
               format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"),
               .soilkey_version()),
     .html_site_header(pedon),
+    .html_map_card(.report_map_data_uri(pedon),
+                   .report_msg("report.map_caption")),
     .html_summary_table(results),
     sprintf("<h2>%s</h2>\n", .report_msg("report.classification_results")),
     paste(vapply(results, .html_classification_card, character(1)),
             collapse = "\n"),
     .html_horizons_table(pedon),
+    .html_spectra_preprocess(pedon),
     .html_provenance_table(pedon),
     "<footer>\n",
     .report_msg("report.footer"),

@@ -29,15 +29,19 @@
 }
 
 # Build N demo PedonRecords from fixtures, spread deterministically across
-# Brazil via a golden-ratio scatter (no RNG -> reproducible).
+# Brazil via the R2 low-discrepancy sequence (no RNG -> reproducible). The two
+# multipliers are 1/g and 1/g^2 for the plastic number g = 1.3247179572...,
+# which give two *independent* dimensions -- unlike a golden-ratio pair
+# (0.618 / 0.382 = 1 - 0.618), whose points collapse onto a single line.
 .batch_demo_pedons <- function(n = 12L, loader = pro_load_fixture) {
   fx <- .batch_demo_fixtures()
   n  <- max(1L, as.integer(n))
   out <- vector("list", n)
   for (i in seq_len(n)) {
     p   <- loader(fx[[((i - 1L) %% length(fx)) + 1L]])
-    lat <- -5  - 25 * ((i * 0.6180339887) %% 1)   # ~ -5 .. -30
-    lon <- -40 - 20 * ((i * 0.3819660113) %% 1)   # ~ -40 .. -60
+    # R2 sequence over a Brazil-ish land box (lat -8..-28, lon -42..-58).
+    lat <- -8  - 20 * ((i * 0.7548776662) %% 1)   # dim 1 (1/g)
+    lon <- -42 - 16 * ((i * 0.5698402910) %% 1)   # dim 2 (1/g^2)
     p$site$id  <- sprintf("demo-%02d", i)
     p$site$lat <- round(lat, 4)
     p$site$lon <- round(lon, 4)
@@ -45,6 +49,19 @@
   }
   out
 }
+
+# Long-format starter table (two profiles, a few horizons each) so the upload
+# path is self-documenting: id + lat/lon repeated per horizon, then depths and
+# the canonical horizon attributes.
+.batch_starter_csv <- paste(
+  "profile_id,lat,lon,top_cm,bottom_cm,designation,clay_pct,silt_pct,sand_pct,ph_h2o,oc_pct,cec_cmol,bs_pct",
+  "P01,-22.75,-43.68,0,15,A,50,15,35,4.8,2.0,8.0,24",
+  "P01,-22.75,-43.68,15,45,Bw,58,12,30,4.7,0.7,5.5,15",
+  "P01,-22.75,-43.68,45,120,Bo,62,10,28,4.9,0.3,4.8,12",
+  "P02,-12.40,-45.10,0,20,A,18,10,72,5.6,1.1,4.0,40",
+  "P02,-12.40,-45.10,20,80,Bt,32,12,56,5.4,0.4,6.0,55",
+  sep = "\n"
+)
 
 # Find the first present name (case-insensitive) from a set of candidates.
 .batch_pick_col <- function(nms, candidates) {
@@ -126,48 +143,108 @@ map_batch_ui <- function(id) {
   bslib::layout_sidebar(
     sidebar = bslib::sidebar(
       width = 330,
-      shiny::h5(i18n("mbatch.title")),
-      shinyWidgets::radioGroupButtons(
-        ns("source"),
+
+      # ---- 1. Where the profiles come from ----------------------------------
+      sk_section(
         i18n("mbatch.point_source"),
-        choices = stats::setNames(
-          c("demo", "upload"),
-          c(i18n("mbatch.source_demo"), i18n("mbatch.source_upload"))),
-        selected = "demo", justified = TRUE, size = "sm"),
-      shiny::conditionalPanel(
-        sprintf("input['%s'] == 'demo'", ns("source")),
-        shiny::numericInput(ns("n_demo"), i18n("mbatch.n_demo"), 12,
-                            min = 1, max = 60, step = 1)),
-      shiny::conditionalPanel(
-        sprintf("input['%s'] == 'upload'", ns("source")),
-        shiny::fileInput(ns("csv"), i18n("mbatch.long_csv"), accept = ".csv"),
-        shiny::helpText(
-          i18n("mbatch.csv_help"))),
-      shiny::selectInput(ns("system"), i18n("mbatch.colour_by_system"),
-                         choices = c("WRB 2022"  = "wrb",
-                                     "SiBCS 5"    = "sibcs",
-                                     "USDA ST 13" = "usda"),
-                         selected = "wrb"),
-      shiny::actionButton(ns("run"), i18n("mbatch.run"),
-                          icon = shiny::icon("layer-group"),
-                          class = "btn-primary w-100"),
-      shiny::downloadButton(ns("export"), i18n("mbatch.export"),
-                            class = "btn-outline-secondary w-100 mt-2"),
-      shiny::helpText(i18n("mbatch.deterministic_help"))
+        icon = "map-location-dot",
+        desc = "Choose the set of described profiles to classify and map.",
+        shinyWidgets::radioGroupButtons(
+          ns("source"),
+          sk_label(
+            i18n("mbatch.point_source"),
+            paste("Demo spreads canonical fixture profiles across Brazil;",
+                  "Upload reads your own long-format CSV of horizons.")),
+          choices = stats::setNames(
+            c("demo", "upload"),
+            c(i18n("mbatch.source_demo"), i18n("mbatch.source_upload"))),
+          selected = "demo", justified = TRUE, size = "sm"),
+        shiny::conditionalPanel(
+          sprintf("input['%s'] == 'demo'", ns("source")),
+          shiny::numericInput(
+            ns("n_demo"),
+            sk_label(
+              i18n("mbatch.n_demo"),
+              paste("How many demo profiles to place. They are spread",
+                    "deterministically over Brazil, so the map is reproducible.")),
+            12, min = 1, max = 60, step = 1)),
+        shiny::conditionalPanel(
+          sprintf("input['%s'] == 'upload'", ns("source")),
+          shiny::fileInput(
+            ns("csv"),
+            sk_label(
+              i18n("mbatch.long_csv"),
+              paste("Long-format CSV: one row per horizon, with an id column,",
+                    "lat/lon, and top_cm/bottom_cm plus horizon attributes.")),
+            accept = ".csv"),
+          shiny::helpText(i18n("mbatch.csv_help")),
+          shiny::downloadLink(ns("template"), i18n("mbatch.download_template")))
+      ),
+
+      # ---- 2. How to colour the map -----------------------------------------
+      sk_section(
+        i18n("mbatch.colour_by_system"),
+        icon = "sliders",
+        desc = "Pick which classification system drives the map colours and legend.",
+        shiny::selectInput(
+          ns("system"),
+          sk_label(
+            i18n("mbatch.colour_by_system"),
+            paste("Every point is classified under all three systems;",
+                  "this only chooses which one colours the markers.")),
+          choices = c("WRB 2022"  = "wrb",
+                      "SiBCS 5"    = "sibcs",
+                      "USDA ST 13" = "usda"),
+          selected = "wrb")
+      ),
+
+      # ---- 3. Run + export ---------------------------------------------------
+      sk_section(
+        i18n("mbatch.run"),
+        icon = "play",
+        desc = "Classify the point set, then export the result for GIS.",
+        bslib::tooltip(
+          shiny::actionButton(
+            ns("run"), i18n("mbatch.run"),
+            icon = shiny::icon("layer-group"),
+            class = "btn-primary w-100"),
+          "Build one profile per point, classify each under all three systems, and plot them on the map."),
+        bslib::tooltip(
+          shiny::downloadButton(
+            ns("export"), i18n("mbatch.export"),
+            class = "btn-outline-secondary w-100 mt-2"),
+          "Save the classified points as a GeoPackage (.gpkg) you can open in QGIS or ArcGIS."),
+        bslib::tooltip(
+          shiny::downloadButton(
+            ns("report"), i18n("mbatch.report"),
+            icon = shiny::icon("file-lines"),
+            class = "btn-outline-secondary w-100 mt-2"),
+          "Download a multi-profile HTML report: a map of all profiles on the first page, then one page per profile."),
+        shiny::helpText(i18n("mbatch.deterministic_help"))
+      )
     ),
     bslib::layout_column_wrap(
       width = 1, heights_equal = "row",
       bslib::card(
         bslib::card_header(i18n("mbatch.soil_map")),
-        bslib::card_body(padding = 0,
-                         leaflet::leafletOutput(ns("map"), height = "440px"))
+        bslib::card_body(
+          padding = 0,
+          shiny::helpText(
+            class = "px-3 pt-2 mb-1",
+            paste("Each marker is a classified profile, coloured by the chosen",
+                  "system. Click a point to see its WRB, SiBCS and USDA names.")),
+          leaflet::leafletOutput(ns("map"), height = "440px"))
       ),
       bslib::card(
         bslib::card_header(
           shiny::div(class = "d-flex justify-content-between align-items-center",
                      shiny::strong(i18n("mbatch.classified_points")),
                      shiny::uiOutput(ns("count"), inline = TRUE))),
-        bslib::card_body(DT::DTOutput(ns("table")))
+        bslib::card_body(
+          shiny::helpText(
+            paste("One row per mapped profile, with the class name it received",
+                  "in each of the three systems.")),
+          DT::DTOutput(ns("table")))
       )
     )
   )
@@ -180,6 +257,10 @@ map_batch_server <- function(id, rv, settings) {
     class_col <- shiny::reactive(paste0(input$system %||% "wrb", "_class"))
     name_col  <- shiny::reactive(paste0(input$system %||% "wrb", "_name"))
 
+    # The built PedonRecords behind the current point set, kept so the
+    # multi-profile report can be generated from them.
+    batch_pedons <- shiny::reactiveVal(NULL)
+
     # ---- build + classify the point set on demand ---------------------------
     results <- shiny::eventReactive(input$run, {
       on_missing <- tryCatch(settings()$on_missing, error = function(e) NULL)
@@ -189,13 +270,17 @@ map_batch_server <- function(id, rv, settings) {
           if (identical(input$source, "upload")) {
             f <- input$csv
             if (is.null(f)) return(simpleError(i18n("mbatch.upload_first")))
-            .batch_parse_csv(utils::read.csv(f$datapath,
-                                             stringsAsFactors = FALSE))
+            raw <- tryCatch(
+              utils::read.csv(f$datapath, stringsAsFactors = FALSE),
+              error = function(e)
+                stop(i18n("mbatch.csv_read_failed", conditionMessage(e))))
+            .batch_parse_csv(raw)
           } else {
             .batch_demo_pedons(input$n_demo %||% 12L)
           }
         }, error = function(e) e)
         if (inherits(pedons, "error")) return(pedons)
+        batch_pedons(pedons)          # keep for the multi-profile report
         n <- length(pedons)
         bump <- function(i, total)
           shiny::incProgress(1 / total,
@@ -274,6 +359,23 @@ map_batch_server <- function(id, rv, settings) {
       DT::datatable(show, rownames = FALSE,
                     options = list(dom = "tp", pageLength = 8, scrollX = TRUE))
     })
+
+    # ---- long-format CSV template (self-documents the upload layout) --------
+    output$template <- shiny::downloadHandler(
+      filename = function() "soilKey_batch_template.csv",
+      content  = function(file) writeLines(.batch_starter_csv, file)
+    )
+
+    # ---- multi-profile HTML report ------------------------------------------
+    output$report <- shiny::downloadHandler(
+      filename = function() "soilkey_profiles_report.html",
+      content = function(file) {
+        peds <- batch_pedons()
+        if (is.null(peds) || length(peds) == 0L)
+          stop(i18n("mbatch.no_profiles_report"))
+        soilKey::report_html(peds, file = file)
+      }
+    )
 
     # ---- GeoPackage export --------------------------------------------------
     output$export <- shiny::downloadHandler(
