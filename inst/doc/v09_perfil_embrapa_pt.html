@@ -408,7 +408,7 @@ sedimentos argilosos do Terciario.</p>
 <span id="cb1-36"><a href="#cb1-36" tabindex="-1"></a><span class="co">#&gt;  $ ph_h2o     : num  5.5 5.3 5 5 5.1</span></span>
 <span id="cb1-37"><a href="#cb1-37" tabindex="-1"></a><span class="co">#&gt;  $ clay_pct   : num  18 28 45 42 38</span></span>
 <span id="cb1-38"><a href="#cb1-38" tabindex="-1"></a><span class="co">#&gt;  $ bs_pct     : num  35 25 20 18 20</span></span>
-<span id="cb1-39"><a href="#cb1-39" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;.internal.selfref&quot;)=&lt;pointer: 0xb16c0fee0&gt;</span></span></code></pre></div>
+<span id="cb1-39"><a href="#cb1-39" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;.internal.selfref&quot;)=&lt;pointer: 0x1040d5a40&gt;</span></span></code></pre></div>
 <p>Construindo o <code>PedonRecord</code> (R6 com <code>site</code> +
 <code>horizons</code>):</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>perfil <span class="ot">&lt;-</span> PedonRecord<span class="sc">$</span><span class="fu">new</span>(</span>
@@ -475,64 +475,63 @@ um <code>ClassificationResult</code> por sistema:</p>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; ── ClassificationResult (SiBCS 5a edicao) ──</span></span>
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; Name: Argissolos Vermelhos Distroficos tipicos, argilosa, moderado, Tmob</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; Name: Argissolos Vermelhos Distróficos típicos, argilosa, moderado, Tmob</span></span>
 <span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; RSG/Order: Argissolos</span></span>
 <span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; Evidence grade: A</span></span>
 <span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; ── Ambiguities</span></span>
 <span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; - V: Indeterminate -- missing 1 attribute(s): slickensides</span></span>
 <span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; - E: Indeterminate -- missing 2 attribute(s): al_ox_pct, fe_ox_pct</span></span>
-<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; - G: Indeterminate -- missing 1 attribute(s): redoximorphic_features_pct</span></span>
-<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; - F: Indeterminate -- missing 1 attribute(s): plinthite_pct</span></span>
-<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; ── Missing data that would refine result</span></span>
-<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; slickensides, al_ox_pct, fe_ox_pct, redoximorphic_features_pct, plinthite_pct</span></span>
-<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt; ── Key trace</span></span>
-<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; (10 RSGs tested before assignment)</span></span>
-<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; 1. O Organossolos -- failed</span></span>
-<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; 2. R Neossolos -- failed</span></span>
-<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt; 3. V Vertissolos -- NA (1 attrs missing)</span></span>
-<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt; 4. E Espodossolos -- NA (2 attrs missing)</span></span>
-<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt; 5. S Planossolos -- failed</span></span>
-<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a><span class="co">#&gt; 6. G Gleissolos -- NA (1 attrs missing)</span></span>
-<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a><span class="co">#&gt; 7. L Latossolos -- failed</span></span>
-<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="co">#&gt; 8. M Chernossolos -- failed</span></span>
-<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a><span class="co">#&gt; 9. C Cambissolos -- failed</span></span>
-<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a><span class="co">#&gt; 10. F Plintossolos -- NA (1 attrs missing)</span></span>
-<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="co">#&gt; 11. T Luvissolos -- failed</span></span>
-<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="co">#&gt; 12. N Nitossolos -- failed</span></span>
-<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="co">#&gt; 13. P Argissolos -- PASSED</span></span>
-<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co">#&gt; 14. PBAC Argissolos Bruno-Acinzentados -- failed</span></span>
-<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt; 15. PAC Argissolos Acinzentados -- failed</span></span>
-<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co">#&gt; 16. PA Argissolos Amarelos -- failed</span></span>
-<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a><span class="co">#&gt; 17. PV Argissolos Vermelhos -- PASSED</span></span>
-<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a><span class="co">#&gt; 18. PV Argissolos Vermelhos -- assigned</span></span>
-<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a><span class="co">#&gt; 19. PVtal Argissolos Vermelhos Ta Aluminicos -- failed</span></span>
-<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a><span class="co">#&gt; 20. PVal Argissolos Vermelhos Aluminicos -- failed</span></span>
-<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a><span class="co">#&gt; 21. PVtd Argissolos Vermelhos Ta Distroficos -- failed</span></span>
-<span id="cb5-41"><a href="#cb5-41" tabindex="-1"></a><span class="co">#&gt; 22. PVd Argissolos Vermelhos Distroficos -- PASSED</span></span>
-<span id="cb5-42"><a href="#cb5-42" tabindex="-1"></a><span class="co">#&gt; 23. PVd Argissolos Vermelhos Distroficos -- assigned</span></span>
-<span id="cb5-43"><a href="#cb5-43" tabindex="-1"></a><span class="co">#&gt; 24. PVdEs Argissolos Vermelhos Distroficos espessarenicos -- failed</span></span>
-<span id="cb5-44"><a href="#cb5-44" tabindex="-1"></a><span class="co">#&gt; 25. PVdAr Argissolos Vermelhos Distroficos arenicos -- failed</span></span>
-<span id="cb5-45"><a href="#cb5-45" tabindex="-1"></a><span class="co">#&gt; 26. PVdAbPl Argissolos Vermelhos Distroficos abrupticos plintossolicos --</span></span>
-<span id="cb5-46"><a href="#cb5-46" tabindex="-1"></a><span class="co">#&gt; failed (1 attrs missing)</span></span>
-<span id="cb5-47"><a href="#cb5-47" tabindex="-1"></a><span class="co">#&gt; 27. PVdAb Argissolos Vermelhos Distroficos abrupticos -- failed</span></span>
-<span id="cb5-48"><a href="#cb5-48" tabindex="-1"></a><span class="co">#&gt; 28. PVdPl Argissolos Vermelhos Distroficos plintossolicos -- NA (1 attrs</span></span>
-<span id="cb5-49"><a href="#cb5-49" tabindex="-1"></a><span class="co">#&gt; missing)</span></span>
-<span id="cb5-50"><a href="#cb5-50" tabindex="-1"></a><span class="co">#&gt; 29. PVdPs Argissolos Vermelhos Distroficos planossolicos -- failed</span></span>
-<span id="cb5-51"><a href="#cb5-51" tabindex="-1"></a><span class="co">#&gt; 30. PVdNi Argissolos Vermelhos Distroficos nitossolicos -- failed (1 attrs</span></span>
-<span id="cb5-52"><a href="#cb5-52" tabindex="-1"></a><span class="co">#&gt; missing)</span></span>
-<span id="cb5-53"><a href="#cb5-53" tabindex="-1"></a><span class="co">#&gt; 31. PVdLa Argissolos Vermelhos Distroficos latossolicos -- failed</span></span>
-<span id="cb5-54"><a href="#cb5-54" tabindex="-1"></a><span class="co">#&gt; 32. PVdTp Argissolos Vermelhos Distroficos tipicos -- PASSED</span></span>
-<span id="cb5-55"><a href="#cb5-55" tabindex="-1"></a><span class="co">#&gt; 33. PVdTp Argissolos Vermelhos Distroficos tipicos -- assigned</span></span>
-<span id="cb5-56"><a href="#cb5-56" tabindex="-1"></a><span class="co">#&gt; 34. grupamento_textural argilosa -- info</span></span>
-<span id="cb5-57"><a href="#cb5-57" tabindex="-1"></a><span class="co">#&gt; 35. distribuicao_cascalhos distribuicao_cascalhos -- info</span></span>
-<span id="cb5-58"><a href="#cb5-58" tabindex="-1"></a><span class="co">#&gt; 36. constituicao_esqueletica constituicao_esqueletica -- info</span></span>
-<span id="cb5-59"><a href="#cb5-59" tabindex="-1"></a><span class="co">#&gt; 37. tipo_horizonte_superficial moderado -- info</span></span>
-<span id="cb5-60"><a href="#cb5-60" tabindex="-1"></a><span class="co">#&gt; 38. atividade_argila Tmob -- info</span></span>
-<span id="cb5-61"><a href="#cb5-61" tabindex="-1"></a><span class="co">#&gt; 39. oxidos_ferro oxidos_ferro -- info</span></span>
-<span id="cb5-62"><a href="#cb5-62" tabindex="-1"></a><span class="co">#&gt; 40. ??  argilosa, moderado, Tmob -- info</span></span></code></pre></div>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; - F: Indeterminate -- missing 1 attribute(s): plinthite_pct</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; ── Missing data that would refine result</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; slickensides, al_ox_pct, fe_ox_pct, plinthite_pct</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; ── Key trace</span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt; (10 RSGs tested before assignment)</span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; 1. O Organossolos -- failed</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; 2. R Neossolos -- failed</span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; 3. V Vertissolos -- NA (1 attrs missing)</span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt; 4. E Espodossolos -- NA (2 attrs missing)</span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt; 5. S Planossolos -- failed</span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt; 6. G Gleissolos -- failed</span></span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a><span class="co">#&gt; 7. L Latossolos -- failed</span></span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a><span class="co">#&gt; 8. M Chernossolos -- failed</span></span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="co">#&gt; 9. C Cambissolos -- failed</span></span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a><span class="co">#&gt; 10. F Plintossolos -- NA (1 attrs missing)</span></span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a><span class="co">#&gt; 11. T Luvissolos -- failed</span></span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="co">#&gt; 12. N Nitossolos -- failed</span></span>
+<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="co">#&gt; 13. P Argissolos -- PASSED</span></span>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="co">#&gt; 14. PBAC Argissolos Bruno-Acinzentados -- failed</span></span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co">#&gt; 15. PAC Argissolos Acinzentados -- failed</span></span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt; 16. PA Argissolos Amarelos -- failed</span></span>
+<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co">#&gt; 17. PV Argissolos Vermelhos -- PASSED</span></span>
+<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a><span class="co">#&gt; 18. PV Argissolos Vermelhos -- assigned</span></span>
+<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a><span class="co">#&gt; 19. PVtal Argissolos Vermelhos Ta Alumínicos -- failed</span></span>
+<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a><span class="co">#&gt; 20. PVal Argissolos Vermelhos Alumínicos -- failed</span></span>
+<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a><span class="co">#&gt; 21. PVtd Argissolos Vermelhos Ta Distróficos -- failed</span></span>
+<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a><span class="co">#&gt; 22. PVd Argissolos Vermelhos Distróficos -- PASSED</span></span>
+<span id="cb5-41"><a href="#cb5-41" tabindex="-1"></a><span class="co">#&gt; 23. PVd Argissolos Vermelhos Distróficos -- assigned</span></span>
+<span id="cb5-42"><a href="#cb5-42" tabindex="-1"></a><span class="co">#&gt; 24. PVdEs Argissolos Vermelhos Distróficos espessarênicos -- failed</span></span>
+<span id="cb5-43"><a href="#cb5-43" tabindex="-1"></a><span class="co">#&gt; 25. PVdAr Argissolos Vermelhos Distróficos arênicos -- failed</span></span>
+<span id="cb5-44"><a href="#cb5-44" tabindex="-1"></a><span class="co">#&gt; 26. PVdAbPl Argissolos Vermelhos Distróficos abrúpticos plintossólicos --</span></span>
+<span id="cb5-45"><a href="#cb5-45" tabindex="-1"></a><span class="co">#&gt; failed (1 attrs missing)</span></span>
+<span id="cb5-46"><a href="#cb5-46" tabindex="-1"></a><span class="co">#&gt; 27. PVdAb Argissolos Vermelhos Distróficos abrúpticos -- failed</span></span>
+<span id="cb5-47"><a href="#cb5-47" tabindex="-1"></a><span class="co">#&gt; 28. PVdPl Argissolos Vermelhos Distróficos plintossólicos -- NA (1 attrs</span></span>
+<span id="cb5-48"><a href="#cb5-48" tabindex="-1"></a><span class="co">#&gt; missing)</span></span>
+<span id="cb5-49"><a href="#cb5-49" tabindex="-1"></a><span class="co">#&gt; 29. PVdPs Argissolos Vermelhos Distróficos planossólicos -- failed</span></span>
+<span id="cb5-50"><a href="#cb5-50" tabindex="-1"></a><span class="co">#&gt; 30. PVdNi Argissolos Vermelhos Distróficos nitossólicos -- failed (1 attrs</span></span>
+<span id="cb5-51"><a href="#cb5-51" tabindex="-1"></a><span class="co">#&gt; missing)</span></span>
+<span id="cb5-52"><a href="#cb5-52" tabindex="-1"></a><span class="co">#&gt; 31. PVdLa Argissolos Vermelhos Distróficos latossólicos -- failed</span></span>
+<span id="cb5-53"><a href="#cb5-53" tabindex="-1"></a><span class="co">#&gt; 32. PVdTp Argissolos Vermelhos Distróficos típicos -- PASSED</span></span>
+<span id="cb5-54"><a href="#cb5-54" tabindex="-1"></a><span class="co">#&gt; 33. PVdTp Argissolos Vermelhos Distróficos típicos -- assigned</span></span>
+<span id="cb5-55"><a href="#cb5-55" tabindex="-1"></a><span class="co">#&gt; 34. grupamento_textural argilosa -- info</span></span>
+<span id="cb5-56"><a href="#cb5-56" tabindex="-1"></a><span class="co">#&gt; 35. distribuicao_cascalhos distribuicao_cascalhos -- info</span></span>
+<span id="cb5-57"><a href="#cb5-57" tabindex="-1"></a><span class="co">#&gt; 36. constituicao_esqueletica constituicao_esqueletica -- info</span></span>
+<span id="cb5-58"><a href="#cb5-58" tabindex="-1"></a><span class="co">#&gt; 37. tipo_horizonte_superficial moderado -- info</span></span>
+<span id="cb5-59"><a href="#cb5-59" tabindex="-1"></a><span class="co">#&gt; 38. atividade_argila Tmob -- info</span></span>
+<span id="cb5-60"><a href="#cb5-60" tabindex="-1"></a><span class="co">#&gt; 39. oxidos_ferro oxidos_ferro -- info</span></span>
+<span id="cb5-61"><a href="#cb5-61" tabindex="-1"></a><span class="co">#&gt; 40. ??  argilosa, moderado, Tmob -- info</span></span></code></pre></div>
 <p>A descida vai do nivel da Ordem (<code>Argissolos</code>) ate o
 Subgrupo, passando pelos discriminantes:</p>
 <ul>
@@ -549,70 +548,74 @@ Subordem <strong>Vermelho-Amarelo</strong></li>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; ── ClassificationResult (WRB 2022) ──</span></span>
 <span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; Name: Ferralic Cutanic Acrisol (Clayic, Loamic, Eutric, Ochric, Profondic,</span></span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; Rhodic, Rubic)</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; Name: Rhodic Ferralic Acrisol (Clayic, Cutanic, Differentic, Epic, Geric,</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; Ochric, Profondic)</span></span>
 <span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; RSG/Order: Acrisols</span></span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; Qualifiers: Ferralic, Cutanic, Clayic, Loamic, Eutric, Ochric, Profondic,</span></span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; Rhodic, Rubic, FALSE, FALSE, FALSE, FALSE, top_cm, bottom_cm, FALSE, top_cm,</span></span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; bottom_cm, FALSE, FALSE, FALSE, FALSE, plinthite_pct, FALSE, plinthite_pct,</span></span>
-<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; FALSE, plinthite_pct, TRUE, FALSE, redoximorphic_features_pct, FALSE,</span></span>
-<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; redoximorphic_features_pct, FALSE, al_ox_pct, fe_ox_pct,</span></span>
-<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; phosphate_retention_pct, volcanic_glass_pct, FALSE, volcanic_glass_pct, FALSE,</span></span>
-<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; slickensides, TRUE, FALSE, FALSE, coarse_fragments_pct, FALSE, FALSE,</span></span>
-<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; p_mehlich3_mg_kg, FALSE, p_mehlich3_mg_kg, FALSE, FALSE, FALSE, FALSE, TRUE,</span></span>
-<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE,</span></span>
-<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; FALSE, coarse_fragments_pct, FALSE</span></span>
-<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; Evidence grade: A</span></span>
-<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; ── Ambiguities</span></span>
-<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; - AT: Indeterminate -- missing 1 attribute(s): p_mehlich3_mg_kg</span></span>
-<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; - TC: Indeterminate -- missing 3 attribute(s): artefacts_pct,</span></span>
-<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; geomembrane_present, technic_hardmaterial_pct</span></span>
-<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt; - CR: Indeterminate -- missing 1 attribute(s): permafrost_temp_C</span></span>
-<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt; - LP: Indeterminate -- missing 1 attribute(s): coarse_fragments_pct</span></span>
-<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="co">#&gt; - VR: Indeterminate -- missing 1 attribute(s): slickensides</span></span>
-<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt; - SC: Indeterminate -- missing 1 attribute(s): ec_dS_m</span></span>
-<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="co">#&gt; - PZ: Indeterminate -- missing 2 attribute(s): al_ox_pct, fe_ox_pct</span></span>
-<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt; - PT: Indeterminate -- missing 1 attribute(s): plinthite_pct</span></span>
-<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="co">#&gt; - ST: Indeterminate -- missing 1 attribute(s): redoximorphic_features_pct</span></span>
-<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="co">#&gt; - DU: Indeterminate -- missing 1 attribute(s): duripan_pct</span></span>
-<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="co">#&gt; - GY: Indeterminate -- missing 1 attribute(s): caso4_pct</span></span>
-<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co">#&gt; - CL: Indeterminate -- missing 1 attribute(s): caco3_pct</span></span>
-<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt; ── Missing data that would refine result</span></span>
-<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="co">#&gt; p_mehlich3_mg_kg, artefacts_pct, geomembrane_present, technic_hardmaterial_pct,</span></span>
-<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a><span class="co">#&gt; permafrost_temp_C, coarse_fragments_pct, slickensides, ec_dS_m,</span></span>
-<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a><span class="co">#&gt; redoximorphic_features_pct, al_ox_pct, fe_ox_pct, phosphate_retention_pct,</span></span>
-<span id="cb6-39"><a href="#cb6-39" tabindex="-1"></a><span class="co">#&gt; volcanic_glass_pct, plinthite_pct, top_cm, bottom_cm, duripan_pct, caso4_pct,</span></span>
-<span id="cb6-40"><a href="#cb6-40" tabindex="-1"></a><span class="co">#&gt; caco3_pct</span></span>
-<span id="cb6-41"><a href="#cb6-41" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-42"><a href="#cb6-42" tabindex="-1"></a><span class="co">#&gt; ── Key trace</span></span>
-<span id="cb6-43"><a href="#cb6-43" tabindex="-1"></a><span class="co">#&gt; (25 RSGs tested before assignment)</span></span>
-<span id="cb6-44"><a href="#cb6-44" tabindex="-1"></a><span class="co">#&gt; 1. HS Histosols -- failed</span></span>
-<span id="cb6-45"><a href="#cb6-45" tabindex="-1"></a><span class="co">#&gt; 2. AT Anthrosols -- NA (1 attrs missing)</span></span>
-<span id="cb6-46"><a href="#cb6-46" tabindex="-1"></a><span class="co">#&gt; 3. TC Technosols -- NA (3 attrs missing)</span></span>
-<span id="cb6-47"><a href="#cb6-47" tabindex="-1"></a><span class="co">#&gt; 4. CR Cryosols -- NA (1 attrs missing)</span></span>
-<span id="cb6-48"><a href="#cb6-48" tabindex="-1"></a><span class="co">#&gt; 5. LP Leptosols -- NA (1 attrs missing)</span></span>
-<span id="cb6-49"><a href="#cb6-49" tabindex="-1"></a><span class="co">#&gt; 6. SN Solonetz -- failed</span></span>
-<span id="cb6-50"><a href="#cb6-50" tabindex="-1"></a><span class="co">#&gt; 7. VR Vertisols -- NA (1 attrs missing)</span></span>
-<span id="cb6-51"><a href="#cb6-51" tabindex="-1"></a><span class="co">#&gt; 8. SC Solonchaks -- NA (1 attrs missing)</span></span>
-<span id="cb6-52"><a href="#cb6-52" tabindex="-1"></a><span class="co">#&gt; 9. GL Gleysols -- failed (1 attrs missing)</span></span>
-<span id="cb6-53"><a href="#cb6-53" tabindex="-1"></a><span class="co">#&gt; 10. AN Andosols -- failed (4 attrs missing)</span></span>
-<span id="cb6-54"><a href="#cb6-54" tabindex="-1"></a><span class="co">#&gt; 11. PZ Podzols -- NA (2 attrs missing)</span></span>
-<span id="cb6-55"><a href="#cb6-55" tabindex="-1"></a><span class="co">#&gt; 12. PT Plinthosols -- NA (1 attrs missing)</span></span>
-<span id="cb6-56"><a href="#cb6-56" tabindex="-1"></a><span class="co">#&gt; 13. PL Planosols -- failed</span></span>
-<span id="cb6-57"><a href="#cb6-57" tabindex="-1"></a><span class="co">#&gt; 14. ST Stagnosols -- NA (1 attrs missing)</span></span>
-<span id="cb6-58"><a href="#cb6-58" tabindex="-1"></a><span class="co">#&gt; 15. NT Nitisols -- failed</span></span>
-<span id="cb6-59"><a href="#cb6-59" tabindex="-1"></a><span class="co">#&gt; 16. FR Ferralsols -- failed</span></span>
-<span id="cb6-60"><a href="#cb6-60" tabindex="-1"></a><span class="co">#&gt; 17. CH Chernozems -- failed (2 attrs missing)</span></span>
-<span id="cb6-61"><a href="#cb6-61" tabindex="-1"></a><span class="co">#&gt; 18. KS Kastanozems -- failed (2 attrs missing)</span></span>
-<span id="cb6-62"><a href="#cb6-62" tabindex="-1"></a><span class="co">#&gt; 19. PH Phaeozems -- failed (2 attrs missing)</span></span>
-<span id="cb6-63"><a href="#cb6-63" tabindex="-1"></a><span class="co">#&gt; 20. UM Umbrisols -- failed</span></span>
-<span id="cb6-64"><a href="#cb6-64" tabindex="-1"></a><span class="co">#&gt; 21. DU Durisols -- NA (1 attrs missing)</span></span>
-<span id="cb6-65"><a href="#cb6-65" tabindex="-1"></a><span class="co">#&gt; 22. GY Gypsisols -- NA (1 attrs missing)</span></span>
-<span id="cb6-66"><a href="#cb6-66" tabindex="-1"></a><span class="co">#&gt; 23. CL Calcisols -- NA (1 attrs missing)</span></span>
-<span id="cb6-67"><a href="#cb6-67" tabindex="-1"></a><span class="co">#&gt; 24. RT Retisols -- failed</span></span>
-<span id="cb6-68"><a href="#cb6-68" tabindex="-1"></a><span class="co">#&gt; 25. AC Acrisols -- PASSED</span></span></code></pre></div>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; Qualifiers: Rhodic, Ferralic, Clayic, Cutanic, Differentic, Epic, Geric,</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; Ochric, Profondic, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, p_mehlich3_mg_kg,</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; FALSE, FALSE, redoximorphic_features_pct, FALSE, redoximorphic_features_pct,</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, fe_dcb_pct, FALSE,</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; coarse_fragments_pct, FALSE, TRUE, TRUE, FALSE, FALSE, al_ox_pct, fe_ox_pct,</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; phosphate_retention_pct, volcanic_glass_pct, FALSE, FALSE, FALSE, NA,</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; rupture_resistance, TRUE, FALSE, TRUE, FALSE, FALSE, TRUE, FALSE, TRUE, NA,</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; gibbsite_clay_fraction_pct, FALSE, TRUE, FALSE, FALSE, FALSE, fe_dcb_pct,</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; fe_ox_pct, FALSE, NA, water_saturation_days, redoximorphic_features_pct, FALSE,</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; TRUE, NA, visible black carbon, % of exposed area (not in the schema), FALSE,</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; NA, saprolite_pct, FALSE, FALSE, rock_origin, FALSE, FALSE, artefacts_pct,</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; geomembrane_present, technic_hardmaterial_pct, NA, artefacts_pct, NA,</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; contamination_type, NA, layer_origin, artefacts_pct, FALSE, volcanic_glass_pct</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; Evidence grade: A</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; ── Ambiguities</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt; - AT: Indeterminate -- missing 1 attribute(s): p_mehlich3_mg_kg</span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt; - TC: Indeterminate -- missing 3 attribute(s): artefacts_pct,</span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="co">#&gt; geomembrane_present, technic_hardmaterial_pct</span></span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt; - CR: Indeterminate -- missing 1 attribute(s): permafrost_temp_C</span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="co">#&gt; - LP: Indeterminate -- missing 1 attribute(s): coarse_fragments_pct</span></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt; - VR: Indeterminate -- missing 1 attribute(s): slickensides</span></span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="co">#&gt; - SC: Indeterminate -- missing 1 attribute(s): ec_dS_m</span></span>
+<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="co">#&gt; - PZ: Indeterminate -- missing 2 attribute(s): al_ox_pct, fe_ox_pct</span></span>
+<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="co">#&gt; - PT: Indeterminate -- missing 1 attribute(s): plinthite_pct</span></span>
+<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co">#&gt; - ST: Indeterminate -- missing 1 attribute(s): redoximorphic_features_pct</span></span>
+<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="co">#&gt; - NT: Indeterminate -- missing 2 attribute(s): fe_dcb_pct, fe_ox_pct</span></span>
+<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt; - DU: Indeterminate -- missing 1 attribute(s): duripan_pct</span></span>
+<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="co">#&gt; - GY: Indeterminate -- missing 1 attribute(s): caso4_pct</span></span>
+<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a><span class="co">#&gt; - CL: Indeterminate -- missing 1 attribute(s): caco3_pct</span></span>
+<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-39"><a href="#cb6-39" tabindex="-1"></a><span class="co">#&gt; ── Missing data that would refine result</span></span>
+<span id="cb6-40"><a href="#cb6-40" tabindex="-1"></a><span class="co">#&gt; p_mehlich3_mg_kg, artefacts_pct, geomembrane_present, technic_hardmaterial_pct,</span></span>
+<span id="cb6-41"><a href="#cb6-41" tabindex="-1"></a><span class="co">#&gt; permafrost_temp_C, coarse_fragments_pct, slickensides, ec_dS_m,</span></span>
+<span id="cb6-42"><a href="#cb6-42" tabindex="-1"></a><span class="co">#&gt; redoximorphic_features_pct, al_ox_pct, fe_ox_pct, phosphate_retention_pct,</span></span>
+<span id="cb6-43"><a href="#cb6-43" tabindex="-1"></a><span class="co">#&gt; volcanic_glass_pct, plinthite_pct, fe_dcb_pct, top_cm, bottom_cm, duripan_pct,</span></span>
+<span id="cb6-44"><a href="#cb6-44" tabindex="-1"></a><span class="co">#&gt; caso4_pct, caco3_pct</span></span>
+<span id="cb6-45"><a href="#cb6-45" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-46"><a href="#cb6-46" tabindex="-1"></a><span class="co">#&gt; ── Key trace</span></span>
+<span id="cb6-47"><a href="#cb6-47" tabindex="-1"></a><span class="co">#&gt; (25 RSGs tested before assignment)</span></span>
+<span id="cb6-48"><a href="#cb6-48" tabindex="-1"></a><span class="co">#&gt; 1. HS Histosols -- failed</span></span>
+<span id="cb6-49"><a href="#cb6-49" tabindex="-1"></a><span class="co">#&gt; 2. AT Anthrosols -- NA (1 attrs missing)</span></span>
+<span id="cb6-50"><a href="#cb6-50" tabindex="-1"></a><span class="co">#&gt; 3. TC Technosols -- NA (3 attrs missing)</span></span>
+<span id="cb6-51"><a href="#cb6-51" tabindex="-1"></a><span class="co">#&gt; 4. CR Cryosols -- NA (1 attrs missing)</span></span>
+<span id="cb6-52"><a href="#cb6-52" tabindex="-1"></a><span class="co">#&gt; 5. LP Leptosols -- NA (1 attrs missing)</span></span>
+<span id="cb6-53"><a href="#cb6-53" tabindex="-1"></a><span class="co">#&gt; 6. SN Solonetz -- failed</span></span>
+<span id="cb6-54"><a href="#cb6-54" tabindex="-1"></a><span class="co">#&gt; 7. VR Vertisols -- NA (1 attrs missing)</span></span>
+<span id="cb6-55"><a href="#cb6-55" tabindex="-1"></a><span class="co">#&gt; 8. SC Solonchaks -- NA (1 attrs missing)</span></span>
+<span id="cb6-56"><a href="#cb6-56" tabindex="-1"></a><span class="co">#&gt; 9. GL Gleysols -- failed (1 attrs missing)</span></span>
+<span id="cb6-57"><a href="#cb6-57" tabindex="-1"></a><span class="co">#&gt; 10. AN Andosols -- failed (4 attrs missing)</span></span>
+<span id="cb6-58"><a href="#cb6-58" tabindex="-1"></a><span class="co">#&gt; 11. PZ Podzols -- NA (2 attrs missing)</span></span>
+<span id="cb6-59"><a href="#cb6-59" tabindex="-1"></a><span class="co">#&gt; 12. PT Plinthosols -- NA (1 attrs missing)</span></span>
+<span id="cb6-60"><a href="#cb6-60" tabindex="-1"></a><span class="co">#&gt; 13. PL Planosols -- failed</span></span>
+<span id="cb6-61"><a href="#cb6-61" tabindex="-1"></a><span class="co">#&gt; 14. ST Stagnosols -- NA (1 attrs missing)</span></span>
+<span id="cb6-62"><a href="#cb6-62" tabindex="-1"></a><span class="co">#&gt; 15. NT Nitisols -- NA (2 attrs missing)</span></span>
+<span id="cb6-63"><a href="#cb6-63" tabindex="-1"></a><span class="co">#&gt; 16. FR Ferralsols -- failed</span></span>
+<span id="cb6-64"><a href="#cb6-64" tabindex="-1"></a><span class="co">#&gt; 17. CH Chernozems -- failed (2 attrs missing)</span></span>
+<span id="cb6-65"><a href="#cb6-65" tabindex="-1"></a><span class="co">#&gt; 18. KS Kastanozems -- failed (2 attrs missing)</span></span>
+<span id="cb6-66"><a href="#cb6-66" tabindex="-1"></a><span class="co">#&gt; 19. PH Phaeozems -- failed (2 attrs missing)</span></span>
+<span id="cb6-67"><a href="#cb6-67" tabindex="-1"></a><span class="co">#&gt; 20. UM Umbrisols -- failed</span></span>
+<span id="cb6-68"><a href="#cb6-68" tabindex="-1"></a><span class="co">#&gt; 21. DU Durisols -- NA (1 attrs missing)</span></span>
+<span id="cb6-69"><a href="#cb6-69" tabindex="-1"></a><span class="co">#&gt; 22. GY Gypsisols -- NA (1 attrs missing)</span></span>
+<span id="cb6-70"><a href="#cb6-70" tabindex="-1"></a><span class="co">#&gt; 23. CL Calcisols -- NA (1 attrs missing)</span></span>
+<span id="cb6-71"><a href="#cb6-71" tabindex="-1"></a><span class="co">#&gt; 24. RT Retisols -- failed</span></span>
+<span id="cb6-72"><a href="#cb6-72" tabindex="-1"></a><span class="co">#&gt; 25. AC Acrisols -- PASSED</span></span></code></pre></div>
 <p>WRB devolve o RSG mais qualificadores (em ordem canonica):
 <strong>Acrisol Dystric Cutanic</strong> (caracter argico + V baixa +
 presenca de revestimentos argilosos).</p>
@@ -685,10 +688,10 @@ o solum).</p>
 <span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; 1    SiBCS 5a</span></span>
 <span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; 2    WRB 2022</span></span>
 <span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; 3 USDA-ST 13a</span></span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt;                                                                                Classe</span></span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; 1                  Argissolos Vermelhos Distroficos tipicos, argilosa, moderado, Tmob</span></span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; 2 Ferralic Cutanic Acrisol (Clayic, Loamic, Eutric, Ochric, Profondic, Rhodic, Rubic)</span></span>
-<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; 3                                                                  Rhodic Kandiudults</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt;                                                                                   Classe</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; 1                     Argissolos Vermelhos Distróficos típicos, argilosa, moderado, Tmob</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; 2 Rhodic Ferralic Acrisol (Clayic, Cutanic, Differentic, Epic, Geric, Ochric, Profondic)</span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; 3                                                                     Rhodic Kandiudults</span></span>
 <span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt;   EvidGrade</span></span>
 <span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co">#&gt; 1         A</span></span>
 <span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt; 2         A</span></span>

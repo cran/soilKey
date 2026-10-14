@@ -31,6 +31,8 @@ test_that("qual_albic catches a bleached eluvial layer", {
     designation = c("A", "E", "Bt"),
     munsell_value_moist = c(3, 7, 4),
     munsell_chroma_moist = c(2, 2, 4),
+    munsell_value_dry = c(4, 8, 5),     # v0.9.220: claric material needs
+    munsell_chroma_dry = c(2, 2, 4),    # the dry colour too
     clay_pct = c(15, 12, 28), silt_pct = c(40, 50, 30),
     sand_pct = c(45, 38, 42)
   )
@@ -143,6 +145,7 @@ test_that("qual_haplic always passes (catch-all)", {
 # ---- resolve_wrb_qualifiers ------------------------------------------------
 
 test_that("resolve_wrb_qualifiers returns canonical-order matched qualifiers", {
+  skip_on_cran()
   pr <- make_ferralsol_canonical()
   res <- resolve_wrb_qualifiers(pr, "FR")
   expect_true("principal" %in% names(res))
@@ -152,6 +155,7 @@ test_that("resolve_wrb_qualifiers returns canonical-order matched qualifiers", {
 })
 
 test_that("resolve_wrb_qualifiers falls back to Haplic when nothing matches", {
+  skip_on_cran()
   # Build a minimal fixture that should not trigger any qualifier.
   hz <- data.table::data.table(
     top_cm = c(0, 30, 80), bottom_cm = c(30, 80, 150),
@@ -163,8 +167,10 @@ test_that("resolve_wrb_qualifiers falls back to Haplic when nothing matches", {
                   parent_material = "test"),
     horizons = ensure_horizon_schema(hz)
   )
-  res <- resolve_wrb_qualifiers(pr, "RG")
-  expect_equal(res$principal, "Haplic")
+  # v0.9.217: Haplic only where Chapter 4 lists it. Luvisols do; Regosols do
+  # not (their list ends with Dystric/Eutric), so nothing applies there.
+  expect_equal(resolve_wrb_qualifiers(pr, "LV")$principal, "Haplic")
+  expect_length(resolve_wrb_qualifiers(pr, "RG")$principal, 0L)
 })
 
 
@@ -187,6 +193,7 @@ test_that("format_wrb_name builds canonical names", {
 # ---- classify_wrb2022 returns full qualified name ----------------------
 
 test_that("classify_wrb2022 returns a qualified name in $name", {
+  skip_on_cran()
   pr <- make_ferralsol_canonical()
   res <- classify_wrb2022(pr, on_missing = "silent")
   expect_match(res$name, "Ferralsol")  # singular with optional qualifiers
@@ -194,6 +201,7 @@ test_that("classify_wrb2022 returns a qualified name in $name", {
 })
 
 test_that("classify_wrb2022 stores qualifiers in $qualifiers", {
+  skip_on_cran()
   pr <- make_ferralsol_canonical()
   res <- classify_wrb2022(pr, on_missing = "silent")
   expect_true("principal" %in% names(res$qualifiers))
@@ -201,6 +209,7 @@ test_that("classify_wrb2022 stores qualifiers in $qualifiers", {
 })
 
 test_that("classify_wrb2022 still maps 31 fixtures to correct RSG", {
+  skip_on_cran()
   expected <- c(
     HS = "Histosols", AT = "Anthrosols", TC = "Technosols", CR = "Cryosols",
     LP = "Leptosols", SN = "Solonetz",   VR = "Vertisols", SC = "Solonchaks",

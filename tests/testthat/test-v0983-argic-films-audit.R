@@ -175,20 +175,71 @@ test_that("v0.9.83: B_latossolico Latossolo / Argissolo confusion preserved bit-
   skip_if_not(file.exists(RJ), "BDsolos RJ.csv not available")
   peds <- suppressMessages(suppressWarnings(load_bdsolos_csv(RJ, verbose = FALSE)))
   res <- suppressMessages(suppressWarnings(
-    benchmark_bdsolos(peds, systems = "sibcs", verbose = FALSE)))
+    benchmark_bdsolos(peds, systems = "sibcs", verbose = FALSE,
+                      sampling_type = NULL)))
   conf <- res$per_system$sibcs$confusion
+  # v0.9.242: benchmark_bdsolos() reports the complete profiles by default;
+  # the cells below are those of every record of the file, complete profiles,
+  # partial profiles and extra samples (sampling_type = NULL), as they were
+  # pinned.
   # v0.9.135: the fluvic-material proxy fix (reversal-based texture
   # stratification -- a monotone A->Bt clay increase is no longer "stratified")
   # stops false-fluvic Argissolos: Argissolo recall lifts 166 -> 175 and
   # Argissolo->Neossolo confusion drops 60 -> 50.
-  expect_equal(conf["Latossolos","Latossolos"], 17L)
-  expect_equal(conf["Latossolos","Argissolos"], 17L)
+  # v0.9.226: two reference labels of RJ are now read, and the key's output
+  # for their profiles is counted: "Latossolo-Amarelo distrofico ..." (keyed
+  # Cambissolos; 43 -> 44) and "Podzolcio Vermelho-Amarelo ..." (keyed
+  # Argissolos; 175 -> 176). The key did not change.
+  # v0.9.227: B_nitico() reads the cerosidade of the RJ profiles ("Comum",
+  # "Abundante"), and eight reference Argissolos whose data meet it are keyed
+  # Nitossolos: three that were keyed Argissolos (176 -> 173) and five that
+  # were keyed Neossolos (50 -> 45).
+  # v0.9.241: the B textural and the B latossolico are tested by the items of
+  # the book (this test no longer shows a rule preserved; it pins the cells).
+  # The 50 cm of the B latossolico are those of the horizon, and the layers of
+  # a B textural are no B latossolico: Latossolos agreed 17 -> 25, keyed
+  # Argissolos 17 -> 6, Cambissolos 44 -> 43, Neossolos 37 -> 41.
+  expect_equal(conf["Latossolos","Latossolos"], 25L)
+  expect_equal(conf["Latossolos","Argissolos"], 6L)
   expect_equal(conf["Latossolos","Cambissolos"], 43L)
-  expect_equal(conf["Latossolos","Neossolos"], 37L)
-  expect_equal(conf["Argissolos","Latossolos"], 5L)
-  expect_equal(conf["Argissolos","Argissolos"], 175L)
+  expect_equal(conf["Latossolos","Neossolos"], 41L)
+  # v0.9.228: the designations are read without the number of the material;
+  # profile 11731 ("Ap A3 B1t IIB21t IIB22t IIB23t", reference Argissolos)
+  # has its IIB horizons read and is keyed Nitossolos (173 -> 172, 8 -> 9).
+  # v0.9.229: four RJ labels that begin with "Argissolo" and state Eutrofico
+  # and Ta are read as Luvissolos and leave this row: two keyed Argissolos
+  # (172 -> 170) and two keyed Neossolos (45 -> 43). The key did not change.
+  # v0.9.233: the colour of the B planico follows the book; two reference
+  # Argissolos of RJ whose B is 5YR or 7.5YR with chroma 3 are no longer keyed
+  # Planossolos and agree (170 -> 172).
+  # v0.9.238: the B planico is tested for its structure and for the colours of
+  # a variegated or mottled B. Three reference Argissolos of RJ with an abrupt
+  # change are now keyed Planossolos (12683 and 12692, variegated; 13061, a
+  # yellowish matrix with a grey mottle), and one whose B is in small blocks
+  # is no longer (13069): 172 -> 170.
+  # v0.9.239: the glei horizon is read by the colours of the book and the
+  # drainage class of the site. Four reference Argissolos of RJ, mottled and
+  # with no colour of reduction, are no longer keyed Gleissolos: 170 -> 174.
+  # v0.9.241: reference Argissolos of RJ whose relacao textural is below item
+  # (h) and that record no cerosidade of item (i) have no B textural by the
+  # data: agreed 174 -> 168, keyed Latossolos 5 -> 1, Neossolos 44 -> 54.
+  # v0.9.243: the B latossolico is asked for its Ki. Profile 14713, a
+  # reference Argissolo that was keyed Latossolos, has a Ki above 2.2 in its B
+  # and is keyed Neossolos (1 -> 0, and 54 -> 55 below).
+  expect_equal(conf["Argissolos","Latossolos"], 0L)
+  # v0.9.244: the B planico is the first B sub-horizon below an abrupt change
+  # from the A or E. Profile 12692, a reference Argissolo, had its jump of
+  # clay inside the B and is no longer keyed Planossolos (168 -> 169).
+  # v0.9.257: the activity of the clay and the base saturation are those of
+  # the larger part of the first 100 cm of the B. Profile 11787, a reference
+  # Argissolo, is no longer keyed Luvissolos (169 -> 170).
+  expect_equal(conf["Argissolos","Argissolos"], 170L)
   expect_equal(conf["Argissolos","Cambissolos"], 1L)
-  expect_equal(conf["Argissolos","Neossolos"], 50L)
+  # v0.9.231: profile 14603 has cerosidade "Comum" of grade "Fraca a
+  # moderada"; the grade is read by its lower end, its B nitico no longer
+  # passes and it goes from Nitossolos to Neossolos (43 -> 44, 9 -> 8).
+  expect_equal(conf["Argissolos","Neossolos"], 55L)
+  expect_equal(conf["Argissolos","Nitossolos"], 8L)
 })
 
 

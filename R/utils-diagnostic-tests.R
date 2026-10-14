@@ -129,8 +129,16 @@ ecec_per_clay <- function(ecec_cmol, clay_pct) {
 #'   horizon, criteria 2.a.iv-vi (p. 36); Soil Survey Staff (2022),
 #'   Keys to Soil Taxonomy 13th ed., Chapter 3, Argillic horizon (p. 4).
 #' @noRd
-test_clay_increase_argic <- function(h, system = c("wrb2022", "usda")) {
+test_clay_increase_argic <- function(h, system = c("wrb2022", "usda"),
+                                     lithic_aware = FALSE) {
   system <- match.arg(system)
+  # v0.9.220: with lithic_aware = TRUE (the WRB argic), a layer is not compared
+  # with a coarser layer of another material (WRB 2022 Ch 3.1.3, criterion
+  # 2.a.i: "the coarser-textured layer is not separated from the argic horizon
+  # by a lithic discontinuity"), read from the designations' material numbers
+  # (Ap over 2Bt). A layer without a designation is compared as before.
+  mat <- if (lithic_aware) .desg_material_number(h$designation %||% rep(NA_character_, nrow(h)))
+         else rep(NA_integer_, nrow(h))
   if (nrow(h) < 2L) {
     return(.subtest_result(
       passed = FALSE,
@@ -163,6 +171,10 @@ test_clay_increase_argic <- function(h, system = c("wrb2022", "usda")) {
       next
     }
     above_idx_set <- seq.int(1L, i - 1L)
+    if (!is.na(mat[i]))
+      above_idx_set <- above_idx_set[is.na(mat[above_idx_set]) |
+                                       mat[above_idx_set] == mat[i]]
+    if (!length(above_idx_set)) next
     above_clays   <- h$clay_pct[above_idx_set]
     has_clay      <- !is.na(above_clays)
     if (!any(has_clay)) {
@@ -175,7 +187,7 @@ test_clay_increase_argic <- function(h, system = c("wrb2022", "usda")) {
     above_min_idx <- above_idx_set[has_clay][which.min(above_clays[has_clay])]
     # Reference 2: immediate predecessor (back-compat with WRB
     # adjacent-layer interpretation when a thick eluvial is absent).
-    above_adj     <- h$clay_pct[i - 1L]
+    above_adj     <- if ((i - 1L) %in% above_idx_set) h$clay_pct[i - 1L] else NA_real_
 
     eval_rule <- function(above) {
       if (is.na(above)) return(list(passed = FALSE, rule = "NA above"))
@@ -248,8 +260,8 @@ test_clay_increase_argic <- function(h, system = c("wrb2022", "usda")) {
 #' A horizons (clay < ~7.5\%), where the ratio test is a smaller absolute jump
 #' than argic's +6 pp.
 #'
-#' Control section (footnote 4): A clay = thickness-weighted mean of the A
-#' horizons; B clay = thickness-weighted mean of the B horizons (excluding BC)
+#' Control section (footnote 4): A clay = arithmetic mean of the A
+#' horizons; B clay = arithmetic mean of the B horizons (excluding BC)
 #' within a window from the top of B equal to 30 cm if the A is < 15 cm thick,
 #' or twice the A thickness if the A is \\>= 15 cm thick. Thresholds:
 #' ratio \\> 1.50 if A clay \\> 400 g/kg; \\> 1.70 if 150-400 g/kg; \\> 1.80 if
@@ -260,11 +272,12 @@ test_clay_increase_argic <- function(h, system = c("wrb2022", "usda")) {
 #'   \code{details}).
 #' @noRd
 test_ratio_textural_sibcs <- function(h) {
-  desig <- h$designation
+  # v0.9.241: the designations are read by .desg_master() ("IIBt", "(B)21"),
+  # and BC is the transitional horizon, not any "c" after a "B" ("Btc").
+  desig <- .desg_master(h$designation)
   has_d <- !is.na(desig)
-  a_idx <- which(has_d & grepl("^[0-9]*A", desig))
-  b_idx <- which(has_d & grepl("^[0-9]*B", desig) &
-                   !grepl("BC", desig, ignore.case = TRUE))
+  a_idx <- which(has_d & grepl("^A", desig))
+  b_idx <- which(has_d & grepl("^B", desig) & !grepl("^B/?C", desig))
   if (length(a_idx) == 0L || length(b_idx) == 0L) {
     return(.subtest_result(passed = FALSE,
                            notes = "no A or B horizon for relacao textural"))
@@ -272,7 +285,10 @@ test_ratio_textural_sibcs <- function(h) {
   a_thk  <- h$bottom_cm[a_idx] - h$top_cm[a_idx]
   a_clay <- h$clay_pct[a_idx]
   if (all(is.na(a_clay))) return(.subtest_result(passed = FALSE, missing = "clay_pct"))
-  a_mean <- stats::weighted.mean(a_clay, a_thk, na.rm = TRUE)
+  # v0.9.241: footnote 4 asks for the "media aritmetica do teor de argila
+  # total do horizonte B (excluido o BC)" over the "media de argila total de
+  # A"; the means were weighted by the thickness of the sub-horizons.
+  a_mean <- mean(a_clay, na.rm = TRUE)
   a_thick_total <- sum(a_thk, na.rm = TRUE)
   # B control section per footnote 4.
   b_top  <- min(h$top_cm[b_idx], na.rm = TRUE)
@@ -281,9 +297,7 @@ test_ratio_textural_sibcs <- function(h) {
   if (length(b_ctrl) == 0L) b_ctrl <- b_idx
   b_clay <- h$clay_pct[b_ctrl]
   if (all(is.na(b_clay))) return(.subtest_result(passed = FALSE, missing = "clay_pct"))
-  b_mean <- stats::weighted.mean(b_clay,
-                                 pmax(h$bottom_cm[b_ctrl] - h$top_cm[b_ctrl], 0),
-                                 na.rm = TRUE)
+  b_mean <- mean(b_clay, na.rm = TRUE)
   if (is.na(a_mean) || is.na(b_mean) || a_mean <= 0) {
     return(.subtest_result(passed = FALSE, missing = "clay_pct"))
   }
@@ -304,15 +318,50 @@ test_ratio_textural_sibcs <- function(h) {
 #' For each candidate layer, checks \code{bottom_cm - top_cm >= min_cm}.
 #' Used by argic (default 7.5), ferralic (30), mollic (20), and others.
 #'
+#' With \code{adjoining = TRUE} (v0.9.241) the thickness is that of the
+#' horizon: the candidate layers that adjoin (the top of one at the bottom of
+#' the one above, or above it) are taken together, and all the layers of a
+#' group that reaches \code{min_cm} pass. A diagnostic horizon is described
+#' in sub-horizons (B1, B21, B22), and its minimum thickness is asked of the
+#' horizon. Used by the SiBCS B latossolico.
+#'
 #' @param h Horizons data.table.
 #' @param min_cm Minimum thickness in cm.
 #' @param candidate_layers Integer vector of horizon indices to test.
 #'                         If NULL, all layers are tested.
+#' @param adjoining \code{FALSE} (default): each layer on its own.
+#'   \code{TRUE}: adjoining candidate layers taken together.
 #' @noRd
-test_minimum_thickness <- function(h, min_cm = 7.5, candidate_layers = NULL) {
+test_minimum_thickness <- function(h, min_cm = 7.5, candidate_layers = NULL,
+                                     adjoining = FALSE) {
   cl <- .candidate_layers(h, candidate_layers)
   if (length(cl) == 0L) {
     return(.subtest_result(passed = FALSE, layers = integer(0)))
+  }
+  if (isTRUE(adjoining)) {
+    known <- cl[!is.na(h$top_cm[cl]) & !is.na(h$bottom_cm[cl])]
+    missing <- if (length(known) < length(cl)) c("top_cm", "bottom_cm")
+               else character(0)
+    known <- known[order(h$top_cm[known])]
+    passing <- integer(0); details <- list()
+    if (length(known) > 0L) {
+      group <- cumsum(c(TRUE, h$top_cm[known][-1L] >
+                                h$bottom_cm[known][-length(known)]))
+      for (g in unique(group)) {
+        m <- known[group == g]
+        thick <- max(h$bottom_cm[m]) - min(h$top_cm[m])
+        ok <- thick >= min_cm
+        details[[length(details) + 1L]] <- list(
+          layers = m, top = min(h$top_cm[m]), bottom = max(h$bottom_cm[m]),
+          thickness = thick, threshold = min_cm, passed = ok)
+        if (ok) passing <- c(passing, m)
+      }
+    }
+    passed <- if (length(passing) > 0L) TRUE
+              else if (length(details) == 0L && length(missing) > 0L) NA
+              else FALSE
+    return(.subtest_result(passed = passed, layers = sort(passing),
+                           missing = missing, details = details))
   }
 
   passing <- integer(0)
@@ -388,36 +437,23 @@ test_texture_argic <- function(h, candidate_layers = NULL) {
   )
 }
 
-#' Test for albeluvic glossic features that exclude argic (-> Retisol path)
-#'
-#' v0.1 implementation: scans horizon designations for the substrings
-#' \code{"glossic"} or \code{"albeluvic"}. A more rigorous implementation
-#' would inspect tongue features, fragic properties, and morphological
-#' descriptions; that is scheduled for v0.2.
-#'
-#' @noRd
-test_not_albeluvic <- function(h) {
-  flags <- grepl("glossic|albeluvic|retic", h$designation,
-                 ignore.case = TRUE)
-  if (any(flags, na.rm = TRUE)) {
-    .subtest_result(
-      passed = FALSE,
-      notes  = sprintf(
-        "Glossic/albeluvic/retic feature detected at horizon(s) %s -- Retisol path",
-        paste(which(flags), collapse = ", ")
-      )
-    )
-  } else {
-    .subtest_result(passed = TRUE, layers = seq_len(nrow(h)))
-  }
-}
-
-
 # ========================================================= ferralic sub-tests ====
 
-#' Test CEC (1M NH4OAc, pH 7) per kg clay <= threshold
+#' Test CEC (1M NH4OAc, pH 7) per kg clay below a threshold
 #'
 #' Default threshold is 16 cmol_c/kg clay (WRB 2022 ferralic horizon).
+#'
+#' @section v0.9.212 strict limit:
+#' WRB 2022 and SiBCS write these limits as strictly below: "< 16 cmolc kg-1
+#' clay" (ferralic, Ch 3.1.10), "< 24" (cohesic, sideralic properties, the
+#' Acrisol and Lixisol argic), "menor que 17" (B latossolico, SiBCS Cap 2).
+#' The test used to accept a value equal to the limit, so a horizon at
+#' exactly 16 was ferralic, and one at exactly 24 was both below 24 (Acrisol,
+#' Lixisol) and at or above 24 (Alisol, Luvisol). It is now strict;
+#' \code{inclusive = TRUE} gives "or less", which USDA's oxic horizon uses
+#' ("16 cmol(+) or less per kg clay", KST 13 Ch 3). Values are compared
+#' after rounding to 9 decimals, so floating-point noise in cec * 100 / clay
+#' does not move a value across the limit.
 #'
 #' @section v0.9.69 ECEC fallback (opt-in):
 #' Brazilian / SOTERLAC / BDsolos profiles often record the exchange
@@ -448,9 +484,11 @@ test_not_albeluvic <- function(h) {
 #' @param h Numeric threshold or option (see Details).
 #' @param max_cmol_per_kg_clay Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
+#' @param inclusive \code{FALSE} (default): pass below the limit (WRB,
+#'   SiBCS). \code{TRUE}: pass at the limit too (USDA "or less").
 #' @noRd
 test_cec_per_clay <- function(h, max_cmol_per_kg_clay = 16,
-                                candidate_layers = NULL) {
+                                candidate_layers = NULL, inclusive = FALSE) {
   cl <- .candidate_layers(h, candidate_layers)
   passing <- integer(0)
   missing <- character(0)
@@ -486,15 +524,17 @@ test_cec_per_clay <- function(h, max_cmol_per_kg_clay = 16,
     details[[as.character(i)]] <- list(
       idx = i, cec_cmol = cec_used, clay_pct = h$clay_pct[i],
       cec_per_clay = cpc, threshold = max_cmol_per_kg_clay,
-      cec_source = cec_source
+      inclusive = isTRUE(inclusive), cec_source = cec_source
     )
     if (is.na(cpc)) {
       if (is.na(cec_used))           missing <- c(missing, "cec_cmol")
       if (is.na(h$clay_pct[i]))      missing <- c(missing, "clay_pct")
       next
     }
-    details[[as.character(i)]]$passed <- cpc <= max_cmol_per_kg_clay
-    if (cpc <= max_cmol_per_kg_clay) passing <- c(passing, i)
+    v  <- round(cpc, 9)
+    ok <- if (inclusive) v <= max_cmol_per_kg_clay else v < max_cmol_per_kg_clay
+    details[[as.character(i)]]$passed <- ok
+    if (ok) passing <- c(passing, i)
   }
 
   evaluated <- sum(vapply(details, function(d) !is.null(d$passed), logical(1)))
@@ -600,8 +640,12 @@ test_ferralic_thickness <- function(h, min_cm = 30, candidate_layers = NULL) {
 #'
 #' @param h Numeric threshold or option (see Details).
 #' @param candidate_layers Numeric threshold or option (see Details).
+#' @param tropical Single logical (or `NA`) from \code{\link{.pedon_is_tropical}}.
+#'   v0.9.188: the Bw/Bo-implies-ferralic-texture inference is only valid in a
+#'   tropical regime; it is suppressed unless `tropical` is `TRUE`, so a
+#'   temperate data-poor Bw is no longer read as a deeply-weathered subsoil.
 #' @noRd
-test_ferralic_texture <- function(h, candidate_layers = NULL) {
+test_ferralic_texture <- function(h, candidate_layers = NULL, tropical = NA) {
   res <- test_texture_argic(h, candidate_layers = candidate_layers)
   if (!is.na(res$passed)) return(res)
   # v0.9.89: engine="aqp" auto-enables the texture-morphological
@@ -617,6 +661,14 @@ test_ferralic_texture <- function(h, candidate_layers = NULL) {
     identical(engine_opt, "aqp")
   }
   if (!morph_fallback) return(res)
+  # v0.9.188: region-aware gate. A Bw/Bo subsoil implies ferralic texture in a
+  # tropical regime, but designates the temperate cambic horizon elsewhere. We
+  # therefore suppress this fallback only when the pedon is KNOWN to be temperate
+  # (`tropical` is FALSE); a tropical (TRUE) or unknown (NA) region leaves the
+  # fallback in place. In the default engine = "soilkey" path this gate is never
+  # reached (the block above returns first), so the region logic that drives the
+  # benchmarks lives in the designation-inference path, not here.
+  if (isFALSE(tropical)) return(res)
   cl <- .candidate_layers(h, candidate_layers)
   if (length(cl) == 0L) return(res)
   desig <- if (!is.null(h$designation)) as.character(h$designation)
@@ -1346,7 +1398,9 @@ test_slickensides_present <- function(h,
       missing <- c(missing, "slickensides")
       next
     }
-    ok <- val %in% levels
+    # v0.9.232: the amount is read in either language ("Comum", "Abundante"
+    # of the Brazilian field sheets), a range by its lower end.
+    ok <- .amount_at_least(val, levels)
     details[[as.character(i)]] <- list(
       idx = i, slickensides = val,
       accepted_levels = levels, passed = ok
@@ -1529,8 +1583,9 @@ test_cec_per_clay_above <- function(h, min_cmol_per_kg_clay = 24,
       if (is.na(h$clay_pct[i]))  missing <- c(missing, "clay_pct")
       next
     }
-    details[[as.character(i)]]$passed <- cpc >= min_cmol_per_kg_clay
-    if (cpc >= min_cmol_per_kg_clay) passing <- c(passing, i)
+    ok <- round(cpc, 9) >= min_cmol_per_kg_clay
+    details[[as.character(i)]]$passed <- ok
+    if (ok) passing <- c(passing, i)
   }
   evaluated <- sum(vapply(details, function(d) !is.null(d$passed), logical(1)))
   passed <- if (length(passing) > 0L) TRUE
@@ -1985,38 +2040,76 @@ test_bulk_density_below <- function(h, max_g_cm3 = 0.9,
 }
 
 
-#' Test that artefacts_pct >= threshold within the upper max_top_cm
+#' Test that artefacts reach a threshold as a weighted average in the upper depth
 #'
-#' Default 20\% by volume (Technosols criterion, WRB 2022).
+#' WRB 2022 keys Technosols on artefacts of \strong{>= 20 \% by volume, as a
+#' weighted average, in the upper 100 cm} (Chapter 5, Technosols). Up to
+#' v0.9.189 this was implemented as "any single layer >= 20 \%", which is a
+#' different -- and more permissive -- criterion: a thin 5 cm lens of pure
+#' rubble over clean soil satisfied it, although its weighted average over the
+#' upper 100 cm is only about 5 \%. v0.9.190 computes the thickness-weighted
+#' average the standard actually asks for.
 #'
-#' @param h Numeric threshold or option (see Details).
-#' @param min_pct Numeric threshold or option (see Details).
-#' @param max_top_cm Numeric threshold or option (see Details).
-#' @param candidate_layers Numeric threshold or option (see Details).
+#' Missing values are handled by interval reasoning rather than by guessing.
+#' The unmeasured thickness is bounded below by 0 \% and above by 100 \%
+#' artefacts, giving the lowest and highest averages still compatible with the
+#' data. The test returns \code{TRUE} when even the lowest possible average
+#' reaches the threshold, \code{FALSE} when even the highest cannot, and
+#' \code{NA} (data needed) only when the gap genuinely straddles the threshold.
+#'
+#' @param h Horizon table.
+#' @param min_pct Threshold in percent by volume (default 20).
+#' @param max_top_cm Bottom of the evaluation window in cm (default 100).
+#' @param candidate_layers Optional restriction of the layers considered.
 #' @noRd
 test_artefacts_concentration <- function(h, min_pct = 20, max_top_cm = 100,
                                             candidate_layers = NULL) {
   cl <- .candidate_layers(h, candidate_layers)
-  cl <- cl[!is.na(h$top_cm[cl]) & h$top_cm[cl] < max_top_cm]
+  top <- suppressWarnings(as.numeric(h$top_cm))
+  bot <- suppressWarnings(as.numeric(h$bottom_cm))
+  # Thickness of each layer that falls inside the 0..max_top_cm window.
+  overlap <- rep(0, length(top))
+  ok_geom <- !is.na(top) & !is.na(bot) & bot > top
+  overlap[ok_geom] <- pmax(0, pmin(bot[ok_geom], max_top_cm) - pmax(top[ok_geom], 0))
+  cl <- cl[overlap[cl] > 0]
+
+  known_sum <- 0; t_known <- 0; t_unknown <- 0
   passing <- integer(0); missing <- character(0); details <- list()
   for (i in cl) {
-    val <- h$artefacts_pct[i]
+    val <- suppressWarnings(as.numeric(h$artefacts_pct[i]))
     if (is.na(val)) {
+      t_unknown <- t_unknown + overlap[i]
       missing <- c(missing, "artefacts_pct")
       next
     }
+    known_sum <- known_sum + val * overlap[i]
+    t_known   <- t_known + overlap[i]
+    if (val >= min_pct) passing <- c(passing, i)   # layers driving the average
     details[[as.character(i)]] <- list(
-      idx = i, artefacts_pct = val,
-      threshold = min_pct, passed = val >= min_pct
+      idx = i, artefacts_pct = val, thickness_cm = overlap[i]
     )
-    if (val >= min_pct) passing <- c(passing, i)
   }
-  evaluated <- length(details)
-  passed <- if (length(passing) > 0L) TRUE
-            else if (evaluated == 0L && length(missing) > 0L) NA
-            else FALSE
-  .subtest_result(passed = passed, layers = passing,
-                   missing = missing, details = details)
+  t_total <- t_known + t_unknown
+  if (t_total <= 0) {
+    # No described material inside the window: nothing to average.
+    return(.subtest_result(passed = NA, layers = integer(0),
+                            missing = "artefacts_pct", details = details))
+  }
+  lower <- known_sum / t_total                        # unmeasured assumed 0 %
+  upper <- (known_sum + 100 * t_unknown) / t_total    # unmeasured assumed 100 %
+  passed <- if (lower >= min_pct) TRUE
+            else if (upper < min_pct) FALSE
+            else NA
+  details$summary <- list(
+    weighted_mean_pct = if (t_known > 0) known_sum / t_total else NA_real_,
+    lower_bound_pct = lower, upper_bound_pct = upper,
+    window_cm = c(0, max_top_cm), thickness_evaluated_cm = t_known,
+    thickness_unmeasured_cm = t_unknown, threshold = min_pct
+  )
+  .subtest_result(passed = passed,
+                   layers  = if (isTRUE(passed)) passing else integer(0),
+                   missing = if (is.na(passed)) unique(missing) else character(0),
+                   details = details)
 }
 
 

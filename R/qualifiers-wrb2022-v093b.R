@@ -1,7 +1,7 @@
 # ============================================================================
 # WRB 2022 (4th ed.) -- Supplementary qualifier seed (v0.9.3.B)
 #
-# Adds the most commonly used SUPPLEMENTARY qualifiers per Ch 6 that
+# Adds the most commonly used SUPPLEMENTARY qualifiers per Ch 5 that
 # v0.9.1 had not yet implemented as standalone functions:
 #
 #   Aric       homogenised plough layer (designation \\code{Ap*})
@@ -31,7 +31,7 @@ qual_aric <- function(pedon) {
     return(DiagnosticResult$new(name = "Aric", passed = NA,
             layers = integer(0), evidence = list(),
             missing = "designation",
-            reference = "WRB (2022) Ch 6, Aric"))
+            reference = "WRB (2022) Ch 5, Aric"))
   d <- h$designation[ly]
   ok <- !is.na(d) & grepl("^Ap", d, ignore.case = FALSE)
   passed <- any(ok)
@@ -40,7 +40,7 @@ qual_aric <- function(pedon) {
     layers = ly[ok],
     evidence = list(designation = d),
     missing = if (all(is.na(d))) "designation" else character(0),
-    reference = "WRB (2022) Ch 6, Aric"
+    reference = "WRB (2022) Ch 5, Aric"
   )
 }
 
@@ -58,13 +58,13 @@ qual_cumulic <- function(pedon) {
     return(DiagnosticResult$new(name = "Cumulic", passed = FALSE,
             layers = integer(0), evidence = list(),
             missing = "top_cm",
-            reference = "WRB (2022) Ch 6, Cumulic"))
+            reference = "Not a WRB 2022 qualifier (out of the lists since v0.9.216)"))
   top_idx <- which(!is.na(h$top_cm) & h$top_cm <= 5)
   if (length(top_idx) == 0L)
     return(DiagnosticResult$new(name = "Cumulic", passed = FALSE,
             layers = integer(0), evidence = list(),
             missing = "top_cm",
-            reference = "WRB (2022) Ch 6, Cumulic"))
+            reference = "Not a WRB 2022 qualifier (out of the lists since v0.9.216)"))
   origin <- h$layer_origin[top_idx]
   d      <- h$designation [top_idx]
   ok_origin <- !is.na(origin) &
@@ -80,7 +80,7 @@ qual_cumulic <- function(pedon) {
     layers = top_idx[ok],
     evidence = list(layer_origin = origin, designation = d),
     missing = character(0),
-    reference = "WRB (2022) Ch 6, Cumulic",
+    reference = "Not a WRB 2022 qualifier (out of the lists since v0.9.216)",
     notes = "v0.9.3.B: proxy via layer_origin / cumulic-style designation"
   )
 }
@@ -98,7 +98,7 @@ qual_profondic <- function(pedon) {
     return(DiagnosticResult$new(name = "Profondic", passed = FALSE,
             layers = integer(0), evidence = list(argic = arg),
             missing = arg$missing %||% character(0),
-            reference = "WRB (2022) Ch 6, Profondic"))
+            reference = "WRB (2022) Ch 5, Profondic"))
   h <- pedon$horizons
   ly <- arg$layers
   ok <- !is.na(h$bottom_cm[ly]) & h$bottom_cm[ly] >= 150
@@ -108,7 +108,7 @@ qual_profondic <- function(pedon) {
     layers = ly[ok],
     evidence = list(argic = arg, bottom_cm = h$bottom_cm[ly]),
     missing = if (all(is.na(h$bottom_cm[ly]))) "bottom_cm" else character(0),
-    reference = "WRB (2022) Ch 6, Profondic"
+    reference = "WRB (2022) Ch 5, Profondic"
   )
 }
 
@@ -127,7 +127,7 @@ qual_rubic <- function(pedon) {
     return(DiagnosticResult$new(name = "Rubic", passed = NA,
             layers = integer(0), evidence = list(),
             missing = "munsell_hue_moist",
-            reference = "WRB (2022) Ch 6, Rubic"))
+            reference = "WRB (2022) Ch 5, Rubic"))
   hu <- h$munsell_hue_moist[ly]
   ch <- h$munsell_chroma_moist[ly]
   ok <- !is.na(hu) & !is.na(ch) &
@@ -139,7 +139,7 @@ qual_rubic <- function(pedon) {
     layers = ly[ok],
     evidence = list(hues = hu, chromas = ch),
     missing = if (all(is.na(hu))) "munsell_hue_moist" else character(0),
-    reference = "WRB (2022) Ch 6, Rubic"
+    reference = "WRB (2022) Ch 5, Rubic"
   )
 }
 
@@ -151,23 +151,68 @@ qual_rubic <- function(pedon) {
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @noRd
 qual_lamellic <- function(pedon) {
+  # v0.9.220: WRB 2022 Ch 5, Lamellic: "having two or more lamellae, >= 0.5 and
+  # < 7.5 cm thick, that have one or both of the following: higher clay contents
+  # than the directly overlying and underlying layers as stated in the
+  # diagnostic criteria 2.a of the argic horizon, or meet the diagnostic
+  # criteria 2.b of the argic horizon ... and that have a combined thickness of
+  # >= 5 cm within 50 cm; the uppermost lamella starting <= 100 cm from the
+  # mineral soil surface". Read from the layers' thickness, clay and clay films
+  # (2.b.ii, "common" or more). A lamella designation (E&Bt, "lamell") without
+  # the data makes it NA; until v0.9.219 the designation alone decided.
   h <- pedon$horizons
-  ly <- which(!is.na(h$top_cm) & h$top_cm >= 5 & h$top_cm <= 200)
-  if (length(ly) == 0L)
-    return(DiagnosticResult$new(name = "Lamellic", passed = FALSE,
-            layers = integer(0), evidence = list(),
-            missing = character(0),
-            reference = "WRB (2022) Ch 6, Lamellic"))
-  d <- h$designation[ly]
-  ok <- !is.na(d) & grepl("lamell|E&Bt|&Bt|Btlam|Bt[0-9]?lam",
-                              d, ignore.case = TRUE)
-  passed <- any(ok)
+  ref <- "WRB (2022) Ch 5, Lamellic"
+  n <- nrow(h)
+  ord <- order(h$top_cm)
+  thk <- h$bottom_cm - h$top_cm
+  clay <- h$clay_pct
+  films <- .clay_films_class(h$clay_films_amount %||% rep(NA_character_, n))
+  more_clay <- function(here, other) {
+    if (is.na(here) || is.na(other)) return(NA)
+    if (other < 15) here - other >= 6
+    else if (other < 50) here / other >= 1.4
+    else here - other >= 20
+  }
+  lam <- rep(FALSE, n)
+  for (k in seq_along(ord)) {
+    i <- ord[k]
+    if (is.na(thk[i])) { lam[i] <- NA; next }
+    if (thk[i] < 0.5 || thk[i] >= 7.5) next
+    by_films <- if (is.na(films[i])) NA else films[i] >= 3L
+    if (k == 1L || k == length(ord)) { lam[i] <- if (isTRUE(by_films)) TRUE else
+                                                   if (is.na(by_films)) NA else FALSE; next }
+    by_clay <- .and3(more_clay(clay[i], clay[ord[k - 1L]]),
+                     more_clay(clay[i], clay[ord[k + 1L]]))
+    lam[i] <- if (isTRUE(by_clay) || isTRUE(by_films)) TRUE
+              else if (is.na(by_clay) || is.na(by_films)) NA else FALSE
+  }
+  ms <- .q_mineral_surface_cm(h)
+  if (is.na(ms)) ms <- 0
+  combined <- function(idx) {
+    idx <- idx[!is.na(h$top_cm[idx]) & h$top_cm[idx] - ms <= 100]
+    if (length(idx) < 2L) return(0)
+    best <- 0
+    for (i in idx) {
+      w <- idx[h$top_cm[idx] >= h$top_cm[i] & h$top_cm[idx] < h$top_cm[i] + 50]
+      if (length(w) >= 2L)
+        best <- max(best, sum(pmin(h$bottom_cm[w], h$top_cm[i] + 50) - h$top_cm[w]))
+    }
+    best
+  }
+  yes <- which(lam %in% TRUE)
+  may <- which(lam %in% TRUE | is.na(lam))
+  passed <- if (combined(yes) >= 5) TRUE else if (combined(may) >= 5) NA else FALSE
+  desg <- as.character(h$designation %||% rep(NA_character_, n))
+  described <- which(!is.na(desg) &
+                       grepl("lamell|E&Bt|&Bt|Btlam|Bt[0-9]?lam", desg, ignore.case = TRUE))
+  if (isFALSE(passed) && length(described)) passed <- NA
   DiagnosticResult$new(
     name = "Lamellic", passed = passed,
-    layers = ly[ok],
-    evidence = list(designation = d),
-    missing = character(0),
-    reference = "WRB (2022) Ch 6, Lamellic",
-    notes = "v0.9.3.B: designation-pattern proxy; dedicated lamellae_thickness_cm scheduled for v0.9.4"
+    layers = if (isTRUE(passed)) yes else integer(0),
+    evidence = list(lamella = lam, lamella_designations = described,
+                    mineral_surface_cm = ms),
+    missing = if (is.na(passed)) c("top_cm", "bottom_cm", "clay_pct",
+                                   "clay_films_amount") else character(0),
+    reference = ref
   )
 }

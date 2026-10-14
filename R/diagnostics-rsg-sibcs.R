@@ -15,15 +15,52 @@
 #' espessura: \\>= 20 cm sobre rocha, \\>= 40 cm continuo OR cumulativo
 #' nos 80 cm superficiais, OR \\>= 60 cm se \\>= 75\% volume tecido
 #' vegetal.
+#'
+#' Since v0.9.253 the step asks for the thickness the key states (p. 111):
+#' \itemize{
+#'   \item (a) "20 cm ou mais, quando sobrejacente a um contato litico": a
+#'         horizon of 20 cm or more with a layer R or Cr right below it; or
+#'   \item (b) "40 cm ou mais, continuo ou cumulativo nos primeiros 80 cm a
+#'         partir da superficie do solo": the thickness of the horizon, or
+#'         of the horizons, that lies within 80 cm of the surface.
+#' }
+#' Until v0.9.252 any \code{\link{horizonte_histico}} made an Organossolo, so
+#' that one of 20 to 39 cm over a mineral horizon did; the book places those
+#' soils further down the key (Gleissolos Melanicos, Cambissolos Histicos).
+#' Item (c), the 60 cm asked where plant tissue makes 75\% or more of the
+#' horizon, is not tested: that volume is no column of the profile.
+#' The 80 cm are counted from the surface of the soil: where O or H layers
+#' are recorded upward from the mineral soil ("O 120-0"), from the top of the
+#' uppermost of them (v0.9.254).
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @noRd
 organossolo <- function(pedon) {
   res <- horizonte_histico(pedon)
+  ref <- "Embrapa (2018), SiBCS 5a ed., Cap 4, p. 111"
+  if (!isTRUE(res$passed)) {
+    return(DiagnosticResult$new(
+      name = "organossolo", passed = res$passed,
+      layers = res$layers, evidence = list(histico = res),
+      missing = res$missing, reference = ref
+    ))
+  }
+  hz <- res$evidence$horizons
+  hz <- hz[hz$passed, , drop = FALSE]
+  # (a) 20 cm or more over a lithic contact
+  over_rock <- any(hz$thickness_cm >= 20 & hz$on_rock)
+  # (b) 40 cm or more, in one section or added up, in the first 80 cm from
+  # the surface of the soil, which lies above the zero of the description
+  # where organic layers are recorded upward (v0.9.254)
+  surface <- res$evidence$surface_cm
+  in_80 <- sum(pmax(0, pmin(hz$bottom_cm, surface + 80) -
+                         pmax(hz$top_cm, surface)))
+  passed <- over_rock || in_80 >= 40
   DiagnosticResult$new(
-    name = "organossolo", passed = res$passed,
-    layers = res$layers, evidence = list(histico = res),
-    missing = res$missing,
-    reference = "Embrapa (2018), SiBCS 5a ed., Cap 4, p. 111"
+    name = "organossolo", passed = passed,
+    layers = if (passed) res$layers else integer(0),
+    evidence = list(histico = res, over_lithic_contact = over_rock,
+                    within_80_cm = in_80),
+    missing = res$missing, reference = ref
   )
 }
 
@@ -33,18 +70,19 @@ organossolo <- function(pedon) {
 #' Neossolos (SiBCS Cap 4, p 111-112; conceito Cap 3, p 96-97)
 #'
 #' Solos pouco evoluidos: SEM horizonte B diagnostico + ausencia de:
-#' (a) glei dentro 150 cm, (b) plintico dentro 40 cm, (c) vertico
+#' (a) glei dentro 50 cm, exceto textura areia ou areia franca, (b)
+#' plintico dentro 40 cm, (c) vertico
 #' imediatamente abaixo de A, (d) A chernozemico conjugado com
 #' carbonatico ou cálcico.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @noRd
 neossolo <- function(pedon) {
-  # v0.9.10: when `carater_fluvico` is TRUE, the apparent B-textural
-  # pattern is depositional / allochthonous (Neossolos Fluvicos), not a
-  # pedogenic B horizon. We therefore short-circuit the has-B exclusion
-  # for fluvic profiles -- otherwise the canonical Fluvisol fixture is
-  # rejected by neossolo() (because argic-via-clay-jump triggers on the
-  # C1->C2 stratification) and falls through to Luvissolos.
+  # v0.9.241: a profile with a diagnostic B is no Neossolo ("Outros solos sem
+  # horizonte B diagnostico", p. 111), with or without carater fluvico. From
+  # v0.9.10 the carater fluvico set the B aside, because the clay increase of
+  # the WRB argic horizon fired between the stratified C layers of the
+  # canonical Fluvisol; the B textural of the book is looked for in B
+  # horizons, and that profile has none.
   fluv <- carater_fluvico(pedon)
   has_b <- any(c(
     isTRUE(B_textural(pedon)$passed),
@@ -54,7 +92,7 @@ neossolo <- function(pedon) {
     isTRUE(B_espodico(pedon)$passed),
     isTRUE(B_planico(pedon)$passed)
   ))
-  if (has_b && !isTRUE(fluv$passed)) {
+  if (has_b) {
     return(DiagnosticResult$new(
       name = "neossolo", passed = FALSE,
       layers = integer(0),
@@ -65,19 +103,41 @@ neossolo <- function(pedon) {
     ))
   }
   h <- pedon$horizons
-  glei_dentro_150 <- isTRUE(horizonte_glei(pedon)$passed) &&
-                       any(h$top_cm[horizonte_glei(pedon)$layers] <= 150,
-                              na.rm = TRUE)
+  # v0.9.239: "a) Ausencia de horizonte glei dentro de 50 cm a partir da
+  # superficie, exceto no caso de solos de textura areia e areia franca"
+  # (SiBCS 2018, Cap 4, p. 111). 150 cm was tested, with no exception.
+  hg <- horizonte_glei(pedon)
+  glei_dentro_50 <- isTRUE(hg$passed) &&
+                      any(h$top_cm[hg$layers] <= 50, na.rm = TRUE) &&
+                      !.textura_areia_ou_areia_franca(h)
   plint_dentro_40 <- isTRUE(horizonte_plintico(pedon)$passed) &&
                        any(h$top_cm[horizonte_plintico(pedon)$layers] <= 40,
                               na.rm = TRUE)
-  vert_below_a <- isTRUE(horizonte_vertico(pedon)$passed) &&
-                    any(h$top_cm[horizonte_vertico(pedon)$layers] <= 50,
-                           na.rm = TRUE)
+  # v0.9.252: "c) Ausencia de horizonte vertico imediatamente abaixo de
+  # horizonte A" (Cap 4, p. 112). A vertic horizon that begins within 50 cm
+  # was tested, whatever lay between it and the A. Decided on 2026-10-13: the
+  # first vertic layer has to be right below an A; the horizons of transition
+  # from the A (AB, AC) count with the A, as they do in the thickness of the
+  # A chernozemico (p. 51). A vertic horizon that begins at the surface is
+  # there too. A profile with no horizon designation is tested as before.
+  vh <- horizonte_vertico(pedon)
+  vert_below_a <- FALSE
+  if (isTRUE(vh$passed) && length(vh$layers) > 0L) {
+    dmv <- .desg_master(h$designation)
+    if (all(is.na(dmv) | !nzchar(dmv))) {
+      vert_below_a <- any(h$top_cm[vh$layers] <= 50, na.rm = TRUE)
+    } else {
+      o     <- order(h$top_cm)
+      first <- vh$layers[which.min(h$top_cm[vh$layers])]
+      pos   <- match(first, o)
+      above <- if (!is.na(pos) && pos > 1L) dmv[o[pos - 1L]] else NA_character_
+      vert_below_a <- isTRUE(pos == 1L) || (!is.na(above) && grepl("^A", above))
+    }
+  }
   chern_calc <- isTRUE(horizonte_A_chernozemico(pedon)$passed) &&
                   (isTRUE(carater_carbonatico(pedon)$passed) ||
                      isTRUE(horizonte_calcico(pedon)$passed))
-  exclusion_failed <- glei_dentro_150 || plint_dentro_40 ||
+  exclusion_failed <- glei_dentro_50 || plint_dentro_40 ||
                         vert_below_a || chern_calc
   passed <- !exclusion_failed
   DiagnosticResult$new(
@@ -85,7 +145,7 @@ neossolo <- function(pedon) {
     layers = if (passed) seq_len(nrow(h)) else integer(0),
     evidence = list(
       no_b_diagnostic = !has_b,
-      glei_dentro_150 = glei_dentro_150,
+      glei_dentro_50 = glei_dentro_50,
       plintico_dentro_40 = plint_dentro_40,
       vertico_below_a = vert_below_a,
       chernozemic_carbonatic = chern_calc
@@ -103,6 +163,10 @@ neossolo <- function(pedon) {
 #' Horizonte vertico iniciando \\<= 100 cm + clay \\>= 30\% nos 20 cm
 #' superficiais + fendas verticais + ausencia de contato litico /
 #' petrocalcico / duripa nos 30 cm + COLE \\>= 0.06.
+#'
+#' Since v0.9.245 the step also asks what its first words ask, a "relacao
+#' textural insuficiente para identificar um B textural", and the clay of
+#' the upper 20 cm is that of the mixed material (item a).
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @noRd
 vertissolo <- function(pedon) {
@@ -118,11 +182,20 @@ vertissolo <- function(pedon) {
   h <- pedon$horizons
   vert_top <- min(h$top_cm[v$layers], na.rm = TRUE)
   starts_in_100 <- vert_top <= 100
-  surface_clay <- mean(h$clay_pct[h$top_cm <= 20], na.rm = TRUE)
+  # v0.9.245: "a) Teor de argila, apos mistura e homogeneizacao do material de
+  # solo, nos 20 cm superficiais, de no minimo 300 g kg-1": the clay of each
+  # layer weighted by what it has within the upper 20 cm. The plain mean of
+  # the layers that begin at 20 cm or above was tested, which gave an A of
+  # 12 cm the weight of the B below it, and took a layer that begins at
+  # 20 cm for the surface.
+  within_20 <- pmax(0, pmin(h$bottom_cm, 20) - pmax(h$top_cm, 0))
+  within_20[is.na(within_20) | is.na(h$clay_pct)] <- 0
+  surface_clay <- if (sum(within_20) > 0)
+    sum(h$clay_pct * within_20, na.rm = TRUE) / sum(within_20) else NA_real_
   surface_clay_ok <- !is.na(surface_clay) && surface_clay >= 30
   # Cracks tested via vertic_horizon's internal sub-test
   shallow_30 <- which(!is.na(h$top_cm) & h$top_cm <= 30)
-  has_lithic_petric <- any(grepl("^R|^Cr", h$designation[shallow_30])) ||
+  has_lithic_petric <- any(grepl("^R|^Cr", .desg_master(h$designation)[shallow_30])) ||
                          any(!is.na(h$cementation_class[shallow_30]) &
                                 h$cementation_class[shallow_30] %in%
                                   c("strongly", "indurated"))
@@ -131,14 +204,31 @@ vertissolo <- function(pedon) {
   # V precedes S in the order cascade, so without this guard a `Btv` Planossolo
   # would flip to Vertissolo once vertic morphology is inferred from the suffix.
   no_b_planico <- !isTRUE(B_planico(pedon)$passed)
-  passed <- starts_in_100 && surface_clay_ok && !has_lithic_petric && no_b_planico
+  # v0.9.245: "Outros solos com relacao textural insuficiente para identificar
+  # um B textural e que apresentam horizonte vertico" (Cap 4, p. 112); the
+  # concept (Cap 3): "pequena variacao textural ao longo do perfil,
+  # insuficiente para caracterizar um horizonte B textural". It is the
+  # textural ratio, item (h) of the B textural, that the step asks about: a
+  # B textural identified by its cerosidade alone, with a ratio known to be
+  # below the limit, does not keep the profile out. Where the ratio cannot
+  # be computed (no clay in the A, or a profile with no horizon designation)
+  # the B textural keeps it out.
+  bt <- B_textural(pedon)
+  ratio <- suppressWarnings(as.numeric(bt$evidence$ratio %||% NA_real_))
+  ratio_insufficient <- length(ratio) == 1L && is.finite(ratio) &&
+    !isTRUE(bt$evidence$item_h)
+  no_b_textural <- !isTRUE(bt$passed) || ratio_insufficient
+  passed <- starts_in_100 && surface_clay_ok && !has_lithic_petric &&
+    no_b_planico && no_b_textural
   DiagnosticResult$new(
     name = "vertissolo", passed = passed, layers = v$layers,
     evidence = list(
       vertico = v, vert_top_cm = vert_top,
       surface_clay_pct = surface_clay,
       no_lithic_petric_in_30 = !has_lithic_petric,
-      no_b_planico = no_b_planico
+      no_b_planico = no_b_planico,
+      no_b_textural = no_b_textural,
+      textural_ratio = ratio
     ),
     missing = v$missing,
     reference = "Embrapa (2018), SiBCS 5a ed., Cap 4, p. 112"
@@ -236,7 +326,20 @@ gleissolo <- function(pedon) {
   h <- pedon$horizons
   glei_top <- min(h$top_cm[g$layers], na.rm = TRUE)
   in_50  <- glei_top <= 50
-  in_150 <- glei_top <= 150
+  # v0.9.239: between 50 and 150 cm the glei horizon counts "desde que
+  # imediatamente subjacente a horizontes A ou E ou a horizonte histico com
+  # menos de 40 cm de espessura" (SiBCS 2018, Cap 4, p. 112-113); any glei
+  # horizon within 150 cm used to count.
+  in_150 <- FALSE
+  if (!in_50 && glei_top <= 150) {
+    o <- order(h$top_cm)
+    first <- g$layers[which.min(h$top_cm[g$layers])]
+    pos <- match(first, o)
+    above <- if (!is.na(pos) && pos > 1L)
+      .desg_master(h$designation[o[pos - 1L]], profile = h$designation)
+    else NA_character_
+    in_150 <- !is.na(above) && grepl("^[AEHO]", above)
+  }
   # Exclusoes: plintico/concrecionario/litoplintico dentro de 200 cm
   pl <- horizonte_plintico(pedon)
   co <- horizonte_concrecionario(pedon)
@@ -280,10 +383,28 @@ latossolo <- function(pedon, max_top_cm = 200) {
   }
   h <- pedon$horizons
   lat_top <- min(h$top_cm[res$layers], na.rm = TRUE)
-  passed <- lat_top <= max_top_cm
+  # v0.9.241: "o primeiro horizonte diagnostico de subsuperficie, a contar da
+  # superficie, tem prevalencia [...] nas classes Argissolos e Nitossolos, pode
+  # ocorrer, abaixo dos horizontes B textural e do B nitico respectivamente, o
+  # horizonte B latossolico. Este, quando situado apos aqueles, nao tem
+  # significado taxonomico no 1o nivel categorico" (Cap 4, p. 110). A
+  # B latossolico in the lower sub-horizons of a profile with a B textural (a
+  # thick BC, for instance) makes no Latossolo; a B nitico already excludes
+  # the B latossolico.
+  bt <- B_textural(pedon)
+  below_b_textural <- isTRUE(bt$passed)
+  # v0.9.249: the same for a B nitico above the B latossolico. Until
+  # v0.9.248 a B nitico anywhere voided the B latossolico itself; it now
+  # takes out its own layers only, and the rule of the key is applied here.
+  bn <- res$evidence$excluded_by$B_nitico
+  below_b_nitico <- isTRUE(bn$passed) && length(bn$layers) > 0L &&
+    min(h$top_cm[bn$layers], na.rm = TRUE) <= lat_top
+  passed <- lat_top <= max_top_cm && !below_b_textural && !below_b_nitico
   DiagnosticResult$new(
     name = "latossolo", passed = passed, layers = res$layers,
-    evidence = list(latossolico = res, top_cm = lat_top),
+    evidence = list(latossolico = res, top_cm = lat_top,
+                    below_b_textural = below_b_textural,
+                    below_b_nitico = below_b_nitico),
     missing = character(0),
     reference = "Embrapa (2018), SiBCS 5a ed., Cap 4, p. 113"
   )
@@ -362,8 +483,11 @@ cambissolo <- function(pedon) {
   pl <- horizonte_plintico(pedon)
   co <- horizonte_concrecionario(pedon)
   li <- horizonte_litoplintico(pedon)
-  is_plintossolo <- any(c(isTRUE(pl$passed), isTRUE(co$passed),
-                            isTRUE(li$passed)))
+  # v0.9.234: a Cambissolo is excluded when it meets "os requisitos
+  # estabelecidos para serem enquadrados" as a Plintossolo (SiBCS 2018, Cap 3,
+  # p. 88), which include where the plinthic horizon starts; any plinthic
+  # horizon, at any depth, used to exclude it.
+  is_plintossolo <- isTRUE(plintossolo(pedon)$passed)
   passed <- !is_plintossolo
   DiagnosticResult$new(
     name = "cambissolo", passed = passed, layers = bi$layers,
@@ -374,6 +498,93 @@ cambissolo <- function(pedon) {
     missing = bi$missing,
     reference = "Embrapa (2018), SiBCS 5a ed., Cap 4, p. 113"
   )
+}
+
+
+#' Whether every horizon that starts within `max_cm` and has its texture
+#' recorded is of the classes areia or areia franca (silt + 2 x clay < 30,
+#' in per cent), and at least one has. The exception of the Neossolos step to
+#' the absence of a glei horizon within 50 cm.
+#' @noRd
+.textura_areia_ou_areia_franca <- function(h, max_cm = 150) {
+  i <- which(!is.na(h$top_cm) & h$top_cm < max_cm &
+               !is.na(h$clay_pct) & !is.na(h$silt_pct))
+  length(i) > 0L && all(h$silt_pct[i] + 2 * h$clay_pct[i] < 30)
+}
+
+
+#' Whether a plinthic, litoplinthic or concretionary horizon that starts below
+#' 40 cm is preceded as condition (b) of the definition of Plintossolos asks
+#' (SiBCS 2018, Cap 3, p. 104): "precedidos de horizonte glei ou situados
+#' imediatamente abaixo do horizonte A ou E ou de outro horizonte que
+#' apresente cores palidas, variegadas ou com mosqueados em quantidade
+#' abundante".
+#'
+#' Read from the profile: a glei horizon above; or, in the layer immediately
+#' above, an A or an E horizon, a pale colour, variegated colours or mottles
+#' in abundant amount. The three kinds of colour answer to the same two
+#' items, "a) Matiz 5Y; ou b) Matizes 7,5YR, 10YR ou 2,5Y com croma menor ou
+#' igual a 4" (`.plintossolo_items_a_b()`):
+#'
+#' * a pale layer "devera ter matizes e cromas de acordo com os itens (a) e
+#'   (b)". The book calls it "acinzentada ou amarelado clara" without a
+#'   number for the lightness; a moist value of 5 or more is taken here, so
+#'   that a brown 10YR 4/4 is not pale;
+#' * of a variegated layer, "pelo menos uma das cores deve satisfazer aos
+#'   itens (a) e (b)" (`variegated_colors`; hue and chroma only, as written);
+#' * mottles "deverao ocorrer em quantidade abundante (> 20% em volume) numa
+#'   matriz de coloracao avermelhada ou amarelada e deverao apresentar
+#'   matizes e cromas conforme os itens (a) e (b)". The amount is asked
+#'   always; the colour, when the sheet records it (`mottle_colors`), of at
+#'   least one of the mottles. The colour of the matrix is not tested: the
+#'   book gives no hue for "avermelhada ou amarelada".
+#' @noRd
+.plinthic_preceded <- function(pedon, layers) {
+  h <- pedon$horizons
+  if (length(layers) == 0L) return(FALSE)
+  o <- order(h$top_cm)
+  first <- layers[which.min(h$top_cm[layers])]
+  pos <- match(first, o)
+  top <- h$top_cm[first]
+  gl <- horizonte_glei(pedon)
+  if (isTRUE(gl$passed) && any(h$top_cm[gl$layers] < top, na.rm = TRUE)) return(TRUE)
+  if (is.na(pos) || pos < 2L) return(FALSE)
+  above <- o[pos - 1L]
+  d <- .desg_master(h$designation[above], profile = h$designation)
+  if (!is.na(d) && grepl("^[AE]", d)) return(TRUE)
+  # mottles: abundant, and of a colour that satisfies (a) or (b) when the
+  # sheet records their colours
+  mott <- h$redoximorphic_features_pct[above]
+  if (!is.na(mott) && mott > 20) {
+    mc <- .munsell_notations(h$mottle_colors[above])
+    if (nrow(mc) == 0L ||
+          any(.plintossolo_items_a_b(mc$number, mc$family, mc$chroma))) return(TRUE)
+  }
+  # pale colour: (a) or (b), with a moist value of 5 or more
+  hue <- .munsell_hue_parts(h$munsell_hue_moist[above])
+  vm  <- h$munsell_value_moist[above]
+  if (!is.na(vm) && vm >= 5 &&
+        .plintossolo_items_a_b(hue$number, hue$family,
+                               h$munsell_chroma_moist[above])) return(TRUE)
+  # variegated colours: at least one of them satisfies (a) or (b)
+  vc <- .munsell_notations(h$variegated_colors[above])
+  if (nrow(vc) > 0L &&
+        any(.plintossolo_items_a_b(vc$number, vc$family, vc$chroma))) return(TRUE)
+  FALSE
+}
+
+
+#' Items (a) and (b) of the definition of Plintossolos (SiBCS 2018, Cap 3,
+#' p. 104), for a colour given by the number and the family of its hue and by
+#' its chroma: "a) Matiz 5Y; ou b) Matizes 7,5YR, 10YR ou 2,5Y com croma menor
+#' ou igual a 4". Vectorised; a colour that is not recorded does not satisfy.
+#' @noRd
+.plintossolo_items_a_b <- function(number, family, chroma) {
+  known <- !is.na(number) & !is.na(family)
+  item_a <- known & family == "Y" & number == 5
+  item_b <- known & !is.na(chroma) & chroma <= 4 &
+    ((family == "YR" & number %in% c(7.5, 10)) | (family == "Y" & number == 2.5))
+  item_a | item_b
 }
 
 
@@ -410,7 +621,13 @@ plintossolo <- function(pedon) {
   all_layers <- unique(c(pl$layers, co$layers, li$layers))
   pl_top <- min(h$top_cm[all_layers], na.rm = TRUE)
   in_40 <- pl_top <= 40
-  in_200 <- pl_top <= 200
+  # v0.9.234: condition (b) of the definition (SiBCS 2018, Cap 3, p. 104; key,
+  # Cap 4, p. 113): within 200 cm only "quando precedidos de horizonte glei ou
+  # situados imediatamente abaixo do horizonte A ou E ou de outro horizonte
+  # que apresente cores palidas, variegadas ou com mosqueados em quantidade
+  # abundante". The depth alone was taken, so that plinthite deep in a B
+  # textural made a Plintossolo.
+  in_200 <- pl_top <= 200 && .plinthic_preceded(pedon, all_layers)
   # Exclusao: B planico de carater sodico
   excluded <- isTRUE(bp$passed) && isTRUE(sod$passed) &&
                 length(intersect(all_layers, bp$layers)) > 0L

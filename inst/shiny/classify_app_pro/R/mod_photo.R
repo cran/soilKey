@@ -75,25 +75,79 @@
     if (conf >= 0.55) "C" else if (conf >= 0.40) "D" else "E"
 }
 
+# The Groq vision model, resolved at CALL time from Groq's own list of models
+# available to the key (see utils_groq.R). Fixed names broke this tab twice:
+# meta-llama/llama-4-scout-17b-16e-instruct (August 2026, reported from ISRIC)
+# and qwen/qwen3.6-27b (October 2026) were each retired and every call returned
+# HTTP 404. An explicit options(soilKey.groq_vision_model=) or
+# $GROQ_VISION_MODEL still wins while Groq offers it.
+.groq_vision_model <- function(key = Sys.getenv("GROQ_API_KEY", "")) {
+  .groq_model("vision", key)
+}
+
+# Downscale a photo before it goes to the vision model.
+#
+# A phone photo is several megapixels; base64'd into the request it dominates
+# the token count, and Groq's free tier caps consumption at 8,000 tokens per
+# MINUTE -- a full-size upload fails with "Request too large" even when the
+# model is right. Measured against the live endpoint, the image alone costs
+# ~2,300 tokens at 256 px and ~2,950 at 512 px, so the long edge is a direct
+# lever on whether the call fits at all. 512 px still resolves horizon
+# boundaries and colour.
+#
+# Best-effort: without magick, or if anything fails, the original path is
+# returned and the call proceeds exactly as before.
+.photo_downscale <- function(path, max_px = 512L) {
+  if (is.null(path) || !nzchar(path) || !file.exists(path)) return(path)
+  if (!requireNamespace("magick", quietly = TRUE)) return(path)
+  tryCatch({
+    img  <- magick::image_read(path)
+    info <- magick::image_info(img)
+    if (max(info$width[1], info$height[1]) <= max_px) return(path)
+    out <- tempfile(fileext = ".jpg")
+    magick::image_write(
+      magick::image_resize(img, paste0(max_px, "x", max_px, ">")),
+      path = out, format = "jpeg", quality = 85L)
+    if (file.exists(out)) out else path
+  }, error = function(e) path)
+}
+
 # Resolve the vision provider for the chosen mode:
-#   "mock"  -> offline canned demo (no model, no key).
-#   "local" -> a FREE open-source vision model on the user's own machine via
-#              Ollama + ellmer (no API key, nothing leaves the computer).
-#   "live"  -> a cloud ellmer chat preconfigured in options(soilKey.vlm_chat=).
+#   "live" -> an online cloud vision model. Uses an explicit preconfigured chat
+#             (options(soilKey.vlm_chat=)) when set, else builds a Groq vision
+#             chat from GROQ_API_KEY. This is the default.
+#   "mock" -> offline canned demo (no model, no key), for a network-free demo.
 .photo_provider <- function(mode, mock_responses) {
   if (identical(mode, "live")) {
     live <- getOption("soilKey.vlm_chat", default = NULL)
-    if (is.null(live)) stop(i18n("photo.live_needs_chat"), call. = FALSE)
-    return(live)
-  }
-  if (identical(mode, "local")) {
+    if (!is.null(live)) return(live)
     if (!requireNamespace("ellmer", quietly = TRUE))
       stop(i18n("photo.ellmer_missing"), call. = FALSE)
-    running <- isTRUE(tryCatch(soilKey::ollama_is_running(),
-                               error = function(e) FALSE))
-    if (!running) stop(i18n("photo.ollama_not_running"), call. = FALSE)
-    model <- getOption("soilKey.ollama_vision_model", "llama3.2-vision")
-    return(ellmer::chat_ollama(model = model))
+    key <- Sys.getenv("GROQ_API_KEY", "")
+    if (!nzchar(key)) stop(i18n("photo.live_needs_key"), call. = FALSE)
+    model <- .groq_vision_model(key)
+    if (is.na(model)) stop(i18n("photo.no_vision_model"), call. = FALSE)
+    # Two settings keep the call inside Groq's 8,000-tokens-per-minute free
+    # tier. Measured end to end against the live endpoint, they take one
+    # extraction from 15,597 tokens (rejected before the model ever ran) to
+    # 3,546 (accepted, three horizons returned):
+    #
+    #   max_tokens        -- not just an output cap. Groq charges the RESERVED
+    #                        completion against the budget, so ellmer's generous
+    #                        default alone accounted for ~7k of that 15.6k.
+    #   reasoning_effort  -- "none" turns off Qwen3's <think> preamble. It cost
+    #                        output tokens for reasoning the task does not need
+    #                        (reading colour off an image), and at a low
+    #                        max_tokens it could consume the whole allowance and
+    #                        truncate the JSON mid-object.
+    #
+    # api_args passes reasoning_effort straight through to the endpoint, and
+    # only for a Qwen model (.groq_api_args): another family may reject the
+    # field instead of ignoring it.
+    return(suppressWarnings(ellmer::chat_groq(
+      model = model, api_key = key, echo = "none",
+      params   = ellmer::params(max_tokens = 1500L, temperature = 0),
+      api_args = .groq_api_args(model))))
   }
   soilKey::MockVLMProvider$new(responses = mock_responses)
 }
@@ -108,38 +162,36 @@ photo_ui <- function(id) {
         i18n("photo.step1_provider"),
         icon = "camera",
         desc = i18n("photo.provider_desc"),
-        # Two clear options only: an offline demo, or a FREE local model
-        # (Ollama). The old preconfigured-cloud option was dropped -- it
-        # confused more than it helped.
+        # Two options: the online AI (default) or an offline demo. The local
+        # Ollama option was removed -- the deployed app always uses online AI.
         shiny::radioButtons(
           ns("provider"), NULL,
           choiceNames = list(
+            shiny::tagList(shiny::strong(i18n("photo.provider_live")),
+                           shiny::tags$span(class = "text-muted small",
+                                            i18n("photo.provider_live_hint"))),
             shiny::tagList(shiny::strong(i18n("photo.provider_demo")),
                            shiny::tags$span(class = "text-muted small",
-                                            i18n("photo.provider_demo_hint"))),
-            shiny::tagList(shiny::strong(i18n("photo.provider_local")),
-                           shiny::tags$span(class = "text-muted small",
-                                            i18n("photo.provider_local_hint")))),
-          choiceValues = c("mock", "local"),
-          selected = "mock"),
-        shiny::uiOutput(ns("ollama_status")),
+                                            i18n("photo.provider_demo_hint")))),
+          choiceValues = c("live", "mock"),
+          selected = "live"),
         shiny::helpText(i18n("photo.provider_help"))
       ),
 
       sk_section(
         i18n("photo.step2_munsell"),
         icon = "eye-dropper",
-        desc = "Read Munsell colour per horizon from a profile photo; only the PedonRecord is filled, never the key.",
+        desc = i18n("photo.desc_munsell"),
         shiny::fileInput(
           ns("profile_img"),
           sk_label(i18n("photo.profile_photograph"),
-                   "A JPG or PNG of the soil profile, ideally with a Munsell card in frame for reference."),
+                   i18n("photo.help_profile_photo")),
           accept = c(".jpg", ".jpeg", ".png")),
         bslib::tooltip(
           shiny::actionButton(ns("run_munsell"), i18n("photo.extract_munsell"),
                               icon = shiny::icon("eye-dropper"),
                               class = "btn-primary w-100"),
-          "Read per-horizon Munsell colour from the photo and merge it into the pedon, with a confidence for each value."),
+          i18n("photo.tip_extract_munsell")),
         shiny::div(
           class = "mt-2 small",
           shiny::actionLink(ns("demo_photo"), i18n("photo.use_demo"),
@@ -149,17 +201,17 @@ photo_ui <- function(id) {
       sk_section(
         i18n("photo.step3_site"),
         icon = "location-dot",
-        desc = "Read site metadata (coordinates, elevation, drainage) from a scanned field sheet.",
+        desc = i18n("photo.desc_site"),
         shiny::fileInput(
           ns("sheet_img"),
           sk_label(i18n("photo.field_sheet_image"),
-                   "A JPG or PNG of the field description sheet; legible handwriting improves extraction."),
+                   i18n("photo.help_sheet")),
           accept = c(".jpg", ".jpeg", ".png")),
         bslib::tooltip(
           shiny::actionButton(ns("run_site"), i18n("photo.extract_site"),
                               icon = shiny::icon("map-pin"),
                               class = "btn-secondary w-100"),
-          "Read coordinates, elevation and drainage from the field sheet and merge them into the pedon site record.")
+          i18n("photo.tip_extract_site"))
       )
     ),
     shiny::uiOutput(ns("body"))
@@ -189,20 +241,6 @@ photo_server <- function(id, rv) {
         demo_active(TRUE)
     })
 
-    # Live status of a local Ollama server when the Local provider is chosen.
-    output$ollama_status <- shiny::renderUI({
-      if (!identical(input$provider, "local")) return(NULL)
-      ok <- isTRUE(tryCatch(soilKey::ollama_is_running(),
-                            error = function(e) FALSE))
-      if (ok)
-        shiny::div(class = "small mt-1", style = "color:#3f6024;",
-                   shiny::icon("circle-check"), " ",
-                   i18n("photo.ollama_detected"))
-      else
-        shiny::div(class = "small mt-1 alert alert-warning py-1 px-2",
-                   shiny::icon("triangle-exclamation"), " ",
-                   i18n("photo.ollama_not_running"))
-    })
     active_profile <- shiny::reactive({
       f <- input$profile_img
       if (!is.null(f))
@@ -239,9 +277,20 @@ photo_server <- function(id, rv) {
         return(invisible())
       }
       shiny::withProgress(message = i18n("photo.extracting_munsell"), value = 0.5, {
-        res <- tryCatch(
-          soilKey::extract_munsell_from_photo(rv$pedon, f$path, provider),
+        run <- function(pr) tryCatch(
+          soilKey::extract_munsell_from_photo(
+            rv$pedon, .photo_downscale(f$path), pr),
           error = function(e) e)
+        res <- run(provider)
+        # The model was retired since Groq's list was last read: read it
+        # again, pick another model, and try once more.
+        if (inherits(res, "error") && .groq_model_gone(res)) {
+          .groq_forget_models()
+          provider <- tryCatch(.photo_provider(input$provider,
+                                 rep(list(.photo_mock_munsell()), 3L)),
+                               error = function(e) e)
+          if (!inherits(provider, "error")) res <- run(provider)
+        }
       })
       if (inherits(res, "error")) {
         shiny::showNotification(
@@ -280,9 +329,20 @@ photo_server <- function(id, rv) {
         return(invisible())
       }
       shiny::withProgress(message = i18n("photo.extracting_site"), value = 0.5, {
-        res <- tryCatch(
-          soilKey::extract_site_from_fieldsheet(rv$pedon, f$datapath, provider),
+        run <- function(pr) tryCatch(
+          # a field sheet is handwriting, so it keeps more resolution than the
+          # colour photo does -- still far below a raw phone upload.
+          soilKey::extract_site_from_fieldsheet(
+            rv$pedon, .photo_downscale(f$datapath, max_px = 768L), pr),
           error = function(e) e)
+        res <- run(provider)
+        if (inherits(res, "error") && .groq_model_gone(res)) {
+          .groq_forget_models()
+          provider <- tryCatch(.photo_provider(input$provider,
+                                 rep(list(.photo_mock_site()), 3L)),
+                               error = function(e) e)
+          if (!inherits(provider, "error")) res <- run(provider)
+        }
       })
       if (inherits(res, "error")) {
         shiny::showNotification(
@@ -400,19 +460,19 @@ photo_server <- function(id, rv) {
       )
     })
 
-    output$munsell_table <- DT::renderDT({
+    output$munsell_table <- sk_renderDT({
       shiny::req(rv$pedon)
       h <- as.data.frame(rv$pedon$horizons)
       cols <- intersect(c("designation", "top_cm", "bottom_cm",
                           "munsell_hue_moist", "munsell_value_moist",
                           "munsell_chroma_moist"), names(h))
       if (length(cols) == 0L) {
-        return(DT::datatable(
+        return(sk_datatable(
           stats::setNames(data.frame(i18n("photo.no_horizons")),
                           i18n("photo.note_col")),
           rownames = FALSE, options = list(dom = "t")))
       }
-      DT::datatable(h[, cols, drop = FALSE], rownames = FALSE,
+      sk_datatable(h[, cols, drop = FALSE], rownames = FALSE,
                     options = list(dom = "tp", pageLength = 10))
     })
 

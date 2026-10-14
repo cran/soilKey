@@ -30,6 +30,57 @@ schema. Texture (argila / silte / areia) is converted from g/kg to
 percent (BDsolos canonical unit).
 }
 \details{
+Iron (v0.9.221): \code{"CDB - Ferro (g/kg)"} (dithionite-citrate-
+bicarbonate, free Fe as the element) goes to \code{fe_dcb_pct}, which
+the WRB Fe-dith criteria read (nitic horizon, Ferric, Ferritic);
+\code{"Ataque sulfurico - Fe2O3"} (total Fe of the sulfuric attack, as
+the oxide) goes to \code{fe2o3_sulfuric_pct}, which the SiBCS
+ferrico / perferrico classes read; \code{"Oxalato de Amonio - Ferro"}
+goes to \code{fe_ox_pct}. All three are converted from g/kg to \%.
+Until v0.9.220 the sulfuric Fe2O3 filled \code{fe_dcb_pct}, unconverted.
+
+Silica and alumina (v0.9.243): \code{"Ataque sulfurico - SiO2"} and
+\code{"- Al2O3"} go to \code{sio2_sulfuric_pct} and
+\code{al2o3_sulfuric_pct}, converted from g/kg to \%. The Ki index
+(molecular SiO2 / Al2O3), which SiBCS asks of the B latossolico, is
+computed from them; it reproduces the Ki column of the export.
+
+Text of the horizon description (v0.9.245): the column
+\code{"Descricao Original"} holds the field description of each horizon
+as the survey wrote it. Two things are read from it where the structured
+columns are empty, and the text itself is not kept: the amount of
+slickensides written beside the term (\code{"''slickenside'' comum e
+moderado"} fills \code{slickensides} with \code{"Comum"}; a mention with
+no amount fills nothing), and a wedge-shaped or parallelepipedic
+structure (\code{"cuneiforme"}, \code{"paralelepipedica"}, added to
+\code{structure_type}; a structure "com tendencia a paralelepipedica" is
+not one). SiBCS knows the vertic horizon by these two features, and the
+surveys that predate the structured sheet describe them only there.
+Since v0.9.251 the amount and the grade of the cerosidade are read the
+same way (\code{"cerosidade comum e moderada"} fills
+\code{clay_films_amount} with \code{"Comum"} and
+\code{clay_films_strength} with \code{"Moderada"}), each where its own
+cell is empty.
+
+Reading (v0.9.222): the file is read with \code{utils::read.csv2}. The
+export quotes every field, and its free-text fields hold line breaks and,
+in some states, quotation marks of their own; \code{read.csv2} returns
+the export's records for all 27 state files. \code{data.table::fread},
+used until v0.9.221, split such records at the line breaks (in BA, GO, PI
+and RS, where the lines of text became profiles of their own) or stopped
+with an error that left the next \code{fread()} of the R session waiting
+forever (after DF, MT, PA, PB or SP). An empty text field is \code{NA} in
+every file; a quotation mark inside a text field is dropped.
+
+Kind of sampling point (v0.9.242): the column \code{"Tipo"} of the export
+goes to \code{site$sampling_type}, as written: \code{"Perfil completo"},
+\code{"Perfil parcial"} or \code{"Amostra extra"}. An extra sample is, in
+most cases, two sampled layers of a point (a topsoil and a subsoil sample,
+often with a gap between them), not a described profile: the thickness of
+its layers is that of the samples. About a third of the records of the
+national export are extra samples; \code{\link{benchmark_bdsolos}}
+reports the kinds apart.
+
 Profile-id columns are auto-detected: looks for any column whose
 normalised name matches
 \code{"id_perfil|profile_id|cod_perfil|^perfil$|sample_id|^id$"};

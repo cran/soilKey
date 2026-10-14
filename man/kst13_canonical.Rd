@@ -7,10 +7,9 @@
 kst13_canonical(prefer_pkg = TRUE)
 }
 \arguments{
-\item{prefer_pkg}{If \code{TRUE} (default), prefer the installed
-SoilTaxonomy package over the vendored copy. Set to
-\code{FALSE} to force the vendored copy (e.g. for
-reproducibility of a specific soilKey release).}
+\item{prefer_pkg}{Retained for compatibility and no longer used. Until
+v0.9.203 \code{FALSE} selected a copy bundled with soilKey; there is
+no bundled copy any more, so the data always come from SoilTaxonomy.}
 }
 \value{
 The canonical \emph{Keys to Soil Taxonomy} (13th ed.) criteria reference (a list / data.frame).

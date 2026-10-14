@@ -298,8 +298,8 @@ map_batch_server <- function(id, rv, settings) {
 
     # ---- base map -----------------------------------------------------------
     output$map <- leaflet::renderLeaflet({
-      leaflet::leaflet() |>
-        leaflet::addProviderTiles("CartoDB.Positron") |>
+      sk_leaflet() |>
+        sk_provider_tiles("CartoDB.Positron") |>
         leaflet::setView(lng = -51, lat = -14, zoom = 4)
     })
 
@@ -314,8 +314,7 @@ map_batch_server <- function(id, rv, settings) {
       if (inherits(res, "error") || is.null(res) || nrow(res) == 0L) return()
 
       classes <- res[[sysc]]
-      pal <- leaflet::colorFactor("Set3", domain = sort(unique(classes)),
-                                  na.color = "#bdbdbd")
+      pal <- sk_class_pal(sort(unique(classes)), na.color = "#bdbdbd")
       popups <- sprintf(
         "<b>%s</b><br/>WRB: %s <i>(%s)</i><br/>SiBCS: %s <i>(%s)</i><br/>USDA: %s <i>(%s)</i>",
         res$id,
@@ -343,7 +342,7 @@ map_batch_server <- function(id, rv, settings) {
                        i18n("mbatch.n_points", nrow(res)))
     })
 
-    output$table <- DT::renderDT({
+    output$table <- sk_renderDT({
       res <- results()
       shiny::req(res)
       shiny::validate(shiny::need(!inherits(res, "error"),
@@ -356,7 +355,7 @@ map_batch_server <- function(id, rv, settings) {
       names(show) <- c(i18n("mbatch.col_id"), i18n("mbatch.col_lat"),
                        i18n("mbatch.col_lon"), "WRB 2022", "SiBCS 5",
                        "USDA ST 13")
-      DT::datatable(show, rownames = FALSE,
+      sk_datatable(show, rownames = FALSE,
                     options = list(dom = "tp", pageLength = 8, scrollX = TRUE))
     })
 

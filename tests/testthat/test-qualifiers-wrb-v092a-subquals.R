@@ -109,16 +109,17 @@ test_that("Protovertic excludes layers that also satisfy strict Vertic", {
 # ---- Family-suppression contract in resolve_wrb_qualifiers ----------------
 
 test_that("Family suppression keeps the most-specific of co-firing siblings", {
-  # All four members of the calcic family pass; resolver must keep
-  # only Hypercalcic.
-  matched <- c("Vermic", "Hypercalcic", "Calcic", "Hypocalcic", "Protocalcic")
+  # All three members of the calcic family pass; resolver must keep only
+  # Hypercalcic. (v0.9.216: Hypocalcic and Hyposodic, WRB 2014 qualifiers,
+  # left the families with the lists.)
+  matched <- c("Vermic", "Hypercalcic", "Calcic", "Protocalcic")
   kept <- soilKey:::.suppress_qualifier_siblings(matched)
   expect_setequal(kept, c("Vermic", "Hypercalcic"))
 
-  # Sodic + Hyposodic -> keep only Sodic.
+  # Hypersalic + Salic -> keep only Hypersalic.
   expect_setequal(
-    soilKey:::.suppress_qualifier_siblings(c("Sodic", "Hyposodic")),
-    "Sodic")
+    soilKey:::.suppress_qualifier_siblings(c("Hypersalic", "Salic")),
+    "Hypersalic")
   # Hyperalic + Alic -> keep only Hyperalic.
   expect_setequal(
     soilKey:::.suppress_qualifier_siblings(c("Hyperalic", "Alic")),
@@ -131,9 +132,9 @@ test_that("Family suppression keeps the most-specific of co-firing siblings", {
 
 test_that("Family suppression preserves YAML order of survivors", {
   # YAML-canonical order is reproduced after suppression.
-  matched <- c("Mazic", "Sodic", "Hyposodic", "Calcic", "Cambic")
+  matched <- c("Mazic", "Hypersalic", "Salic", "Calcic", "Cambic")
   kept <- soilKey:::.suppress_qualifier_siblings(matched)
-  expect_equal(kept, c("Mazic", "Sodic", "Calcic", "Cambic"))
+  expect_equal(kept, c("Mazic", "Hypersalic", "Calcic", "Cambic"))
 })
 
 test_that("SC fixture name no longer doubles up Sodic + Hyposodic", {
@@ -145,18 +146,26 @@ test_that("SC fixture name no longer doubles up Sodic + Hyposodic", {
   }
 })
 
-test_that("CH fixture surfaces Hypocalcic instead of bare Calcic when caco3 < 15%", {
+test_that("CH fixture: no Hypocalcic, Protocalcic or Calcic", {
+  skip_on_cran()
   pr <- make_chernozem_canonical()
   res <- resolve_wrb_qualifiers(pr, "CH")
-  # CH fixture has caco3 = 8 / 12 % in Bk / Ck (below the 15% Calcic
-  # gate but inside the 5-15% Hypocalcic band).
-  expect_true("Hypocalcic" %in% res$principal)
+  # CH fixture has caco3 = 8 / 12 % in Bk / Ck (below the 15% Calcic gate).
+  # Hypocalcic, which covered that band, is a WRB 2014 qualifier absent from
+  # WRB 2022 (v0.9.216). Protocalcic is "not in Chernozems and Kastanozems,
+  # where protocalcic properties are part of the definition" (WRB 2022 Ch 5),
+  # so Chapter 4 does not list it for them (v0.9.217); Calcic is listed but
+  # the carbonates do not make a calcic horizon.
+  expect_false("Hypocalcic" %in% res$principal)
+  expect_false("Protocalcic" %in% c(res$principal, res$supplementary))
+  expect_false("Calcic" %in% res$principal)
 })
 
 
 # ---- 31-fixture regression check ------------------------------------------
 
 test_that("v0.9.2.A sub-qualifier additions do not regress 31 fixtures", {
+  skip_on_cran()
   expected <- c(
     HS = "Histosols", AT = "Anthrosols", TC = "Technosols", CR = "Cryosols",
     LP = "Leptosols", SN = "Solonetz",   VR = "Vertisols", SC = "Solonchaks",

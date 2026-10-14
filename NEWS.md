@@ -1,3 +1,3723 @@
+# soilKey 0.9.259 (2026-10-14)
+
+## Tests: the slow ones run off CRAN
+
+The CRAN pre-test of 0.9.258 (2026-10-14) did not pass automatically on
+r-devel-windows-x86_64: "Overall checktime 14 min > 10 min", mainly from the
+tests, 461 s on Windows (158 s on Debian). The CRAN team asked to reduce the
+test timings, among other ways by running less important tests only off CRAN.
+
+Every test that took more than 0.03 s on CRAN's terms (`NOT_CRAN` unset, the
+installed package) on a fast machine now starts with `skip_on_cran()`: 457
+tests in 137 files. They run as before with `devtools::test()` and wherever
+`NOT_CRAN=true`. The core of the three keys stays on CRAN, slow as it is:
+the tests that the canonical profiles classify to their WRB Reference Soil
+Group, to their SiBCS order, and to their USDA order.
+
+| | before | now |
+|---|---|---|
+| tests run on CRAN | 1,821 | 1,354 |
+| time of the tests on CRAN's terms, this machine | 87 s | 21 s |
+| the same, the whole test process | 98 s | 28 s |
+
+Windows ran the tests of 0.9.258 about five times slower than this machine;
+by that ratio they take about 150 s there now.
+
+## The links to Embrapa's AgroAPI are text
+
+The check of this version found the three addresses of Embrapa's AgroAPI
+(`www.agroapi.cnptia.embrapa.br`) out of reach: the server did not answer in
+60 s, and the incoming check waited for it. The addresses stay, written as
+text and no longer as links: in the NEWS entry of 0.9.237, in the README, and
+in `inst/CITATION`, where the entry of the SmartSolos Expert article loses its
+`url` and keeps its DOI. As for the data servers in 0.9.155.
+
+No code changes; the classification of every profile is the same.
+
+# soilKey 0.9.258 (2026-10-14)
+
+## NEWS: no link to a file the package does not ship
+
+The CRAN pre-test of 0.9.213 (2026-10-08) gave one NOTE, on Debian and on
+Windows: "Found the following (possibly) invalid file URI: URI:
+inst/benchmarks/reports/embrapa_febr_2026-05-01.md From: NEWS.md". The entry
+of 0.9.16 linked to a benchmark report that left the repository with the
+other reports when it was made public on 2026-09-22. The entry names the
+report as text now, and says it is no longer part of the package.
+
+The only other link of the package without a scheme, `inst/DATA-PROVENANCE.md`
+in the README, is to a file that ships.
+
+No code changes.
+
+# soilKey 0.9.257 (2026-10-13)
+
+## SiBCS key: the activity of the clay and the base saturation in the larger part of the first 100 cm of the B
+
+The key gives the Luvissolos a "horizonte B textural com argila de atividade
+alta e saturação por bases alta na maior parte dos primeiros 100 cm do
+horizonte B (inclusive BA)" (SiBCS 2018, Cap. 4, p. 113), asks the same
+section of the Nitossolos (p. 114), and the definitions of the classes of the
+lower levels repeat it. Cap. 1 (p. 30) takes the activity of the clay "no
+horizonte B (inclusive BA e exclusive BC) ou no horizonte C (inclusive CA),
+quando não existe B", and does not apply it to "materiais de solo das classes
+texturais areia e areia franca".
+
+`atividade_argila_alta()` and `eutrofico()` passed with **one layer** of B or
+of C, anywhere in the profile:
+
+* the C of a profile, with little clay and a high ratio of CEC to clay, made
+  the clay of the whole profile one of high activity;
+* one eutrophic layer, the C as often as not, made the profile eutrophic;
+* the two did not have to be found in the same part of the profile.
+
+With both, an Argissolo with a B of low base saturation keyed Luvissolos
+(AC 10374, an Argissolo Álico of high activity: B1, B2 and B3 with V of 49,
+40 and 37%, and a C with 76%). The same reading kept a B nítico from being
+one, as it asks for clay of low activity, and sent to the Luvissolos the
+Nitossolos that come after them in the key. Of the 260 complete profiles keyed Luvissolos in the
+default mode, 86 had that reference.
+
+Now, in a profile with a B horizon:
+
+* The section is the first 100 cm of the B: the B layers, the BA with them
+  and the BC not, that begin within 100 cm of the top of the uppermost one,
+  each with the thickness it has inside the section.
+* The activity is high, or the base saturation is, when the layers where it
+  is so make **more than half** of the thickness of the section, among the
+  layers that say. Half is not the larger part. A layer with no CEC, no clay
+  or no V recorded is left out of both sides of the count.
+* A layer of areia or of areia franca is left out of the activity. It is told
+  by its sand, silt and clay. It was told by a clay under 15%, which also
+  left out the franco-arenosa and the franca with little clay.
+
+A profile with no B is read as before, in its C layers. The sections that the
+book gives for those classes, each its own (Gleissolos: "dentro de 100 cm a
+partir da superfície"), are not in this version.
+
+The two functions are read by the Chernossolos and Luvissolos steps, by the
+B nítico, and by the classes of the third level (Eutróficos, Distróficos, Ta,
+Tb) of every order, which follow the same section.
+
+### Measured
+
+National BDsolos export, 7,593 profiles with a reference order:
+
+| | 0.9.256 | 0.9.257 |
+|---|---|---|
+| default mode | 4,029 (53.1%) | 4,098 (54.0%) |
+| morphological mode | 4,967 (65.4%) | 5,044 (66.4%) |
+| complete profiles, default | 2,925 of 4,674 (62.6%) | 2,992 (64.0%) |
+| complete profiles, morphological | 3,313 (70.9%) | 3,386 (72.4%) |
+
+Default mode: 110 profiles change order; 76 reach their reference, 7 leave it
+and 27 go from one other order to another. 84 go from Luvissolos to
+Argissolos and 13 from Luvissolos to Nitossolos. Reference Argissolos keyed
+so: 1,099 to 1,161 of 2,016; Nitossolos, 79 to 91 of 347; Luvissolos, 98 to
+94 of 197. Morphological mode: 117 change, 84 reach their reference and the
+same 7 leave it.
+
+The seven that leave their reference, by what the sheets record:
+
+* RN 6022 and RN 7434 (one profile under two names, a Luvissolo Crômico):
+  activity of 31.9 in the first 22 cm of the B, 26.7 in the next 50 and 29.6
+  below. High in 50 of the first 100 cm, which is half.
+* PE 9076 (Luvissolo Crômico): 27.0 in the 10 cm of the IIB21t and 25.7 in
+  the 20 cm of the IIB22t.
+* MG 7400 (Podzólico Vermelho-Amarelo Eutrófico Ta): 22.2, 19.8 and 24.3 in
+  its B, under the 27 of the book.
+* RN 9776 (Argissolo equivalente eutrófico, argila de atividade alta): V of
+  36, 43 and 81% in its B; high in 39 of 83 cm.
+* PR 5728 and PR 6773 (one profile, a Cambissolo Tb Eutrófico with an A
+  chernozêmico): the Bi has 13% of clay and 37% of silt, a franca, and an
+  activity of 61.5. It was left out by its clay under 15%; read, it is of
+  high activity and the profile a Chernossolo.
+
+Third level. The name changes in 215 profiles that keep their order (default
+mode). Where the reference states the base saturation and the order is right
+before and after, the name agrees with it in 1,005 then 1,015 of 1,022
+profiles; for the activity of the clay, in 295 then 304 of 357. Morphological
+mode: 1,269 then 1,284 of 1,309, and 325 then 334 of 400.
+
+Panel of complete profiles (781): 437 to 447 and 514 to 524. Redape (94): 79
+to 81 and 84 to 87, Argissolos that were keyed Luvissolos. FEBR (1,000): 376
+and 501, unchanged. The 44 canonical profiles are identical in the three
+systems.
+
+# soilKey 0.9.256 (2026-10-13)
+
+## SiBCS key: more marks of the older notation of horizons
+
+Since 0.9.250 the "A2" of a profile written in the notation in use until
+1988 is read as the E of today, and its "B3" as the BC. The profile was known
+to be in that notation by a B followed at once by a number ("B1", "B21t") or
+by a "(B)". A podzol described "A1, A21, A22, Bhir" has neither: its A2 was
+read as a part of the A, and with no E above it its Bhir was no B espódico by
+item (a) of the book (0.9.255).
+
+Decided on 2026-10-13: three more marks.
+
+* An A or a C followed at once by two figures ("A11", "A12", "A21", "C11").
+  The older notation numbers the parts of a horizon after the figure of the
+  horizon; the present one counts them from 1 after the letters.
+* The suffix "ir" in a B ("Bir", "Bhir", "B2ir"), the illuvial iron that is
+  written "s" today.
+* The suffix "pl" in a B or a C ("Bpl", "B21pl", "Cpl"), the plinthite that
+  is written "f" today.
+
+**The suffix "cn" of the concretions is not a mark.** It was measured with
+the other three and is found in profiles otherwise written in the present
+notation: GO 12592, a Latossolo Vermelho described "A1, A2, AB, BA, Bw1,
+Bw2, BC, C1, Ccn, C2", whose A2 has 43% of clay and 1.6% of organic carbon
+and is the second part of the A, would have had it read as an E and left its
+order.
+
+Like the correspondence of the A2 and of the B3 itself, these marks are not
+in SiBCS 2018, which gives the present notation only.
+
+### Measured
+
+National BDsolos export. 154 of its 7,694 classified profiles are newly taken
+for the older notation (116 by the two figures, 16 by "ir", 31 by "pl"); 34
+of them have an A2 or a B3 to read.
+
+Of the 7,593 with a reference order:
+
+| | 0.9.255 | 0.9.256 |
+|---|---|---|
+| default mode | 4,022 (53.0%) | 4,029 (53.1%) |
+| morphological mode | 4,967 (65.4%) | 4,967 (65.4%) |
+| complete profiles, default | 2,918 of 4,674 (62.4%) | 2,925 (62.6%) |
+| complete profiles, morphological | 3,313 (70.9%) | 3,313 (70.9%) |
+
+Default mode: 9 profiles change order; 7 reach their reference and none
+leaves it. The 7 are Espodossolos keyed Neossolos, Gleissolos, Argissolos
+and Planossolos, whose E is now seen above the B (AM 10913: A1, A21, A22,
+Bhir; MG 8112: A1, A2, Bh, Bhir; PB 7844: A1, A2, Bp, Bhir). Reference
+Espodossolos keyed so: 23 to 30 of 98. Two go from one other order to
+another: DF 7017, a Podzol Hidromórfico whose Bh has 0.1% of organic carbon,
+and PA 10278, a Plintossolo "A1, A2, A3, Bpl", both to Argissolos.
+
+Morphological mode: no profile changes its order or its name. That mode
+already read the B espódico of these profiles from the "h" and the "ir" of
+its designation.
+
+Panel of complete profiles (781): 435 to 437 in the default mode, two
+Espodossolos keyed Argissolos and Planossolos; 514 unchanged in the
+morphological. FEBR (1,000): 376 and 501, unchanged. Redape (94): 79 and 84,
+unchanged. The 44 canonical profiles are identical in the three systems.
+
+# soilKey 0.9.255 (2026-10-13)
+
+## SiBCS key: item (a) of the B espódico
+
+The B espódico (SiBCS 2018, Cap. 2, p. 62-65) is a horizon "com acumulação
+iluvial de compostos organometálicos" that has one or more of three
+characteristics, the first being "a) Um horizonte E (álbico ou não)
+sobrejacente e cores úmidas de acordo com um dos itens a seguir: 1) Matiz
+5YR ou mais vermelho; 2) Matiz 7,5YR com valor 5 ou menor e croma 4 ou
+menor; 3) Matiz 10YR, com valor e croma 3 ou menor; 4) Cores neutras com
+valor 3 ou menor (N 3/)".
+
+`B_espodico()` was the spodic horizon of the WRB, which asks for aluminium
+and iron by oxalate, or for a horizon named Bh or Bs under an albic one. The
+items of the book were not tested. The sheets of the Brazilian surveys seldom
+have the oxalate extraction: of the 98 Espodossolos of the BDsolos export
+the default mode keyed 4 as such.
+
+The colours of the item cannot stand alone. "5YR ou mais vermelho" is the
+colour of the B textural of many an Argissolo that lies below an E, and the
+Espodossolos come before the Argissolos in the key; what tells the two apart
+is the illuvial accumulation of the heading, which the sheets do not measure.
+Three ways of asking for it were measured on the 389 profiles with an E:
+
+| the B, below an E and with a colour of the item, has | default mode | morphological mode |
+|---|---|---|
+| 0.5% of organic carbon or more and a pH under 5.9, the limits of the WRB, which the book cites as its source | 19 reach their reference, 17 leave it | 0 and 18 |
+| 0.5% or more and at least twice that of the E | 18 and 2 | 1 and 2 |
+| the same, with no cerosidade recorded | 18 and 0 | 1 and 0 |
+
+Decided on 2026-10-13: the third. Where the WRB test does not find the
+horizon, a B layer of 2.5 cm or more is a B espódico when
+
+* an E lies above it;
+* its moist colour is one of the four of item (a);
+* its organic carbon is 0.5% or more and at least twice that of the nearest E
+  above it, the form the book gives in item (b)(3) for aluminium and iron by
+  oxalate ("valor 0,50 ou maior, sendo este valor pelo menos o dobro do
+  encontrado no horizonte sobrejacente"); and
+* no cerosidade is recorded in it, which is the mark of illuvial clay.
+
+**This is a reading by analogy, not the letter of the book.** It is so stated
+in the documentation of the function. Items (b) and (c), the cementation and
+the ortstein, are not tested. The reading is the same in both modes; the
+morphological mode goes on reading the designation as well.
+
+### Measured
+
+National BDsolos export, 7,593 profiles with a reference order:
+
+| | 0.9.254 | 0.9.255 |
+|---|---|---|
+| default mode | 4,003 (52.7%) | 4,022 (53.0%) |
+| morphological mode | 4,966 (65.4%) | 4,967 (65.4%) |
+| complete profiles, default | 2,900 of 4,674 (62.0%) | 2,918 (62.4%) |
+| complete profiles, morphological | 3,312 (70.9%) | 3,313 (70.9%) |
+
+Default mode: 20 profiles change order, all to Espodossolos; 19 reach their
+reference and none leaves it. They were keyed Neossolos (12), Gleissolos (3),
+Planossolos (3) and Argissolos (1): sandy profiles with a Bh of massive or
+single-grain structure (RJ 5339: Bh2 with 3% of clay; BA 13385: E of 140 cm
+over a Bh 10YR 2/2 with 2.4% of organic carbon). Reference Espodossolos keyed
+so: 4 to 23 of 98. Morphological mode, where the horizon was already read
+from its designation: 2 change, 1 reaches its reference (RJ 13200, a Podzol
+whose horizon is written "B2"); 73 to 74 of 98.
+
+The one profile that goes from one other order to another, in both modes:
+MT 11357, a Plintossolo Pétrico whose "B22cn", 5YR 6/8, is recorded with 3.4%
+of organic carbon below an "A21cn" with 0.6%.
+
+The three Argissolos abrúpticos that the doubling of the carbon alone took
+(MT 11249, SC 5444, PE 9019: a Bt of 30 to 51% of clay below a sandy E) all
+have cerosidade recorded in that Bt, and stay where they were.
+
+Panel of complete profiles (781): 429 to 435 in the default mode, 514
+unchanged in the morphological. FEBR (1,000): 376 and 501, unchanged.
+Redape (94): 77 to 79 in the default mode, two Espodossolos keyed Argissolos
+(PE 022 Igarassu: Ap, E1, E2, Bh, Bhsm; RN 020 Baía Formosa: A, AE, E, Bh,
+Bhs); 84 unchanged in the morphological. The 44 canonical profiles are
+identical in the three systems.
+
+# soilKey 0.9.254 (2026-10-13)
+
+## SiBCS key: an O or H layer recorded upward from the mineral soil is part of the histic horizon
+
+The older descriptions give the organic layers that lie on a mineral soil
+upward from its top: "O 120-0", or "Hd 110-60" above "Hoj 60-0", over a
+"Cg 0-10". With an upper depth greater than the lower one, such a layer had a
+thickness below zero and was never part of the horizonte hístico. BDsolos
+RJ 14357, an Organossolo Háplico whose one layer is "O 120-0" with 17% of
+organic carbon, keyed Neossolos.
+
+Decided on 2026-10-13: the layer is counted.
+
+* In `horizonte_histico()` an O or H layer whose upper depth is greater than
+  its lower one lies above the mineral surface, with the thickness between
+  its two figures; layers so recorded adjoin one another and the mineral
+  soil as they are written.
+* The 80 cm of the Organossolos step (0.9.253) are counted from the surface
+  of the soil, the top of the uppermost of those layers.
+* The depths of the profile are not changed, and no other test reads them
+  this way. A layer that is no O or H is not read upward: a mineral horizon
+  with its depths the wrong way round is a slip of the sheet.
+
+### Measured
+
+National BDsolos export, 7,593 profiles with a reference order:
+
+| | 0.9.253 | 0.9.254 |
+|---|---|---|
+| default mode | 4,001 (52.7%) | 4,003 (52.7%) |
+| morphological mode | 4,965 (65.4%) | 4,966 (65.4%) |
+| complete profiles, default | 2,900 of 4,674 (62.0%) | 2,900 (62.0%) |
+| complete profiles, morphological | 3,313 (70.9%) | 3,312 (70.9%) |
+
+Three profiles change order, to Organossolos. Two reach their reference:
+RJ 14357 and RJ 5333 (Organossolo Tiomórfico: "Hd 110-60", "Hoj 60-0",
+"Cg 0-10"). The third leaves it in the morphological mode and goes from one
+other order to another in the default mode: MG 7435, a Glei Húmico with an
+"O1 44-0" of 8.3% of organic carbon written over an "A 0-20", which may be a
+slip for "4-0"; as recorded it is 44 cm of organic material. Reference
+Organossolos keyed so: 27 to 29 of 44.
+
+224 profiles of the export have a layer recorded this way; in 172 of them it
+is under 10 cm, the litter over a mineral soil, which is no horizonte
+hístico. In the second level, RJ 13045 and RJ 13091 ("H 30-0" over a Cg) get
+the class their horizonte hístico of 30 cm gives: Gleissolos Melânicos, and
+for RJ 13091 in the default mode, where it keys Neossolos, Neossolos
+Litólicos Hísticos.
+
+Panel of complete profiles (781): 429 and 514, unchanged. FEBR (1,000): 376
+and 501, unchanged. Redape: 77 and 84 of 94, unchanged. The 44 canonical
+profiles are identical in the three systems.
+
+# soilKey 0.9.253 (2026-10-13)
+
+## SiBCS key: the histic horizon with the whole of its thickness, and the thickness the key asks of it
+
+The horizonte hístico (SiBCS 2018, Cap. 2, p. 49-50) results from plant
+residues laid down at the surface, "ainda que, no presente, possa
+encontrar-se recoberto por horizontes ou depósitos minerais", and has to be
+20 cm thick or more, or 10 cm or more over a lithic contact. The
+Organossolos (Cap. 4, p. 111) have a horizonte hístico of "20 cm ou mais,
+quando sobrejacente a um contato lítico", or of "40 cm ou mais, contínuo ou
+cumulativo nos primeiros 80 cm a partir da superfície do solo".
+
+Two things in the code were not that:
+
+* **Only a layer that starts within 5 cm of the surface was looked at.** A
+  horizon described in sub-horizons counted the first of them alone (BDsolos
+  ES 8651: Oo1 0-15, Oo2 15-32, Oo3 32-80 cm, with 39 to 45% of organic
+  carbon, keyed Neossolos by the 15 cm of its Oo1), and a buried horizon was
+  not seen (SE 6560: 2Hdz from 22 cm down).
+* **Any horizonte hístico made an Organossolo.** One of 20 to 39 cm over a
+  mineral horizon did, although the key asks 40 cm of it and places those
+  soils further down (Gleissolos Melânicos, Cambissolos Hísticos).
+
+Now:
+
+* `horizonte_histico()` takes the organic layers wherever they lie; adjoining
+  ones make one horizon, with the thickness of all of them; a horizon passes
+  with 20 cm, or with 10 cm when the layer right below it is an R or a Cr.
+  What makes a layer organic is as before. The evidence lists each run of
+  adjoining organic layers with its limits and its thickness.
+* The Organossolos step asks (a) 20 cm or more of a horizon that lies on a
+  lithic contact, or (b) 40 cm or more of horizonte hístico within the first
+  80 cm, in one section or added up.
+* Not tested, as before: the volume of plant tissue is no column of the
+  profile, so the greater thickness asked where it makes 75% or more of the
+  horizon (40 cm in the horizon, 60 cm in the key) is not asked. The earlier
+  code read it from the column of worm holes, which is not that, in a test
+  that could not change the result.
+
+### Measured
+
+National BDsolos export, 7,593 profiles with a reference order:
+
+| | 0.9.252 | 0.9.253 |
+|---|---|---|
+| default mode | 3,989 (52.5%) | 4,001 (52.7%) |
+| morphological mode | 4,949 (65.2%) | 4,965 (65.4%) |
+| complete profiles, default | 2,886 of 4,674 (61.7%) | 2,900 (62.0%) |
+| complete profiles, morphological | 3,297 (70.5%) | 3,313 (70.9%) |
+
+27 profiles change order in each mode. Default: 16 reach their reference, 4
+leave it, 7 move between two other orders. Morphological: 20, 4 and 3. The
+Organossolos of the reference that are keyed so go from 17 to 27 of 44, and
+the profiles keyed Organossolos that are of another order from 13 to 4.
+
+The four that leave their reference, by what the sheet records:
+
+* MG 7482 (Solo Orgânico): 20 cm at the surface and organic layers again
+  from 61 cm down, 39 cm within the first 80.
+* PR 6848 (Solo Orgânico): one layer described, of 20 cm.
+* SC 13649 (Organossolo Háplico): 20 cm at the surface, nothing described
+  from 20 to 80 cm.
+* RJ 13006 (Glei Húmico): an H recorded from 30 to 80 cm, inside a 2Cgn
+  recorded from 20 to 80 cm.
+
+In the second level, 2 profiles (default) and 3 (morphological) go from
+Gleissolos Háplicos to Gleissolos Melânicos, by a horizonte hístico that was
+not seen.
+
+Panel of complete profiles (781): 428 to 429 and 513 to 514, one Latossolo
+with an A of 14.5% of organic carbon that was keyed Organossolos. FEBR
+(1,000): 376 and 501, unchanged. Redape: 77 and 84 of 94, unchanged. The 44
+canonical profiles are identical in the three systems.
+
+# soilKey 0.9.252 (2026-10-13)
+
+## SiBCS key: item (c) of the Neossolos step by its letter
+
+The Neossolos are soils with no diagnostic B that satisfy, among others
+(SiBCS 2018, Cap. 4, p. 112), "c) Ausência de horizonte vértico
+imediatamente abaixo de horizonte A". The step tested a vertic horizon that
+begins within 50 cm, whatever lay between it and the A.
+
+Decided on 2026-10-13: by the letter.
+
+* The first layer of the vertic horizon has to be right below an A. The
+  horizons of transition from the A (AB, AC) count with the A, as they do in
+  the thickness of the A chernozêmico (p. 51).
+* A vertic horizon that begins at the surface is there too.
+* A profile with no horizon designation is tested as before.
+
+### Measured
+
+National BDsolos export, 7,593 profiles with a reference order:
+
+| | 0.9.251 | 0.9.252 |
+|---|---|---|
+| default mode | 3,998 (52.7%) | 3,989 (52.5%) |
+| morphological mode | 4,958 (65.3%) | 4,949 (65.2%) |
+| complete profiles, default | 2,895 of 4,674 (61.9%) | 2,886 (61.7%) |
+| complete profiles, morphological | 3,306 (70.7%) | 3,297 (70.5%) |
+
+**The agreement goes down, by the book.** Default mode: 13 profiles change
+order, all to Neossolos; none reaches its reference, 9 leave it and 4 go
+from one wrong order to another. The 9 are reference Vertissolos with a C
+between the A and the first vertic layer, a C1 with few slickensides or
+with none recorded (BA 8974: A, C1, then the vertic C2 from 35 cm).
+Reference Vertissolos agreed 41 to 32 of 72. Morphological mode: 11 change,
+the same 9 leave their reference; 45 to 36 of 72.
+
+Two of the four others had no order of their own: with a vertic horizon
+within 50 cm they were kept out of the Neossolos, met no later step and
+fell to the last one, Argissolos (CE 8114, MA 9946).
+
+Panel of complete profiles (781): 432 to 428 and 517 to 513. FEBR (1,000):
+376 and 501, confusion matrices identical. Redape (94): 77 and 84, no profile
+changes. The 44 canonical profiles keep their class in the three systems, in
+both modes.
+
+### Tried and left out
+
+The vertic horizon "tem precedência diagnóstica sobre os horizontes B
+incipiente, B nítico e glei" (Cap. 2, p. 73). Taking the layers of the
+vertic horizon out of the glei and of the B nítico was measured: one
+profile changed order, from one wrong order to another, and Vertissolos
+Hidromórficos lost their suborder, which asks for a horizonte glei in the
+layers that are also vertic. At the first level the precedence is already
+that of the order of the key. It is not in this version.
+
+# soilKey 0.9.251 (2026-10-13)
+
+## BDsolos: the cerosidade written in the text of the horizon is read
+
+The export has the cerosidade in two structured columns, its amount and its
+grade, and also as the survey wrote it, in the text of the horizon
+("Descrição Original"). The key asks for both: the B textural by its
+cerosidade (SiBCS 2018, Cap. 2, p. 56, item i), the B nítico "em quantidade
+no mínimo comum e com grau forte ou moderado" (p. 62), the B latossólico "no
+máximo pouca e fraca" (p. 59). In 142 horizons the text names the cerosidade
+and the two columns are empty.
+
+`load_bdsolos_csv()` reads the amount and the grade from the text, each
+where its own cell is empty, by the rule decided on 2026-10-13 for the
+slickensides: what is written beside the term.
+
+* The words right after "cerosidade" are read as long as they are amounts,
+  grades or words that join them ("cerosidade comum e moderada",
+  "cerosidade fraca e pouca"), or the one word right before it ("pouca
+  cerosidade"). Two grades or two amounts are a range ("fraca a moderada").
+* Nothing is read from a bare mention ("presença de cerosidade"), a denial
+  ("sem cerosidade"), or words that are of something else ("cor da
+  cerosidade (10YR 4/4) com mosqueado pouco", "comum e moderada muito
+  firme").
+* The spellings of the export are read ("serosidade", "crosidade").
+
+The reader was checked against the structured columns, in the horizons that
+have both: the amount is the same in 2,150 of 2,190 (98.2%) and the grade in
+2,172 of 2,208 (98.4%). Where they differ the text and the cell say different things ("comum
+e fraca" beside a cell "Pouca"); the cell is kept. In the horizons with empty
+cells every phrase was read: the loader fills the amount in 123 layers and
+the grade in 123, 127 layers of 111 profiles in all.
+
+### Measured
+
+National BDsolos export, 7,593 profiles with a reference order:
+
+| | 0.9.250 | 0.9.251 |
+|---|---|---|
+| default mode | 3,993 (52.6%) | 3,998 (52.7%) |
+| morphological mode | 4,956 (65.3%) | 4,958 (65.3%) |
+
+Default mode: 13 profiles change order, 6 reach their reference (4
+Argissolos that keyed Latossolos, 1 Neossolo and 1 Nitossolo), 1 leaves it
+(a Latossolo with "cerosidade comum e fraca" in its B, RS 8704) and 6 go
+from one wrong order to another. Morphological mode: 6 change, 3 to their
+reference and 1 from it.
+
+Panel of complete profiles (781): 432 and 517, as before (one profile of
+the default mode goes from one wrong order to another). FEBR (1,000): 376 and
+501, confusion matrices identical. Redape (94): 77 and 84, no profile
+changes. The 44 canonical profiles keep their class in the three systems, in
+both modes.
+
+# soilKey 0.9.250 (2026-10-13)
+
+## SiBCS key: in a profile of the older notation the A2 is the E and the B3 is the BC
+
+The notation in use in Brazil until 1988 named the eluvial horizon "A2" and
+the horizon of transition from the B to the C "B3"; the present notation
+writes them "E" and "BC". The book asks about both by their present names:
+an E above the B makes a B textural (SiBCS 2018, Cap. 2, p. 55, item f), and
+the BC is left out of the B in the textural ratio (p. 56, note 4). The key
+read the A2 as an A and the B3 as a B.
+
+Decided on 2026-10-13: both are read by what they name.
+
+* A profile is taken to be in the older notation when one of its horizons
+  is a B followed at once by a number ("B1", "B21t", "IIB3") or a "(B)". In
+  the present notation the number comes after the letters ("Bt1"), and "A1,
+  A2" beside "Bt1, Bt2" stay two parts of an A. Of the 7,593 profiles of the
+  national BDsolos export with a reference order, 3,167 are in the older
+  notation; 250 of them have an A2 and 853 a B3.
+* In such a profile "A2", "A21" and "B3t" are read "E", "E1" and "BCt", by
+  every test of the SiBCS key that reads a designation. The horizon data
+  keep the designation as written, and WRB and USDA are not changed.
+
+That the A2 is the eluvial horizon and the B3 the transition to the C is the
+notation as I know it from the surveys; SiBCS 2018 does not state the
+correspondence, and it is for confirmation.
+
+### Measured
+
+National BDsolos export, 7,593 profiles with a reference order:
+
+| | 0.9.249 | 0.9.250 |
+|---|---|---|
+| default mode | 3,984 (52.5%) | 3,993 (52.6%) |
+| morphological mode | 4,953 (65.2%) | 4,956 (65.3%) |
+| complete profiles, default | 2,882 of 4,674 (61.7%) | 2,890 (61.8%) |
+| complete profiles, morphological | 3,301 (70.6%) | 3,304 (70.7%) |
+
+Default mode: 45 profiles change order, 18 reach their reference, 9 leave it
+and 18 go from one wrong order to another.
+
+* The A2 read as E, measured alone on 0.9.247: 22 profiles change, 14 reach
+  their reference and none leaves it. They are mostly reference Argissolos
+  that keyed Latossolos or Neossolos, with an eluvial horizon above a B
+  whose clay does not make the ratio of item (h).
+* The B3 read as BC, measured alone: 24 change, 5 reach their reference and
+  9 leave it. The 9 are reference Argissolos whose B3 has more clay than
+  their B2: without it the mean of the B no longer makes the ratio, and 8
+  of them have no cerosidade recorded.
+
+The lower levels change in 67 profiles that keep their order.
+
+Morphological mode: 27 change, 11 to their reference and 8 from it.
+
+Panel of complete profiles (781): 431 to 432 and 516 to 517. FEBR (1,000):
+376 and 501, confusion matrices identical. Redape (94): 77 and 84, no profile
+changes. The 44 canonical profiles keep their class in the three systems, in
+both modes.
+
+# soilKey 0.9.249 (2026-10-13)
+
+## SiBCS key: the horizons the B latossólico does not present take out their own layers
+
+The book (SiBCS 2018, Cap. 2, p. 59): "o horizonte B latossólico é um
+horizonte subsuperficial que não apresenta características diagnósticas de
+horizontes glei, B textural, B nítico e plíntico". The sentence is about the
+horizon. `B_latossolico()` voided the B latossólico of the whole profile
+when one of three things was found in any layer: the gleyic properties of
+WRB (mottles of 5% or more in a layer that begins within 50 cm), the
+plinthic horizon of WRB, or a B nítico.
+
+Decided on 2026-10-13: those horizons take out their own layers only.
+
+* The layers of a horizonte glei, of a horizonte plíntico and of a B nítico,
+  as SiBCS defines them, are no part of the B latossólico, with those of
+  the B textural, which were already left out. The layers that are left
+  make the horizon if they make its 50 cm.
+* Mottles alone make no horizonte glei, so that a red B with common mottles
+  keeps its B latossólico.
+* `latossolo()` applies to the B nítico the rule it applied to the
+  B textural (Cap. 4, p. 110): a B latossólico below a B nítico makes no
+  Latossolo.
+
+### Measured
+
+National BDsolos export, 7,593 profiles with a reference order:
+
+| | 0.9.248 | 0.9.249 |
+|---|---|---|
+| default mode | 3,969 (52.3%) | 3,984 (52.5%) |
+| morphological mode | 4,922 (64.8%) | 4,953 (65.2%) |
+| complete profiles, default | 2,866 of 4,674 (61.3%) | 2,882 (61.7%) |
+| complete profiles, morphological | 3,274 (70.0%) | 3,301 (70.6%) |
+
+Default mode: 41 profiles change order, all of them to Latossolos. 17 reach
+their reference (Latossolos that keyed Neossolos, 9, and Cambissolos, 8), 2
+leave it (reference Cambissolos) and 22 go from one wrong order to another:
+12 reference Argissolos, 6 Plintossolos, 2 Cambissolos and 2 Gleissolos that
+keyed Neossolos or Cambissolos. Of the profiles keyed Latossolos, 72.4% had
+that reference before (1,007 of 1,391) and 71.5% now (1,024 of 1,432).
+
+Morphological mode: 48 change, 35 reach their reference (30 Latossolos, 5
+Plintossolos) and 4 leave it. Two of the four are reference Latossolos
+"plíntico" whose layer written "p1" is no longer part of the B latossólico,
+which leaves 30 and 40 cm of it (GO 6062, PA 8626).
+
+Panel of complete profiles (781): 428 to 431 and 511 to 516. FEBR (1,000):
+376 and 501, confusion matrices identical. Redape (94): 77 and 84, no profile
+changes. The 44 canonical profiles keep their class in the three systems, in
+both modes.
+
+# soilKey 0.9.248 (2026-10-13)
+
+## SiBCS key: the "p1" of B and C horizons is the "pl" of plinthite
+
+The surveys before the present notation wrote plinthite "pl" (B21pl, Cpl),
+which the morphological mode reads as the horizonte plíntico since 0.9.234.
+The BDsolos export has it also as "p1", the letter "l" written as the figure
+1: B2tp1, B22tp1, Cp1, B2tp1cn, in 219 horizons of 145 profiles. Of those
+profiles, 135 have "plíntico", "laterita" or "concrecionário" in their
+reference name, and 95 have a reference in Plintossolos.
+
+`horizonte_plintico()` reads the "p1" of a B or C horizon as "pl", in the
+morphological mode only, with the same 15 cm. It is not read where the
+profile numbers such horizons on ("Bp1" beside "Bp2"): no B or C of the
+export is written with "p2", so that the "p1" there is not the first of a
+series. "Ap1" is a ploughed layer and stays one.
+
+### Measured
+
+National BDsolos export, 7,593 profiles with a reference order,
+morphological mode: 4,860 to 4,922 (64.0% to 64.8%); complete profiles
+3,248 to 3,274 of 4,674 (69.5% to 70.0%). Reference Plintossolos agreed 118
+to 195 of 331; profiles keyed Plintossolos 178 to 273.
+
+96 profiles change order: 77 reach their reference, all of them Plintossolos
+(44 keyed Argissolos, 14 Planossolos, 10 Luvissolos, 9 others), 15 leave it
+and 4 go from one wrong order to another. The 15 are 13 reference Argissolos
+and 2 reference Cambissolos, every one "plíntico" in its reference name
+("Podzólico Vermelho-Amarelo Tb Álico plíntico"): their plinthic horizon,
+once read, meets the position the Plintossolos step asks for.
+
+The default mode does not read designations and is identical, profile by
+profile. The panel of complete profiles (428 and 511 of 781), FEBR (376 and
+501 of 1,000), Redape (77 and 84 of 94) and the 44 canonical profiles are
+identical in both modes.
+
+# soilKey 0.9.247 (2026-10-13)
+
+## SiBCS key: the "ir" of the older surveys is a B espódico in the morphological mode
+
+The surveys that predate the present horizon notation write the illuvial
+iron of a B horizon "ir" (Bir, B2ir, B22irx), where the present notation
+writes "s". The morphological mode, which reads the diagnostic horizon from
+the designation where the analyses do not show it, read "h" and "s" as the
+B espódico. A B with "ir" and no "h" was not read.
+
+`B_espodico()` reads it now, in that mode only. In the national BDsolos
+export 26 profiles carry "ir" in a horizon designation, and all 26 have a
+reference in Espodossolos. In the morphological mode 19 of them keyed there
+already and 25 do now; the other one, with 16.5% of organic carbon in an A of
+40 cm, keys Organossolos (AM 10502).
+
+The reading is that of SiBCS only: `spodic()`, which serves WRB and USDA, is
+not changed.
+
+### Measured
+
+National BDsolos export, 7,593 profiles with a reference order, morphological
+mode: 4,854 to 4,860 (63.9% to 64.0%). Six profiles change order, all six to
+their reference: Espodossolos that keyed Cambissolos (3), Neossolos (2) and
+Gleissolos (1). Reference Espodossolos agreed 66 to 72 of 98.
+
+The default mode does not read designations and is identical, profile by
+profile. The panel of complete profiles (428 and 511 of 781), FEBR (376 and
+501 of 1,000), Redape (77 and 84 of 94) and the 44 canonical profiles are
+identical in both modes.
+
+# soilKey 0.9.246 (2026-10-13)
+
+## SiBCS key: the minimum thickness of a horizon is that of its adjoining sub-horizons
+
+The book states each minimum of the horizon: the B incipiente "deve ter no
+mínimo 10 cm de espessura" (SiBCS 2018, Cap. 2, p. 60), the B nítico
+"Espessura de 30 cm ou mais" (p. 62), the horizonte glei "com espessura de
+15 cm ou mais" (p. 69), the concrecionário "no mínimo 30 cm de espessura"
+(p. 68), the sulfúrico "15 cm ou mais de espessura" (p. 72). Each was asked
+of one layer of the description, so that a horizon described in two
+sub-horizons thinner than the minimum did not pass, whatever the two made
+together. The B latossólico is read by its adjoining sub-horizons since
+0.9.241 and the vertic horizon since 0.9.245; the five above are now read
+the same way.
+
+The horizonte sulfúrico is read so on its two paths: with jarosite, and with
+sulfidic material, which is tested by the WRB `thionic()`. That function
+takes a new argument, `adjoining`, `FALSE` by default: the WRB thionic
+horizon is tested as before.
+
+The horizons that reach SiBCS through a WRB function (plíntico, espódico,
+cálcico) are not changed.
+
+### A correction to 0.9.244
+
+`mudanca_textural_abrupta()` and `B_planico()` took a BC for the first B
+sub-horizon when it came before any other B. The note of 0.9.244 says that
+the BC is left out of the B, as in item (h) of the B textural; the code did
+not leave it out, and now does. Of the national export, 7 profiles have a BC
+as their first B; none had an abrupt change or a B plânico by it, and no
+figure of 0.9.244 changes.
+
+### Measured
+
+National BDsolos export, 7,593 profiles with a reference order: 3,969 in the
+default mode and 4,854 in the morphological mode, as before. The agreement
+is the same and the profiles are not: 10 change order in the default mode,
+4 reach their reference, 4 leave it and 2 go from one wrong order to another.
+
+* 9 by the horizonte glei, all keyed Gleissolos now. In each a glei
+  horizon is made of two or more sub-horizons under 15 cm (an A of 8 cm
+  over an AB of 13 cm, a C1g of 10 cm over a C2g of 14 cm). 4 are reference
+  Gleissolos that keyed Neossolos; 3 leave their reference, a Cambissolo
+  Háplico gleico (AM 5263) and two alluvial soils (PA 9509, RS 8852); 2 are
+  reference Plintossolos that keyed elsewhere.
+* 1 by the B nítico: a reference Argissolo Bruno-Acinzentado (SC 5445)
+  with a BA of 13 cm, a Bt of 27 cm and a BC of 13 cm keys Nitossolos.
+* None by the B incipiente, the concrecionário or the sulfúrico.
+
+Morphological mode: 8 change, 4 to their reference and 4 from it. Panel of
+complete profiles (781): 429 to 428 and 512 to 511, the Cambissolo gleico.
+FEBR (1,000): 376 and 501, confusion matrices identical. Redape (94): 77 and
+84, no profile changes. The 44 canonical profiles keep their class in the
+three systems, in both modes.
+
+# soilKey 0.9.245 (2026-10-13)
+
+## SiBCS key: the vertic horizon by the features of the book, read also from the text of the description
+
+Of the 72 profiles of the national BDsolos export with a reference in
+Vertissolos, 10 keyed there in the default mode. The book (SiBCS 2018, Cap. 2,
+p. 73) knows the vertic horizon by "superfícies de fricção (slickensides) em
+quantidade no mínimo comum, e/ou unidades estruturais cuneiformes e/ou
+paralelepipédicas", asks of it "uma espessura mínima de 20 cm", and gives it
+"precedência diagnóstica sobre os horizontes B incipiente, B nítico e glei".
+`horizonte_vertico()` was the WRB horizon with other limits: slickensides
+only, and 20 cm of one layer. And the surveys older than the structured
+field sheet wrote the slickensides and the structure in the text of the
+horizon, which the loader did not read.
+
+* **The loader reads the text of the horizon description.** The column
+  "Descrição Original" of the export is read for two things, where the
+  structured columns are empty, and is not kept. The amount of slickensides
+  is the one written beside the term ("''slickenside'' comum e moderado",
+  "abundantes superfícies de fricção"); a mention with no amount fills
+  nothing, as decided on 2026-10-13, and neither does an amount that belongs
+  to another feature ("cerosidade forte e abundante apresentando
+  slickensides") or a comparison ("mais abundantes que o horizonte
+  superior"). A wedge-shaped or parallelepipedic structure is added to the
+  structure of the horizon; a structure "com tendência a paralelepipédica"
+  is not one. The terms are read in the spellings the export has
+  ("slikenside", "silkensides", "paralelepédica"). The reader was checked
+  against every phrase of the export that holds the terms: 127 different
+  ones for the slickensides, 36 for the structure. It reads an amount in
+  212 layers and the structure in 41.
+* **The vertic horizon.** A layer with 300 g/kg of clay or more is vertic by
+  slickensides in amount of common or more, or by wedge-shaped or
+  parallelepipedic structural units, with cracks of 1 cm where their width
+  is recorded; the 20 cm are those of adjoining layers.
+* **Its precedence.** `B_incipiente()` left out the layers of the WRB vertic
+  horizon; it leaves out those of this one.
+* **The Vertissolos step** (Cap. 4, p. 112) asks what its first words ask,
+  a "relação textural insuficiente para identificar um B textural": a
+  profile whose B textural is identified by the textural ratio of item (h)
+  is no Vertissolo. One identified by its cerosidade alone, with a ratio
+  known to be below the limit, is not kept out. Where the ratio cannot be
+  computed, the B textural keeps the profile out.
+* **Item (a) of the step**, "Teor de argila, após mistura e homogeneização
+  do material de solo, nos 20 cm superficiais, de no mínimo 300 g kg-1", is
+  the clay of each layer weighted by what it has within the upper 20 cm.
+  The plain mean of the layers that begin at 20 cm or above was tested.
+
+### Measured
+
+National BDsolos export, 7,593 profiles with a reference order:
+
+| | 0.9.244 | 0.9.245 |
+|---|---|---|
+| default mode | 3,938 (51.9%) | 3,969 (52.3%) |
+| morphological mode | 4,828 (63.6%) | 4,854 (63.9%) |
+
+Default mode: 38 profiles change order, 32 reach their reference, 1 leaves
+it and 5 go from one wrong order to another. Reference Vertissolos agreed
+10 to 41 of 72; profiles keyed Vertissolos 16 (10 of that reference) to 50
+(41). Of the 35 that become Vertissolos, all by what the text says: 23 by
+the amount of slickensides alone, 6 by the structure alone, 6 by both.
+
+The one that leaves its reference is a Gleissolo Háplico vertissólico with
+"slickensides moderado e comum" from 60 cm (SE 6459): the step takes a
+vertic horizon that begins within 100 cm, and Vertissolos key before
+Gleissolos.
+
+Morphological mode: 31 change, 27 to their reference and 1 from it, a
+Bruno Não Cálcico with common slickensides from 12 cm and a textural ratio
+of 1.32 (BA 8520). Reference Vertissolos agreed 19 to 45.
+
+Panel of complete profiles (781): 419 to 429 and 506 to 512. FEBR (1,000):
+376 and 501, confusion matrices identical. Redape (94): 77 and 84, no
+profile changes. The 44 canonical profiles keep their class in the three
+systems, in both modes.
+
+### Not changed, and measured
+
+Item (c) of the Neossolos step, "Ausência de horizonte vértico imediatamente
+abaixo de horizonte A", is tested as a vertic horizon that begins within
+50 cm. By the letter, with the first vertic layer right below an A, 14
+profiles change order in the default mode: 10 reference Vertissolos with a
+C or an AC between the A and the first vertic layer go to Neossolos, and no
+profile reaches its reference.
+
+# soilKey 0.9.244 (2026-10-13)
+
+## SiBCS key: the mudança textural abrupta and the B plânico as the book states them
+
+`mudanca_textural_abrupta()` was the WRB abrupt textural difference under
+another name: every pair of adjoining layers was compared, in the order of the
+rows, and no distance was asked. A jump of clay between two B horizons, or
+from a B to a C, was an abrupt change, and `B_planico()` took any layer with
+such a jump for the B plânico.
+
+The book (SiBCS 2018, Cap. 1, p. 30-31): the mudança textural abrupta is "um
+considerável aumento no teor de argila em pequena distância na zona de
+transição entre o horizonte A ou E e o horizonte subjacente B", twice the
+clay when the A or E has less than 200 g/kg and 200 g/kg more otherwise, "em
+uma distância vertical ≤ 7,5 cm". And the B plânico (Cap. 2, p. 65) is "um
+tipo especial de horizonte B textural [...] subjacente a horizontes A ou E,
+apresentando mudança textural abrupta ou transição abrupta associada à
+relação textural com valor dentro do especificado para o horizonte B textural
+(subitem h), porém calculado entre o primeiro sub-horizonte B e o horizonte
+imediatamente acima (A ou E)".
+
+* **Mudança textural abrupta.** The first B horizon is compared with the
+  horizon immediately above it, which has to be an A or an E. The distance
+  is read from the distinctness of the transition, which the BDsolos loader
+  brings since 0.9.241: abrupt or clear is within 7.5 cm, gradual or diffuse
+  is not; where it is not recorded the two horizons are compared. The
+  subgroups that ask for the attribute ("abrúpticos") read it the same way.
+* **B plânico.** It is looked for in the first B sub-horizon, by one of the
+  two ways of the book: the mudança textural abrupta, or a transition
+  recorded as abrupt with the clay of that sub-horizon over the clay of the
+  horizon above beyond the limit of item (h) (1.50, 1.70 or 1.80). The second
+  way was not tested.
+* **Its texture.** As a type of B textural, that sub-horizon has a texture
+  francoarenosa or finer (p. 54). The WRB property asked 15% of clay of the
+  lower layer; the attribute of the book asks none, and without the texture
+  the sandy Bh of 9 reference Espodossolos, 2 to 7% of clay below an E with
+  0 to 3%, was a B plânico in the default mode.
+* **Where the colour and the structure are asked.** In that first
+  sub-horizon, as decided on 2026-10-13. Measured before the texture was
+  asked: of any B sub-horizon, 216 profiles keyed Planossolos with 122 of
+  that reference; of the first, 178 with 109.
+* Item (g) of the B textural reads the transition by the same function.
+
+The first B sub-horizon is the first horizon whose designation begins with B,
+a BA or the B1 of the old notation included, as in item (h), which leaves out
+of the B only the BC. The other reading, with those as the horizon above, was
+measured: the B plânico changes in 20 profiles, 6 reference Planossolos lose
+it and 1 gains it.
+
+A profile with no horizon designation at all is tested as before. The WRB
+`abrupt_textural_difference()` is not changed.
+
+### Measured
+
+National BDsolos export, 7,593 profiles with a reference order:
+
+| | 0.9.243 | 0.9.244 |
+|---|---|---|
+| default mode | 3,929 (51.7%) | 3,938 (51.9%) |
+| morphological mode | 4,817 (63.4%) | 4,828 (63.6%) |
+
+Default mode: 50 profiles change order, 24 reach their reference, 15 leave
+it and 11 go from one wrong order to another. Reference Planossolos agreed
+98 to 109 of 291; profiles keyed Planossolos 153 (98 of that reference) to
+169 (109).
+
+The 15 that leave their reference:
+
+* 7 reference Planossolos. In 4 the jump of clay is inside the B, below its
+  first sub-horizon; in 2 the transition where the jump is was recorded as
+  gradual; in 1 the first B sub-horizon has no colour recorded.
+* 6 reference Luvissolos and 2 reference Argissolos, now with a B plânico.
+  In 4 by the second way (abrupt transition and the ratio of item h); in 3
+  the B begins at 6 to 8 cm, and the WRB property asked the lower layer to
+  begin at 10 cm or below; in 1 the B has 7% of clay and 32% of silt.
+  All have the colours and the structure of the definition.
+
+The fourth level changes in 157 profiles that keep their first three, by the
+attribute of the "abrúpticos".
+
+Morphological mode: 41 change, 24 to their reference and 13 from it.
+Panel of complete profiles (781): 416 to 419 and 502 to 506. FEBR (1,000):
+376 and 501, confusion matrices identical. Redape (94): 77 and 84, no profile
+changes. The 44 canonical profiles keep their class in the three systems, in
+both modes.
+
+# soilKey 0.9.243 (2026-10-13)
+
+## SiBCS key: the B latossólico is asked for its Ki
+
+The book (SiBCS 2018, Cap. 2, p. 59, item e) asks of the B latossólico a
+"Relação molecular SiO2/Al2O3 (Ki) igual ou inferior a 2,2, sendo normalmente
+menor que 2,0", and tells the B incipiente from it by a Ki "maior que 2,2"
+(p. 61). The item was not tested. The profile schema has the silica and the
+alumina of the sulfuric attack, from which `compute_ki()` gives the index,
+but the BDsolos loader did not read them, although the export records them in
+71% of its rows.
+
+* `load_bdsolos_csv()` reads "Ataque sulfúrico - SiO2" and "- Al2O3" into
+  `sio2_sulfuric_pct` and `al2o3_sulfuric_pct`, converted from g/kg to %. The
+  index computed from them reproduces the Ki column of the export (99.1% of
+  the rows of one state within 0.05).
+* In `B_latossolico()` a layer whose Ki is recorded above 2.20 is no
+  B latossólico. The horizon is what is left: the adjoining sub-horizons that
+  meet every requirement still have to make 50 cm. Where the sulfuric attack
+  is not recorded the horizon is tested as before.
+
+The limit is read as written and by sub-horizon, as decided on 2026-10-13
+after the alternatives were measured (the limit at one decimal, so that 2.24
+counts as 2.2, cost 16 profiles where this costs 23).
+
+### Measured
+
+National BDsolos export, 7,593 profiles with a reference order:
+
+| | 0.9.242 | 0.9.243 |
+|---|---|---|
+| default mode | 3,952 (52.0%) | 3,929 (51.7%) |
+| morphological mode | 4,844 (63.8%) | 4,817 (63.4%) |
+
+**The agreement goes down, and it is the book that takes it down.** In the
+default mode 83 profiles lose their B latossólico: 34 reference Latossolos
+(1,041 agreed before, 1,007 now), of which 16 have every B sub-horizon above
+2.2 and 18 have one that breaks the 50 cm; 11 reference Cambissolos reach
+their order (394 to 405); the other 38 go from one wrong order to another (29 of them
+reference Argissolos that were keyed Latossolos). Of the
+profiles keyed Latossolos, 70.6% had that reference before (1,041 of 1,474)
+and 72.4% now (1,007 of 1,391).
+
+Panel of complete profiles (781): 418 to 416 in the default mode and 504 to
+502 in the morphological mode. FEBR (1,000: 376 and 501, confusion matrices
+identical) and Redape (94: 77 and 84, no profile changes) do not change. The
+44 canonical profiles keep their class in the three systems, in both modes.
+
+# soilKey 0.9.242 (2026-10-13)
+
+## BDsolos: the loader reads the kind of sampling point, and the benchmark reports by it
+
+The export marks each record, in its column "Tipo", as "Perfil completo",
+"Perfil parcial" or "Amostra extra". The loader did not read the column. Of
+the 7,593 records of the national export with a reference order, 4,674 are
+complete profiles, 332 partial profiles and 2,587 extra samples. An extra
+sample is, in most cases, two sampled layers of a point (a topsoil and a
+subsoil sample, often with a gap between them): the thickness recorded is
+that of the samples, and a horizon that is asked for 50 cm cannot be shown by
+it. One figure for the three mixed what the key does on a described profile
+with what it can do on two samples.
+
+* `load_bdsolos_csv()` puts the column in `site$sampling_type`, as written
+  (the double space of "Perfil  parcial" made one).
+* `benchmark_bdsolos()` gains `sampling_type = "Perfil completo"`: the
+  figures of each system (`accuracy`, `n_compared`, `n_correct`, `confusion`,
+  `per_class`) are those of the complete profiles, and the new
+  `by_sampling_type` gives the counts of every kind and of all the records
+  together. `sampling_type = NULL` counts every record, as the function did.
+  Pedons that carry no `site$sampling_type` (another source, a hand-made
+  list, a file with no "Tipo" column) are all counted, as before.
+* The BDsolos row of `run_all_benchmarks()` and of `benchmark_unified()` is
+  drawn from complete profiles: extra samples and partial profiles are left
+  out before the cap.
+
+The key is not changed. On the national export, at this version:
+
+| Kind of point | n | default mode | morphological mode |
+|---|---|---|---|
+| Perfil completo | 4,674 | 2,850 (61.0%) | 3,228 (69.1%) |
+| Perfil parcial | 332 | 111 (33.4%) | 233 (70.2%) |
+| Amostra extra | 2,587 | 991 (38.3%) | 1,383 (53.5%) |
+| all | 7,593 | 3,952 (52.0%) | 4,844 (63.8%) |
+
+**The panel of the EJSS article is another sample now.** It was a draw of 800
+of the 984 labelled records of the first three files (Acre, Alagoas,
+Amazonas), extra samples included. It is a draw of 800 of the 1,111 labelled
+complete profiles of the first five (Acre, Alagoas, Amazonas, Amapá, Bahia):
+418 of 781 in the default mode and 504 of 781 in the morphological mode (19 of
+the 800 carry a label that names no order). At 0.9.241 the old panel gave 361
+and 495 of 798. The two are different samples and their figures are not to
+be compared as a gain of the key.
+
+FEBR, Redape and the 44 canonical profiles are not touched.
+
+# soilKey 0.9.241 (2026-10-13)
+
+## SiBCS key: the B textural and the B latossólico are tested by the items of the book
+
+Three things in the two horizons that separate most of the profiles of Brazil
+were not the book's (SiBCS 2018, Cap. 2, p. 54-59), and one in the Neossolos
+step followed from them.
+
+* `B_textural()` was the WRB argic horizon: a layer with 6 percentage points
+  of clay, a ratio of 1.4 or 20 points more than the least clayey layer
+  anywhere above it. Item (h) of the book, the relação textural, had been
+  joined to it; items (f), (g) and (i) were not tested.
+* `B_latossolico()` asked its 50 cm of each layer on its own: a B latossólico
+  described as B1, B21 and B22 of 35 cm each was none.
+* Since 0.9.61 a B textural did not exclude the B latossólico unless its clay
+  films were common or more, on a rule the comments attributed to Cap. 18 of
+  the book, which deals with families and series. The book (p. 59): the
+  B latossólico "não apresenta características diagnósticas de horizontes
+  glei, B textural, B nítico e plíntico". The first defect hid this one:
+  with the thickness alone corrected, 168 reference Argissolos of the
+  national BDsolos export became Latossolos.
+* `neossolo()` set a diagnostic B aside when the profile had caráter flúvico
+  (0.9.10), because the clay increase of the argic horizon fired between the
+  stratified C layers of the canonical Fluvisol.
+
+### The B textural
+
+A profile with horizon designations is tested by the items of p. 55-56: a B
+horizon (BC excluded) of texture francoarenosa or finer and 7.5 cm or more,
+with one or more of
+
+* **(f)** an E horizon above it, the B having more clay and being no
+  B espódico, plíntico or plânico;
+* **(g)** a mudança textural abrupta from the A or E to the B (Cap. 1,
+  p. 30-31): twice the clay when the A or E has less than 200 g/kg, 200 g/kg
+  more otherwise, "em uma distância vertical ≤ 7,5 cm". The distance is read
+  from the distinctness of the transition, which the BDsolos loader now
+  brings (`boundary_distinctness`: "Abrupta" and "Clara" are within 7.5 cm,
+  "Gradual" and "Difusa" are not); where it is not recorded the two layers
+  are compared;
+* **(h)** the relação textural above 1.50, 1.70 or 1.80 according to the clay
+  of the A. Footnote 4 asks for the "média aritmética do teor de argila total
+  do horizonte B (excluído o BC)"; the means were weighted by the thickness.
+  The designations are read with their material number and the old "(B)";
+* **(i)** where the increase is below item (h), the cerosidade of a
+  sub-horizon of the upper part of the B (read as its upper half): texture
+  média with no macroaggregates and cerosidade of moderate grade; texture
+  média with prismatic or blocky structure of moderate or strong grade and
+  cerosidade of at least moderate grade; texture argilosa or muito argilosa
+  with that structure and cerosidade at least common and weak or few and
+  moderate; or a relação textural of 1.4 with a fragipã;
+* **(j)** across a discontinuity of parent material, or with only a ploughed
+  layer above the B, items (h) or (i) are needed.
+
+A profile with no horizon designation at all (depth slices) cannot be read by
+these items and is tested as before, by the clay increase between layers. In
+the morphological mode a "t" in the designation of a B horizon stands for the
+B textural the data do not show, now with a material number in front too
+("IIBt").
+
+### The B latossólico
+
+Texture francoarenosa or finer, less than 17 cmolc per kg of clay, cerosidade
+at most few and weak (item h, layer by layer; a range counts by its upper
+end), in B horizons where the designations are recorded, and 50 cm of the
+horizon: of the adjoining sub-horizons that meet those requirements, taken
+together (`test_minimum_thickness(adjoining = TRUE)`). The layers of a
+B textural are no B latossólico. A plinthic or gleyic horizon or a B nítico
+in the profile exclude it as before.
+
+The Latossolos step asks that no B textural lie above the B latossólico:
+"o primeiro horizonte diagnóstico de subsuperfície, a contar da superfície,
+tem prevalência" (Cap. 4, p. 110), so that a thick BC of low-activity clay
+below a B textural makes no Latossolo.
+
+`B_incipiente()` excludes the layers of this B textural and of this
+B latossólico (item a, p. 60); it excluded those of the WRB argic and
+ferralic horizons (30 cm, 16 cmolc). `carater_latossolico()` looks for the
+B latossólico below the sub-horizons that carry the evidence of the
+B textural. `neossolo()` no longer sets a diagnostic B aside: the B textural
+is looked for in B horizons, and the canonical Fluvisol has none.
+
+`argic_with_strong_clay_films()` and `audit_argic_strong_films()` are kept as
+tools; the key no longer uses their rule.
+
+The SiBCS B textural no longer goes through `argic()`, so that
+`options(soilKey.diagnostic_engine = "aqp")` does not change it, nor does the
+inference from "Bt" with clay films that the engine bundled (in the RJ file
+the reference Argissolos agreed were 181 with that engine and are 168 with
+either now). The engine still gives the B latossólico its limit of 20 cmolc
+and its fallbacks; a "t" the data do not show is read by the morphological
+mode.
+
+### Measured
+
+National BDsolos export, 7,593 profiles with a reference order:
+
+| | 0.9.240 | 0.9.241 |
+|---|---|---|
+| default mode | 3,783 (49.8%) | 3,952 (52.0%) |
+| morphological mode | 4,452 (58.6%) | 4,844 (63.8%) |
+| complete profiles (4,674), default | 56.7% | 61.0% |
+| complete profiles, morphological | 62.7% | 69.1% |
+| extra samples (2,587), default | 39.3% | 38.3% |
+| extra samples, morphological | 50.1% | 53.5% |
+
+Default mode: 1,780 profiles change order, 677 reach their reference, 508
+leave it. By reference order: Latossolos 899 to 1,041 agreed, Neossolos 690 to
+856, Cambissolos 342 to 394, Argissolos 1,256 to 1,086, Luvissolos 125 to 101.
+Of the profiles keyed Argissolos, 58% had that reference before and 71% now;
+of those keyed Latossolos, 62% and 71%.
+
+**What it costs.** In the default mode 385 reference Argissolos leave their
+order and 215 enter it. Those that leave have a relação textural below item
+(h) and no cerosidade recorded: the data do not show the B textural the
+surveyor saw; 181 of them carry the old name Podzólico. They are concentrated
+in the Amazon: in Amazonas 184 of 254 reference Argissolos agreed before and
+94 now, in Pará 165 and 115. The panel of the EJSS article is the first 800
+profiles of the export, which are those of Acre, Alagoas and Amazonas, and it
+goes down: 387 to 361 in the default mode and 507 to 495 in the morphological
+mode. FEBR (1,000): 387 to 376 and 498 to 501.
+
+Redape (94 profiles of the correlation meetings, with cerosidade and
+structure recorded): 69 to 77 in the default mode and 74 to 84 in the
+morphological mode. The 44 canonical profiles keep their class in the three
+systems, in both modes.
+
+### Not tested, and why
+
+Items (a) structure, (c) rock structure, (e) Ki and (f) weatherable minerals
+of the B latossólico: the profile schema has no Ki, although the BDsolos
+export records it in 71% of its rows. Lamellae (item d of the B textural). A
+B argiloso with cerosidade common or more and a structure of weak grade is
+covered by no condition of item (i): it is no B textural, and by item (h) of
+the B latossólico it is none either.
+
+# soilKey 0.9.240 (2026-10-13)
+
+## SiBCS key: the "(B)" of the old horizon notation is read as the B incipiente it names
+
+Until 1988 the B incipiente was written "(B)" in Brazil: "A (B) C",
+"A1 (B)1 (B)2 C", "A II(B)21 II(B)22". Larach et al. (1988, "Definição e
+notação de horizontes e camadas do solo", the reference of SiBCS 2018 for the
+notation) replaced it by "Bi", which the book uses ("O horizonte B incipiente
+(Bi)", Cap. 3). `B_incipiente()` takes its candidate layers from the
+designation, and `.desg_master()`, which every SiBCS test of the master
+horizon reads, left "(B)" as written: for the key it was not a B horizon. In
+the national BDsolos export 552 layers of 333 profiles carry it, and 293 of
+them are among the 640 profiles whose reference order is Cambissolos. With no
+diagnostic B found, they were keyed Neossolos.
+
+`.desg_master()` now reads "(B)", "(B)21", "(B1)" and "II(B)22" as "Bi",
+"Bi21", "Bi1" and "Bi22". The horizon data keep the designation as written,
+and a parenthesis that does not open the designation ("A3/(B)", "B(2)") is
+left alone. Nothing else of the B incipiente changes: the layer still has to
+be 10 cm thick and not to be a B textural, latossólico, espódico or plânico,
+so that a "(B)" that the data show to be a B latossólico is one. The reader
+serves the SiBCS key only; WRB and USDA read the designation by patterns of
+their own and are not touched.
+
+### Measured
+
+National BDsolos export, 7,593 profiles with a reference order:
+
+| | before | after |
+|---|---|---|
+| default mode | 3,579 (47.1%) | 3,783 (49.8%) |
+| morphological mode | 4,249 (56.0%) | 4,452 (58.6%) |
+
+In the default mode 234 profiles change order: 212 reach their reference, 8
+leave it and 14 go from one wrong order to another. Cambissolos: 134 of 640
+agreed before, 342 after. The 8 that leave their reference are profiles
+labelled Neossolos (six of them by the old names Solo Litólico and Solo
+Aluvial) with a "(B)" of 10 cm or more, which by the book is a B incipiente:
+"Admitem um horizonte B em início de formação, cuja espessura não satisfaz a
+nenhum tipo de horizonte B diagnóstico" (Neossolos Litólicos, Cap. 12).
+
+Panel of the EJSS article (798 profiles): 367 to 387 in the default mode and
+489 to 507 in the morphological mode; only the row of the reference
+Cambissolos moves (15 to 35 agreed in the default mode). FEBR (1,000) keeps
+its confusion matrices (387 and 498 agreed) and no profile of Redape (94)
+changes (69 and 74). The 44 canonical profiles keep their class in the three
+systems, in both modes.
+
+### Found on the way, not changed here
+
+* The export has a column "Tipo" that the loader does not read: of the 7,593
+  profiles with a reference order, 4,674 are "Perfil completo", 332 "Perfil
+  parcial" and 2,587 "Amostra extra", in most cases two sampled layers, often
+  with a gap between them. The order agreement of the three groups is 54.7%,
+  34.9% and 35.1% in the default mode.
+* The minimum thickness of a diagnostic horizon is asked of each sub-horizon
+  on its own: a Latossolo described as B1, B21 and B22 of 35 cm each has no
+  B latossólico of 50 cm for the key.
+* `B_textural()` is the WRB argic horizon with its thresholds, joined to item
+  (h) of the book; items (f), (g) and (i) are not tested, and the
+  B latossólico does not exclude the B textural.
+
+# soilKey 0.9.239 (2026-10-12)
+
+## SiBCS key: the glei horizon is read by the colours of the book, with the drainage class as the record of its saturation
+
+`horizonte_glei()` was the WRB test of gleyic properties under another name:
+redoximorphic features of 5% or more in a layer that starts within 50 cm, with
+no colour asked. A mottled Argissolo was a Gleissolo, and a grey Cg with no
+amount of mottles recorded was not. In the national BDsolos export the key
+called 468 profiles Gleissolos, of which 123 had that reference, and 141
+reference Gleissolos were keyed Neossolos.
+
+The book (SiBCS 2018, Cap. 2, p. 70-71): "o horizonte glei é um horizonte
+mineral, com espessura mínima de 15 cm, com menos de 15% de plintita e é
+saturado com água por influência do lençol freático durante algum período ou o
+ano todo [...], apresentando evidências de processos de redução, com ou sem
+segregação de ferro, caracterizadas por um ou mais dos seguintes requisitos":
+(a) the dominant colour, by four items; (b) "Coloração variegada com pelo
+menos uma das cores de acordo com um dos itens anteriores"; (c) reduced iron
+shown by a field test.
+
+* **Colours.** A layer qualifies by item (a1), neutral or bluer than 10Y;
+  (a2), hues redder than 5YR with value 4 or more and chroma 1 or less; (a3),
+  hues 5YR or yellower with value 4 or more and chroma 2 or less, or 3 in a hue
+  10YR or yellower when the chroma decreases in the horizon below; (a4), any
+  hue and value with chroma 2 or less and mottles; or (b), a variegated layer
+  (`variegated_colors`) with one colour of those items. Organic layers and
+  layers with 15% of plinthite or more do not qualify. Item (c) is recorded
+  by no profile.
+* **Saturation.** It is not measured. What a survey records of it is the
+  drainage class of the site, and Anexo B (p. 315) describes the classes: in a
+  "mal drenado" soil "o lençol freático comumente está à superfície ou próximo
+  dela durante uma considerável parte do ano", while an "imperfeitamente
+  drenado" one shows "indícios de gleização nos seus horizontes mais
+  profundos". The colours make a glei horizon when the site is "mal drenado"
+  or "muito mal drenado". A class written as a range counts by its wetter end
+  ("imperfeitamente a mal drenado" is "mal drenado"), an exception to the
+  rule that a range is read by its lower end. The field is read as
+  `site$drainage` (the BDsolos loader) or `site$drainage_class`.
+* **No drainage class recorded.** The layer itself has to show the
+  saturation, beside its colours: mottles ("O horizonte sendo saturado com
+  água periodicamente ou o solo tendo sido drenado deve apresentar algum
+  mosqueado", p. 70), a colour of item (a1), or a variegated colour. Without
+  that, the greyish A and the pale E of any soil satisfy item (a3).
+* **Morphological mode.** The "g" of a designation (Cg, Btg) stands for the
+  colours and for the saturation, as before.
+* **Gleissolos** (key, Cap. 4, p. 112-113): the glei horizon within 50 cm, or
+  between 50 and 150 cm "desde que imediatamente subjacente a horizontes A ou
+  E ou a horizonte hístico com menos de 40 cm de espessura". Any glei horizon
+  within 150 cm used to count.
+* **Neossolos** (p. 111): "Ausência de horizonte glei dentro de 50 cm a partir
+  da superfície, exceto no caso de solos de textura areia e areia franca". 150
+  cm was tested, with no exception.
+
+The new internals are `.glei_colour_item()`, `.glei_colour_layers()`,
+`.drainage_class()` and `.textura_areia_ou_areia_franca()`. The WRB test,
+`gleyic_properties()`, is not changed.
+
+### Effect
+
+National BDsolos export, 7,593 profiles with a reference order:
+
+|                                          | Default        | Morphological  |
+|------------------------------------------|---------------:|---------------:|
+| Order agreement (count)                  | 3,355 to 3,579 | 3,967 to 4,249 |
+| Order agreement                          | 44.2% to 47.1% | 52.2% to 56.0% |
+| Profiles keyed Gleissolos                | 467 to 309     | 434 to 404     |
+| ... of which reference Gleissolos        | 123 to 226     | 135 to 307     |
+| Reference Gleissolos agreed (373)        | 33% to 61%     | 36% to 82%     |
+| Reference Argissolos agreed (2,016)      | 1,184 to 1,256 | 1,334 to 1,400 |
+| Reference Neossolos agreed (930)         | 679 to 698     | 676 to 691     |
+| Reference Luvissolos agreed (197)        | 109 to 125     | 121 to 138     |
+| Reference Cambissolos agreed (640)       | 124 to 134     | 113 to 124     |
+| Reference Chernossolos agreed (127)      | 29 to 34       | 34 to 39       |
+| Reference Plintossolos agreed (331)      | 0 to 0         | 122 to 119     |
+
+In the default mode 539 profiles change order: 270 now agree with their
+reference, 46 no longer do, 223 go from one disagreeing order to another. Most
+of the gains outside the Gleissolos are profiles with mottles and good
+drainage that are no longer keyed Gleissolos. Among the profiles whose order
+does not change, 51 change their name at the third or fourth level (80 in the
+morphological mode), where a subgroup asks for a glei horizon.
+
+Measured before the choice was made: the colours with no drainage asked keyed
+1,028 profiles Gleissolos, every pale E among them (3,358 in the default
+mode); asking for "imperfeitamente drenado" or wetter gave 3,555, with 99
+reference Plintossolos and 73 Planossolos keyed Gleissolos.
+
+Other benchmarks:
+
+* BDsolos panel of the EJSS article (798 scored): 350 to 367 in the default
+  mode (43.9% to 46.0%) and 458 to 489 in the morphological mode (57.4% to
+  61.3%). The article's own figures are of v0.9.189.
+* FEBR (1,000 profiles): 387 in the default mode, unchanged; 496 to 498 in the
+  morphological mode.
+* Redape (94 profiles), which records no drainage class: 70 to 69 in the
+  default mode, 74 unchanged in the morphological mode. The profile is
+  `GeoTab_RN_021_Ceara_Mirim`, a reference Gleissolos ("AP 11C1g 111C2")
+  whose "C1g" has no chroma recorded and whose "C2", 5Y 5/1, has no mottles.
+  In the morphological mode its "g" is read. The Redape recall of Gleissolos
+  pinned in `test-v09107-sibcs-accuracy.R` goes from 8 of 8 to 7 of 8.
+* The 44 canonical fixtures keep their class in the three systems, in both
+  modes.
+
+Not changed, and worth knowing:
+
+* The thickness of 15 cm is asked of each layer; two adjoining glei layers of
+  10 cm are not added up, as before.
+* The key of the Gleissolos also asks for no "outro horizonte diagnóstico
+  acima do horizonte glei"; that is not tested, as before.
+* A mottle amount written as a range ("Comum a abundante") is still loaded by
+  its upper end.
+
+# soilKey 0.9.238 (2026-10-12)
+
+## SiBCS key: the B plânico is tested for its structure and for the colours of a variegated or mottled horizon
+
+SiBCS 2018 (Cap. 2, p. 65-66) describes the B plânico by more than the key
+tested. It "Apresenta estrutura prismática, colunar ou em blocos angulares e
+subangulares grandes ou médios e, às vezes, estrutura maciça", and its colours
+"devem atender a pelo menos um dos seguintes requisitos": (a) the matrix
+colour; (b) "Coloração variegada com pelo menos uma cor apresentando matiz e
+croma conforme especificado no item (a)"; (c) "matiz 10YR ou mais amarelo,
+cromas ≥ 4, combinado com mosqueado de croma conforme especificado no item
+(a)". `B_planico()` tested an abrupt textural change and item (a). A B horizon
+with small subangular blocks was a B plânico, and a variegated one, which has
+no matrix colour, was none.
+
+* **Structure.** Where the sheet records it, the structure has to be one of
+  those the definition describes: prismatic, columnar or massive; or blocks,
+  angular or subangular, that are medium or larger. A size written as a range
+  is read by its lower end ("Pequena a média" is small), as the other minima
+  are. A structure that is not recorded passes, and so do blocks with no size.
+  The new internal `.structure_size_class()` reads the size in both languages.
+* **Item (b)** reads `variegated_colors`, and **item (c)** `mottle_colors`: a
+  matrix of hue 10YR or yellower and chroma 4 or more, with a mottle whose
+  colour satisfies item (a).
+
+Of the reference Planossolos of the national BDsolos export that have a B
+plânico and a recorded structure, 84 of 90 have one of the list; the six that
+do not are in small blocks.
+
+### Effect
+
+National BDsolos export, 7,593 profiles with a reference order:
+
+|                                        | Default        | Morphological  |
+|----------------------------------------|---------------:|---------------:|
+| Order agreement                        | 3,349 to 3,355 | 3,959 to 3,967 |
+| Reference Planossolos agreed (291)     | 91 to 98       | 89 to 96       |
+| Profiles keyed Planossolos             | 153 to 153     | 141 to 141     |
+| Reference Argissolos agreed (2,016)    | 1,182 to 1,184 | 1,331 to 1,334 |
+| Reference Luvissolos agreed (197)      | 112 to 109     | 124 to 121     |
+
+In the default mode 66 profiles change order: 22 now agree with their
+reference, 16 no longer do, 28 go from one disagreeing order to another. The
+same number of profiles is keyed Planossolos, and more of them are (59% to
+64%): the structure takes out B horizons in small blocks, most of them
+reference Argissolos with an abrupt change, and items (b) and (c) bring in
+Planossolos whose B is variegated. Measured apart, items (b) and (c) alone
+gave 13 gains and 13 losses, and the structure alone 9 gains and 6 losses.
+
+Other benchmarks:
+
+* Redape (94 profiles): 69 to 70 in the default mode and 73 to 74 in the
+  morphological mode. `GeoTab_PE_041_Pombos`, a reference Planossolos with a
+  variegated "2Btn", is now keyed Planossolos.
+* BDsolos panel of the EJSS article (798 scored): 351 to 350 in the default
+  mode and 459 to 458 in the morphological mode.
+* FEBR (1,000 profiles): 387 and 496, unchanged.
+* The 44 canonical fixtures keep their class in the three systems, in both
+  modes.
+
+The precedence of the plinthic horizon is as it was: a B plânico that
+coincides with a plinthic horizon, without the sodic character, is no B
+plânico of a Planossolo (key, Cap. 4, p. 112; Cap. 2, p. 68).
+
+# soilKey 0.9.237 (2026-10-12)
+
+## Redape and SmartSolos: the structure codes are read on the scales the service documents
+
+The GeoTab files of Redape, and the SmartSolos Expert service they were made
+for, record the soil structure as integer codes. The service describes them
+(`https://www.agroapi.cnptia.embrapa.br/store/api-docs/agroapi/SmartSolosExpert/v1`):
+
+| Field | Description |
+|---|---|
+| `ESTRUTURA_GRAU` | "de ausente (1) a forte (4)" |
+| `ESTRUTURA_TAMANHO` | "de muito pequeno (1) a extremamente grande (6)" |
+| `ESTRUTURA_TIPO` | "laminar (1), prismática (2), colunar (3), blocos angulares (4), blocos subangulares (5), granular (6), grumosa (7)" |
+
+Since 0.9.189 the Redape loader read the grade on a scale of three ("weak" for
+1) and the type in another order ("granular" for 1, "columnar" for 5). Of the
+444 horizons of the 94 profiles: the 137 with subangular blocks were read as
+columnar, the 79 with angular blocks as prismatic, the 63 granular ones as
+platy; the 211 of weak grade were read as moderate, the 73 moderate ones as
+strong, and the 24 strong ones had no grade at all. The encoders that send a
+profile to the service (`classify_via_smartsolos_api()`, since 0.9.54) made the
+same two mistakes the other way round.
+
+* `load_redape_pedons()` decodes the three fields on the documented scales.
+  A grade of 1 is "structureless", a size of 6 "extremely coarse", a type of 7
+  "crumb".
+* The payload sent to the service encodes them on the same scales, so that
+  what the loader decodes the encoder sends back as the same code.
+* A structure recorded as absent is now a grade below weak. It was read as
+  not recorded, which passes a minimum such as the "grau moderado ou forte"
+  of the B nítico. No profile of Redape or BDsolos records one.
+
+The documented scales were checked against the data: 35 horizons of 7 Redape
+profiles are also in the BDsolos export, which keeps the words of the field
+sheet. Code 5 is "Blocos subangulares" there in 18 of 18 horizons, 6 is
+"Granular" in 6 of 6, 2 is "Prismática" in the one case; grade 2 is "Fraca" in
+20 of 22 and grade 3 "Moderada" in 6 of 7.
+
+`CEROSIDADE_GRAU` is described the same way, "de ausente (1) a forte (4)", and
+is left on the scale of three it was read with (1 weak, 2 moderate, 3 strong).
+The files hold 1, 2 and 3 only, and 1 comes with an amount of clay films in 12
+of 13 horizons, which "ausente" would not; no shared profile records clay films
+to settle it. It is an open question for the authors of the files.
+
+### Effect
+
+* Redape (94 profiles): 68 to 69 in the default mode and 72 to 73 in the
+  morphological mode. The profile is `GeoTab_PE_045_Cabo_de_Santo_Agostinho`,
+  a reference Nitossolos whose B horizons are in subangular blocks of moderate
+  grade (codes 5 and 3). Read as columnar, they failed the structure of the B
+  nítico, and the profile was keyed Latossolos, or Argissolos in the
+  morphological mode. The Redape figures reported from 0.9.189 to 0.9.235 were
+  computed with the structure read the old way.
+* The national BDsolos export (7,593 profiles), its panel of the EJSS article
+  and FEBR do not change, in either mode: they do not go through these codes.
+  The 44 canonical fixtures keep their class in the three systems.
+* The service itself was not called to verify the encoders; they follow its
+  published description.
+
+# soilKey 0.9.236 (2026-10-12)
+
+## HTML report: the evidence-grade badge has its colour again
+
+The report colours the evidence grade of each classification with a class of
+its own (`grade grade-a` to `grade grade-d`), given by an internal
+`.grade_class()`. 0.9.231 added an internal function of the same name, to read
+the grade of a soil structure ("Fraca", "moderate"), in a file that is loaded
+later. It replaced the report's function, and from 0.9.231 to 0.9.235 every
+badge was written with `class="NA"`: the letter was there, without its colour.
+The report was otherwise unaffected, and no classification changed.
+
+* The reader of field grades is now `.field_grade_class()`; the report has its
+  `.grade_class()` back.
+* A new test parses the package sources and fails when a name is defined twice.
+  Files are loaded in alphabetical order, and a second definition replaces the
+  first without a word; this was the only such name among 1,343.
+
+# soilKey 0.9.235 (2026-10-12)
+
+## SiBCS key: the variegated colours and the colours of the mottles are read in the depth rule of Plintossolos
+
+A plinthic horizon that starts below 40 cm makes a Plintossolo when it lies
+immediately below a horizon "que apresente cores pálidas, variegadas ou com
+mosqueados em quantidade abundante" (SiBCS 2018, Cap. 3, p. 104). Since
+0.9.234 the key tested the pale colour and the amount of the mottles. It could
+not test the rest, because a profile held one colour per horizon: a variegated
+horizon, which has no single matrix colour, reached the key with no colour at
+all, and the mottles counted by their amount whatever their colour.
+
+* **Two new columns of the profile**, `variegated_colors` and
+  `mottle_colors`: the Munsell notations the field sheet lists, separated by
+  ";" (`"10YR 5/3; 2.5YR 4/6"`). They are in `horizon_column_spec()`, in the
+  JSON schema of the profile and in `inst/ATTRIBUTES.md`, and are read only
+  when present.
+* **BDsolos loader.** The export has "Variegado - Matiz / Valor / Croma" and
+  "Mosqueado - Matiz / Valor / Croma", each cell listing one entry per colour
+  separated by ":" ("10YR:5YR", "6:5", "3:6"). They are joined into the
+  notations. In the national export, 975 horizons of 654 profiles are
+  variegated (947 of them have no matrix colour) and 2,649 horizons of 1,395
+  profiles have the colours of their mottles.
+* **Redape loader.** GeoTab gives up to three more colours in `COR_MOSQ_*`.
+  Beside a matrix colour they are read as the colours of the mottles (15
+  horizons); in a horizon with no matrix colour, as its variegated colours (7
+  horizons of 4 profiles).
+* **The rule**, in the internal `.plinthic_preceded()`, with the two items
+  the three kinds of colour answer to ("a) Matiz 5Y; ou b) Matizes 7,5YR,
+  10YR ou 2,5Y com croma menor ou igual a 4") in the new internal
+  `.plintossolo_items_a_b()`:
+  * variegated: "pelo menos uma das cores deve satisfazer aos itens (a) e
+    (b)". Hue and chroma only, as the book writes; the moist value of 5 or
+    more that 0.9.234 asks of a pale matrix colour is not asked here. No
+    profile of BDsolos or Redape differs between the two readings.
+  * mottles: "deverão ocorrer em quantidade abundante (> 20% em volume) numa
+    matriz de coloração avermelhada ou amarelada e deverão apresentar matizes
+    e cromas conforme os itens (a) e (b)". The amount is asked as before; the
+    colour, of at least one of the mottles, when the sheet records it. A
+    horizon with abundant mottles and no colour recorded passes as before.
+    The colour of the matrix is not tested: the book gives no hue for
+    "avermelhada ou amarelada".
+
+### Effect
+
+The 44 canonical fixtures keep their class in the three systems, in the default
+and in the morphological mode. Reloaded with the new loader, each of the 7,714
+profiles of the national BDsolos export is identical to the one of 0.9.234 in
+every column that existed.
+
+National BDsolos export, 7,593 profiles with a reference order. In the default
+mode no profile changes (3,349; the export records no volume of plinthite). In
+the morphological mode:
+
+|                                           | 0.9.234 | 0.9.235 |
+|-------------------------------------------|--------:|--------:|
+| Order agreement (count)                   |   3,957 |   3,959 |
+| Reference Plintossolos agreed (331)       |     118 |     121 |
+| Profiles keyed Plintossolos               |     176 |     180 |
+| Reference Argissolos agreed (2,016)       |   1,332 |   1,331 |
+
+Six profiles change order, and no other changes its second level or its name:
+
+* three reference Plintossolos now agree, each with a variegated horizon above
+  its plinthic one: AM 10006 and AM 12796 ("Btg" 2.5Y 7/1 and 10YR 6/8 above
+  "Btfg" at 100 cm) and PE 5860 ("2Bt" 10YR 5/3 and 2.5YR 4/6 above "2Btf" at
+  93 cm);
+* two reference Argissolos are now keyed Plintossolos, for the same reason: AM
+  10788 ("B21" 10YR 7/3 and 7.5YR 5/8 above "B22pl" at 70 cm) and BA 8469
+  ("B21t" 5YR 4/6 and 10YR 6/4 above "B22tpl" at 120 cm). Both labels are old
+  "Podzólico Vermelho-Amarelo ... plíntico", a class the book places in part
+  among the Plintossolos (Abrangência, p. 104);
+* one reference Argissolos is no longer keyed Plintossolos: PA 9609, whose
+  "B2t" (7.5YR 5/8) has abundant mottles of colour 5YR 6/8, which satisfies
+  neither item.
+
+Other benchmarks:
+
+* Redape (94 profiles): 67 to 68 in the default mode and 71 to 72 in the
+  morphological mode. The profile is `GeoTab_PE_048_Goiana` (the PE 5860 of
+  BDsolos), the limit 0.9.234 left: its "2Bt" is variegated and one of its
+  colours is 10YR with chroma 3. The Redape recall of Plintossolos pinned in
+  `test-v09107-sibcs-accuracy.R` is 3 of 3 again.
+* BDsolos panel of the EJSS article (798 scored): 351 in the default mode,
+  unchanged; 458 to 459 in the morphological mode (the three profiles of
+  Amazonas above). The article's own figures are of v0.9.189.
+* FEBR (1,000 profiles): 387 and 496, unchanged; its loader does not bring
+  these colours.
+
+Not changed: a horizon with abundant mottles also makes a horizonte glei in
+some profiles (`redoximorphic_features_pct` is what the gleyic test reads), and
+a glei horizon above the plinthic one satisfies the rule by itself, whatever
+the colour of the mottles. The other tests that read a colour (B plânico,
+horizonte glei, the colour suborders) still see no colour in a variegated
+horizon.
+
+# soilKey 0.9.234 (2026-10-12)
+
+## SiBCS key: the morphological mode reads "v" and "pl", and a Plintossolo needs its plinthic horizon where the book says
+
+The morphological mode (`options(soilKey.morphological_inference = TRUE)`) lets
+a horizon designation stand for a diagnostic the data cannot test. Two letters
+of the Brazilian notation were not read by it, and reading one of them brought
+out a rule that was looser than the book.
+
+* **"v", vertic features** (Bv, Cv, Biv). `vertic_horizon()` reads the suffix
+  only under an option of its own, because it also serves WRB and USDA, where
+  "v" is plinthite (KST, FAO). `horizonte_vertico()`, the SiBCS wrapper, now
+  turns that reading on in the morphological mode. For WRB and USDA nothing
+  changes.
+* **"pl", plinthite in the older surveys** (B21pl, Cpl), where "f" is written
+  today. `horizonte_plintico()` reads it in the morphological mode, with the
+  thickness it asks of "f". Of the 331 profiles of the national BDsolos export
+  whose reference order is Plintossolos, 80 carry "pl" and 64 carry "f".
+* **Where the plinthic horizon starts.** `plintossolo()` accepted a plinthic,
+  litoplinthic or concretionary horizon that started anywhere within 200 cm.
+  The definition (SiBCS 2018, Cap. 3, p. 104; key, Cap. 4, p. 113) accepts it
+  within 40 cm, or within 200 cm only "quando precedidos de horizonte glei ou
+  situados imediatamente abaixo do horizonte A ou E ou de outro horizonte que
+  apresente cores pálidas, variegadas ou com mosqueados em quantidade
+  abundante". The new internal `.plinthic_preceded()` tests that: a glei
+  horizon above; or, in the horizon immediately above, an A or an E, mottles
+  in abundant amount (more than 20%), or a pale colour. For the pale colour
+  the book gives the hue and the chroma (5Y; or 7.5YR, 10YR or 2.5Y with
+  chroma 4 or less) and no number for the lightness; a moist value of 5 or
+  more is taken, so that a brown 10YR 4/4 is not pale. Variegated colours are
+  not recorded and not tested.
+* **Cambissolos.** `cambissolo()` excluded a profile with any plinthic
+  horizon, at any depth. The book excludes the ones that meet "os requisitos
+  estabelecidos para serem enquadrados" as Plintossolos (Cap. 3, p. 88); the
+  test now asks `plintossolo()`.
+* **The canonical Plintossolo.** `make_plintossolo_canonical()` reuses the WRB
+  fixture, whose plinthic horizons are written "Btv" and "Cv". In the
+  Brazilian notation that "v" is vertic, and the Brazilian "f" is frozen soil
+  for KST and FAO. The profile is classified by the three keys (it is one of
+  the demonstration profiles of the app), so its horizons are now "A", "Bt",
+  "C", with the plinthite it has measured. Its class does not change in any of
+  the three systems.
+
+In the default mode, no profile of the national BDsolos export changes order
+(the export records no volume of plinthite). The 44 canonical fixtures keep
+their class in the three systems.
+
+In the morphological mode, on the national BDsolos export (7,593 profiles with
+a reference order):
+
+|                                           | 0.9.233 | 0.9.234 |
+|-------------------------------------------|--------:|--------:|
+| Order agreement (count)                   |   3,855 |   3,957 |
+| Order agreement                           |   50.8% |   52.1% |
+| Reference Plintossolos agreed (331)       |      60 |     118 |
+| Profiles keyed Plintossolos               |     155 |     176 |
+| ... of which reference Plintossolos       |     39% |     67% |
+| Reference Vertissolos agreed (72)         |      10 |      20 |
+| Reference Argissolos agreed (2,016)       |   1,298 |   1,332 |
+
+185 profiles change order: 125 now agree with their reference, 23 no longer
+do, 37 go from one disagreeing order to another. Reading "pl" under the old
+depth rule would have gained 67 Plintossolos and lost 57 Argissolos, whose
+plinthite lies deep in a B textural ("B21 B22pl"); the rule of the book keeps
+58 of those Plintossolos and returns the Argissolos. The three losses of the
+"v" are intergrades ("Chernossolo ... vertissólico", "Gleissolo ...
+vertissólico").
+
+Other benchmarks:
+
+* BDsolos panel of the EJSS article (798 scored): 351 in the default mode,
+  unchanged; 412 to 458 in the morphological mode (51.6% to 57.4%). Amazonas,
+  one of its three states, holds most of the "Laterita Hidromórfica" profiles
+  written with "pl". The article's own figures are of v0.9.189.
+* FEBR (1,000 profiles): 387 and 496, unchanged.
+* Redape (94 profiles): 67 and 71, the same totals, with two profiles that
+  change in both modes because its loader brings plinthite: a reference
+  Plintossolos whose "2Btf" starts at 93 cm under a "2Bt" no longer agrees,
+  and a reference Argissolos with "Btf" deep under "Bt2" now does. The first
+  is a limit of what a profile carries, not of the rule: the sheet records
+  that "2Bt" as variegated (10YR 5/3 and 2.5YR 4/6), which the book accepts
+  ("pelo menos uma das cores deve satisfazer aos itens (a) e (b)"), and a
+  profile holds one colour per horizon. In the national BDsolos export a
+  variegated colour is recorded just above the first plinthic designation in
+  11 profiles.
+
+Two canonical fixtures written in the notation of KST change SiBCS order in
+the morphological mode, which reads the Brazilian notation: the Cryosol, whose
+"f" (frozen) was read as plinthite at depth, is no longer keyed Plintossolos;
+the WRB Plinthosol, with its "Btv", is keyed Vertissolos.
+
+# soilKey 0.9.233 (2026-10-12)
+
+## SiBCS key: the colour of the B plânico is the one the book lists
+
+SiBCS 2018 (Cap. 2, p. 65-66) asks of a B plânico a matrix colour of "Matiz
+10YR ou mais amarelo, cromas ≤ 3" or of "Matizes 7,5YR ou 5YR, cromas ≤ 2".
+`B_planico()` tested the first with the pattern `10YR|2\.5Y|5Y`, which "5YR",
+"7.5YR" and "2.5YR" also match, because all three contain "5Y". A B horizon of
+hue 5YR or 7.5YR passed with chroma 3, and one of hue 2.5YR passed at all.
+
+* The hue is now read as a number and a family by the new internal
+  `.munsell_hue_parts()` ("7.5YR" and "7,5YR" are 7.5 and "YR"). 10YR and the
+  Y hues pass with chroma 3 or less; from 5YR up to, not including, 10YR,
+  with chroma 2 or less; a redder hue does not pass.
+* Neutral and gley hues (N, GY, G, B) are not among the requirements the book
+  lists and do not pass, as before.
+
+The alternatives (b) and (c) of the book, a variegated colour and a matrix of
+chroma 4 or more with mottles of low chroma, need the colours of the mottles,
+which the profiles do not carry; they are not tested, as before.
+
+The 44 canonical fixtures keep their class in the three systems.
+
+On the national BDsolos export (7,593 profiles with a reference order),
+nineteen profiles change order in the default mode: seven now agree with
+their reference, six no longer do and six go from one disagreeing order to
+another. Order agreement 3,348 to 3,349; reference Planossolos agreed 95 to
+91, Chernossolos 26 to 29, Argissolos 1,180 to 1,182. In the morphological
+mode, 3,854 to 3,855.
+
+The other benchmarks do not change: the BDsolos panel of the EJSS article (351
+and 412 of 798), FEBR (387 and 496 of 1,000) and Redape (67 and 71 of 94).
+
+# soilKey 0.9.232 (2026-10-12)
+
+## BDsolos loader: slickensides, gravel in per cent, hues with a dot
+
+Three things the BDsolos export records and the profiles did not carry as the
+diagnostics read them.
+
+* **Slickensides.** "Superfície de fricção - Quantidade" (filled in 53
+  profiles of the national export) was not loaded, so the vertic horizon had
+  no slickensides to test: the key agreed with none of the 72 profiles whose
+  reference order is Vertissolos. The column now goes to `slickensides`, as
+  the sheet words it ("Pouca", "Comum", "Abundante").
+* **Reading the amount.** `test_slickensides_present()` and the crack test
+  that stands on it compared the amount with the literal English terms. They
+  now read it through the new internal `.amount_at_least()`, in English or
+  Portuguese, a range by its lower end: SiBCS asks for slickensides "em
+  quantidade no mínimo comum" (Cap. 2, p. 73). Amounts in English are read as
+  before.
+* **Gravel.** "Frações da amostra total - Cascalho (g/kg)" went into
+  `coarse_fragments_pct` as it came, so that 560 g/kg read as 560 %: 2,677
+  horizons of 1,285 profiles had more than "100 %". It is now divided by 10,
+  as the clay, silt and sand of the same export already were.
+* **Hue.** The export types the Munsell hue with a decimal comma ("7,5YR",
+  "2,5YR") in 7,492 horizons of 3,430 profiles, and the patterns of the
+  diagnostics are written with a dot. `load_bdsolos_csv()` now gives
+  "7.5YR", as the FEBR loader already did.
+
+The 44 canonical fixtures keep their class in the three systems.
+
+On the national BDsolos export (7,593 profiles with a reference order), default
+mode:
+
+|                                     | 0.9.231 | 0.9.232 |
+|-------------------------------------|--------:|--------:|
+| Order agreement (count)             |   3,340 |   3,348 |
+| Order agreement                     |   44.0% |   44.1% |
+| Reference Vertissolos agreed (72)   |       0 |      10 |
+
+Sixteen profiles change order, all to Vertissolos and all through the
+slickensides: ten agree with their reference, two no longer do (a reference
+Gleissolos and a reference Luvissolos with slickensides "comum" or more) and
+four go from one disagreeing order to another. The gravel and the hue change
+no order.
+
+The hue changes the second level of 1,079 profiles whose order stays the same.
+With a hue it could not read, the key left the colour suborder at
+"Vermelho-Amarelos"; it now follows the hue (Argissolos Vermelho-Amarelos to
+Amarelos in 287 profiles and to Vermelhos in 232, Latossolos Vermelho-Amarelos
+to Vermelhos in 201 and to Amarelos in 178, Luvissolos Háplicos to Crômicos in
+71). Against the reference labels that carry a present-day order name (5,461),
+the second level agrees in 1,088 profiles where it agreed in 1,059: 211
+profiles gained and 182 lost. Latossolos keyed in the right order have the
+right suborder in 362 profiles (305 before), Argissolos in 190 (241 before):
+"Vermelho-Amarelo" is the most frequent suborder of the reference Argissolos,
+and the default coincided with it.
+
+The other benchmarks do not change at the order level: the BDsolos panel of
+the EJSS article (351 and 412 of 798), FEBR (387 and 496 of 1,000) and Redape
+(67 and 71 of 94).
+
+# soilKey 0.9.231 (2026-10-12)
+
+## SiBCS key: in the B nítico, a grade written as a range is read by its lower end
+
+SiBCS 2018 states the criteria of the B nítico as minima: structure "de grau
+de desenvolvimento moderado ou forte", cerosidade "em quantidade no mínimo
+comum e com grau forte ou moderado" (Cap. 2, p. 61-62). A range meets a
+minimum only if all of it does. The amount of cerosidade has been read that
+way since 0.9.227 ("Pouca a comum" is below "comum"); the two grades were read
+with the pattern `moder|strong|forte`, which "Fraca a moderada" matches.
+
+* The new internal `.grade_class()` reads a grade of development on the scale
+  weak / fraca, moderate / moderada, strong / forte, in English or Portuguese,
+  and a range by its lower end. `B_nitico()` uses it for the grade of the
+  structure and for the grade of the cerosidade. "Moderada a forte" passes;
+  "Fraca a moderada" and "weak to moderate" do not. A grade that was not
+  recorded does not fail the layer, as before.
+
+The other kind of criterion is a maximum, and there a range counts by its
+upper end: the B latossólico admits "no máximo cerosidade pouca e fraca"
+(p. 58-59), so "Pouca a comum" exceeds it. The clay-film gate of the B
+latossólico already reads it so and is not changed.
+
+The 44 canonical fixtures keep their class in the three systems.
+
+On the national BDsolos export (7,593 profiles with a reference order), default
+mode, seven profiles change order: two reference Nitossolos are no longer
+reached (PR 6654, SC 11902), two reference Argissolos are no longer keyed
+Nitossolos and agree (MT 6184, MT 10801), one reference Argissolos goes from
+Argissolos to Neossolos (MG 5916), and two go from one disagreeing order to
+another. Order agreement 3,341 to 3,340; reference Nitossolos agreed 80 to 78,
+Argissolos 1,179 to 1,180.
+
+The other benchmarks do not change: the BDsolos panel of the EJSS article (351
+and 412 of 798), FEBR (387 and 496 of 1,000) and Redape (67 and 71 of 94).
+
+# soilKey 0.9.230 (2026-10-12)
+
+## SiBCS key: the clay-film gate of the B latossólico reads "many"
+
+A B latossólico gives way to a B textural when the layers with the clay
+increase have cerosidade "comum" or "abundante" (SiBCS Cap. 18, in
+`B_latossolico()` since 0.9.61). The gate, `.argic_strong_films_match()`, read
+"comum", "abundante", "common" and "abundant", but not "many": the term the
+English field sheets (KST, FAO) use for the class above "common", and the one
+the Redape loader writes for its code of "abundante". A profile whose films
+were "many" kept its B latossólico and keyed out as Latossolos.
+
+* `.argic_strong_films_match()` now reads "many" as a strong amount, as a
+  word ("very many" too, "germany" not).
+
+The 44 canonical fixtures keep their class in the three systems.
+
+On Redape (94 profiles), four profiles of Rio Grande do Norte whose reference
+is Argissolos and whose clay films are "many" go from Latossolos to
+Argissolos:
+
+|               | 0.9.229 | 0.9.230 |
+|---------------|--------:|--------:|
+| Default mode  | 63 (67.0%) | 67 (71.3%) |
+| Morphological | 67 (71.3%) | 71 (75.5%) |
+
+No profile is lost. The other benchmarks do not change: the national BDsolos
+export (its amounts are in Portuguese; the same order for each of the 7,694
+labelled profiles), the BDsolos panel of the EJSS article (351 and 412 of 798)
+and FEBR (387 and 496 of 1,000; its loader records no cerosidade). The
+article's own figures are of v0.9.189.
+
+# soilKey 0.9.229 (2026-10-11)
+
+## SiBCS benchmarks: a label is read by what it states, when that places it in another order
+
+The label map read every "Podzólico" as Argissolos and every "Cambissolo" as
+Cambissolos. Anexo I of SiBCS 2018 (p. 342) is finer, and three kinds of label
+state attributes that the book places in another order than their name. The
+new internal `.sibcs_stated_order()` reads them, after the order of the name.
+
+* **Podzólico Vermelho-Amarelo or Vermelho-Escuro that states Eutrófico and
+  high-activity clay** ("Ta", "argila de atividade alta") is Luvissolos: Anexo
+  I lists the "Podzólicos Vermelho-Amarelos Eutróficos Ta" and the "Podzólicos
+  Vermelho-Escuros Eutróficos Ta" under Luvissolos. 31 labels of the national
+  BDsolos export. The "Podzólicos Amarelos" are Argissolos in Anexo I without
+  condition and stay so.
+* **A label that begins with "Argissolo" and states Eutrófico and
+  high-activity clay** is read as Luvissolos. Such a label contradicts itself:
+  an Argissolo has a B textural "de argila de atividade baixa, ou atividade
+  alta desde que conjugada com saturação por bases baixa ou com caráter
+  alumínico" (p. 87), and a B textural with high-activity clay and high base
+  saturation is a Luvissolo (p. 95). The 36 labels of this kind, 19 of them
+  from Acre ("ARGISSOLO VERMELHO-AMARELO Eutrófico argila de atividade alta A
+  moderado textura argilosa."), read as the old Podzólico names with the first
+  word replaced. The attributes stated are taken, not the word.
+* **Cambissolo in the old form that states Eutrófico, high-activity clay and
+  A chernozêmico** is Chernossolos: the exception of Anexo I ("exceto os
+  Cambissolos Eutróficos com horizonte A chernozêmico e com argila de atividade
+  alta"). 11 labels. A label whose second word is a present suborder
+  ("CAMBISSOLO HÁPLICO Eutrófico Ta A chernozêmico", 2 labels) was written in
+  SiBCS and is left as it is.
+
+"Eutrófico" is the word itself: "Epieutrófico" and the like do not count. A
+label that states both "Ta" and "Tb" keeps the order of its name.
+
+Left as they were, on purpose:
+
+* the 52 "Podzólico ... Eutrófico" or "Equivalente Eutrófico" labels that do
+  not state the clay activity: the book places them in Luvissolos if Ta and in
+  Argissolos if Tb, and the label does not say;
+* the "plíntico" labels under Podzólico (93), Latossolo (32) and Glei (4): the
+  book sends "parte" or "alguns" of them to Plintossolos;
+* the Podzólicos Vermelho-Escuros Tb (51), "alguns" of which the book sends to
+  Nitossolos.
+
+The key does not change; only the reference order of 78 labels does. On the
+national BDsolos export (7,593 profiles with a reference order), default mode:
+
+|                                     | 0.9.228 | 0.9.229 |
+|-------------------------------------|--------:|--------:|
+| Order agreement (count)             |   3,299 |   3,341 |
+| Order agreement                     |   43.4% |   44.0% |
+| Reference Luvissolos (agreed)       | 130 (67) | 197 (113) |
+| Reference Chernossolos (agreed)     | 116 (23) | 127 (26) |
+| Reference Argissolos (agreed)       | 2,083 (1,186) | 2,016 (1,179) |
+| Reference Cambissolos (agreed)      | 651 (124) | 640 (124) |
+
+49 of the 78 profiles now agree with their reference. 7 no longer do: they
+are among the 36 "Argissolo" labels, and the key returns Argissolos for them.
+None of the 42 Podzólico and Cambissolo profiles agreed before.
+
+Other benchmarks:
+
+* BDsolos panel of the EJSS article (798 scored): 339 to 351 in the default
+  mode (42.5% to 44.0%), 400 to 412 in the morphological mode (50.1% to
+  51.6%). Acre is one of its three states. The article's own figures are of
+  v0.9.189 and do not change.
+* FEBR: its 1,442 labels are an order and a suborder, none states the clay
+  activity, and all are read exactly as before.
+* Redape does not go through this function.
+
+At `level = "subordem"` the stated order is followed by the next word of the
+label, as for the old names: it is not a suborder of SiBCS 5 in general.
+
+# soilKey 0.9.228 (2026-10-11)
+
+## SiBCS key: a horizon is read without the number of its material
+
+A horizon below a lithologic discontinuity is written with the number of its
+material in front: "2Bt1" today, "IIBt1" in the surveys that numbered the
+materials in Roman numerals. The SiBCS diagnostics chose their horizons with
+patterns such as `^B` and `^A`, which neither form matches, so a "IIBt" was
+not a B horizon for them. In the national BDsolos export 1,984 horizons of 874
+profiles carry such a number, 670 of them B horizons. The clearest loss was in
+Planossolos, whose B plânico is very often the top of a second material ("A1
+A3 IIBt IIC"): the abrupt textural change passed in 186 of the 291 profiles
+with that reference order and the B plânico in 56.
+
+* The new internal `.desg_master()` gives a designation without the number of
+  the material, Arabic or Roman ("2Bt1" and "IIBt1" are "Bt1"). The 56
+  designation patterns of the SiBCS diagnostics, in 39 functions of the order,
+  suborder, attribute and family levels, now read it. All of them ask whether
+  a horizon is a B, an A, a C, an R or an O, or a B with some suffix; none
+  looks for the number. The horizon data keep the designation as written.
+* Three of those functions already accepted an Arabic number (`^[0-9]*A`) but
+  not a Roman one.
+
+The canonical fixtures have no numbered horizon and classify as before. Their
+SiBCS order no longer depends on the number: with the subsoil of each fixture
+written as a second material ("II" or "2" in front of its horizons), 18 of the
+44 changed order before this version (the canonical Planossolo became
+Gleissolos, the Luvissolo Argissolos) and none does now.
+
+On the national BDsolos export (7,593 profiles with a reference order), default
+mode:
+
+|                                      | 0.9.227 | 0.9.228 |
+|--------------------------------------|--------:|--------:|
+| Order agreement (count)              |   3,245 |   3,299 |
+| Order agreement                      |   42.7% |   43.4% |
+| Reference Planossolos agreed (291)   |      56 |      95 |
+| Reference Luvissolos agreed (130)    |      52 |      67 |
+| Reference Cambissolos agreed (651)   |     119 |     124 |
+| Reference Nitossolos agreed (347)    |      78 |      80 |
+| Reference Chernossolos agreed (116)  |      22 |      23 |
+| Reference Argissolos agreed (2,083)  |   1,194 |   1,186 |
+
+163 profiles change order, all of them with a numbered horizon (859 of the
+labelled profiles have one): 62 now agree with their reference, 8 no longer do
+and 93 go from one disagreeing order to another. Most of the 93 go from
+Argissolos to Luvissolos (95 profiles in all, 15 of them gains): in 88 of
+those the profile has no B horizon without a number, so the tests of clay
+activity and base saturation found no B horizon, answered no, and the profile
+fell to Argissolos, the end of the key for a B textural. They now read the
+IIBt.
+
+Other benchmarks, before and after:
+
+* BDsolos panel of the EJSS article (798 scored): 335 to 339 in the default
+  mode (42.0% to 42.5%), 396 to 400 in the morphological mode (49.6% to
+  50.1%). The article's own figures are of v0.9.189 and do not change.
+* FEBR (1,000 profiles): 387 and 496, unchanged.
+* Redape (94 profiles): 61 to 63 in the default mode, 65 to 67 in the
+  morphological mode.
+
+Not changed here: the tests shared with WRB and USDA (`^Bw|^Bo|^Boi`, `^[BE]`
+and the like in `utils-diagnostic-tests.R` and `designation-inference.R`),
+whose benchmarks, KSSL above all, are full of "2Bt"; and
+`.desg_material_number()`, which reads the number of the material for the WRB
+tests and reads Arabic numbers only.
+
+# soilKey 0.9.227 (2026-10-11)
+
+## SiBCS key: the B nítico test reads cerosidade and structure in the language of the field sheet
+
+SiBCS 2018 (Cap. 2, p. 61-62) asks of a B nítico "cerosidade em quantidade no
+mínimo comum e com grau forte ou moderado" and "estrutura em blocos ou
+prismática". `B_nitico()` compared `clay_films_amount` with the literal English
+terms `c("common", "many", "abundant", "strong")`. The BDsolos export words the
+amount as the Brazilian field sheets do ("Comum" in 1,218 horizons, "Pouca" in
+874, "Abundante" in 523), so the criterion passed in none of its profiles: of
+the 7,694 labelled profiles of the national export, `classify_sibcs()` returned
+Nitossolos for none, although 145 of the 347 whose reference order is
+Nitossolos record cerosidade "comum" or more and "moderada" or more.
+
+* The amount is now read on the ordinal scale of `.clay_films_class()` (none,
+  few / pouca, common / comum, many or abundant / abundante), the reader the
+  WRB nitic horizon already used, in English or Portuguese and whatever the
+  case. `min_cerosidade` keeps its default; its lowest term sets the
+  threshold, and a term the scale does not know passes only if it is listed,
+  as before.
+* A range of amounts is read by its lower end: "Pouca a comum" is below
+  "comum", "Comum a abundante" meets it.
+* The type of structure is matched without depending on accents:
+  "Prismática" and "Prismática que se desfaz" (789 horizons of the export)
+  did not match the pattern `prismatic|prismatica`. The new internal
+  `.field_term()` gives a field term in lower case and without accents.
+
+Profiles described with the English terms are read exactly as before: the 44
+canonical fixtures keep their class in the three systems, and their SiBCS
+order is now the same when their terms are written in Portuguese.
+
+On the national BDsolos export (7,593 profiles with a reference order), default
+mode:
+
+|                                   | 0.9.226 | 0.9.227 |
+|-----------------------------------|--------:|--------:|
+| Order agreement (count)           |   3,182 |   3,245 |
+| Order agreement                   |   41.9% |   42.7% |
+| Reference Nitossolos agreed (347) |       0 |      78 |
+| Reference Argissolos agreed (2,083) |   1,209 |   1,194 |
+
+130 profiles change order: 83 now agree with their reference, 20 no longer do
+and 27 go from one disagreeing order to another. The key returns Nitossolos for
+121 profiles: 78 with that reference, 39 whose reference is Argissolos and 4 of
+other orders. The 39 have at least 350 g/kg of clay from the surface, a B/A
+clay ratio of 1.5 or less and cerosidade "comum" or more: by the data they
+meet the B nítico of the book. 16 of them carry the old name "Podzólico",
+which the label map reads as Argissolos; the book's Anexo I says some
+Podzólicos Vermelho-Escuros Tb and Vermelho-Amarelos Tb went to Nitossolos.
+
+The other 269 reference Nitossolos are still not reached: 160 record no
+cerosidade at all, 42 record it below the threshold, and the rest fail another
+criterion in their own data (most often a B/A ratio above 1.5).
+
+Other benchmarks, before and after:
+
+* BDsolos panel of the EJSS article (800 profiles of AC, AL and AM, 798 with a
+  reference order): 326 to 335 in the default mode (40.9% to 42.0%), 388 to 396
+  in the morphological mode (48.6% to 49.6%). The article's own figures are of
+  v0.9.189 and do not change.
+* FEBR (1,000 profiles): 387 and 496, unchanged. Its loader records no
+  cerosidade.
+* Redape (94 profiles): 61 and 65, unchanged. Its loader already translates the
+  codes of the amount into the English terms.
+
+Not changed here: the grade of cerosidade and of structure is still read by
+the pattern `moder|strong|forte`, under which "Fraca a moderada" passes (27 of
+the 121 profiles now keyed Nitossolos have that grade somewhere; 5 would not
+be Nitossolos if the range were read by its lower end). The clay-film gate of
+the B latossólico (`.argic_strong_films_match()`) reads "comum", "abundante",
+"common" and "abundant" but not "many".
+
+# soilKey 0.9.226 (2026-10-11)
+
+## SiBCS benchmarks: the old soil names of the reference labels are read as their present-day order
+
+0.9.225 left out of the scored profiles every reference label whose first word
+is not an order of SiBCS 5. Most of those labels are names of the
+classifications in use before SiBCS: 876 of the 7,694 labels of the national
+BDsolos export, counting the 252 that begin with "Solo" or "Solos". The 5th
+edition (Santos et al., 2018) says where each old class went, in the
+"Abrangência" paragraph of each order (chapter 3, p. 87 to 106) and in its
+Anexo I (p. 342). `normalise_febr_sibcs()` now follows it.
+
+* **Names the book gives to one order** are in `.SIBCS_LEGACY_ORDER_MAP`:
+  Latosol (Latossolos), Planosol and Solonetz-Solodizado (Planossolos),
+  Brunizem and Rendzina (Chernossolos), Regossolo, Litosol and Solos Litólicos
+  (Neossolos), Solos Orgânicos (Organossolos), Vertisol (Vertissolos), Cambisol
+  (Cambissolos), Solos Concrecionários and Concrecionários Lateríticos
+  (Plintossolos), Rubrozem (Argissolos), with the misspellings of these and
+  of the present orders found in the export ("PLITOSSOLO", "NEO0SSOLO",
+  "POZDÓLICO", "ARE1A QUARTZOSA"). 628 labels.
+* **Names that take two words** are in the new `.SIBCS_LEGACY_TWO_WORD_MAP`:
+  Bruno Não Cálcico (Luvissolos), Humic Glei and Low-Humic Glei (Gleissolos),
+  Solos Indiscriminados Concrecionários (Plintossolos), and Terra Roxa and
+  Terra Bruna Estruturada (Nitossolos). For the last two the book says "na
+  maioria" (p. 98), with a "pequena parte" in Argissolos (p. 87); the name does
+  not say which, and the 147 labels are read as the majority.
+* **"Solo" or "Solos" in front is not the name**: the word after it is ("SOLO
+  LITÓLICO" is Neossolos, "SOLOS ORGÂNICOS" Organossolos). A "Solos ..." label
+  followed by no name of the maps is `NA`, as before.
+* **A hyphen separates the words of a name** as a space does
+  ("LATOSSOLO-VERMELHO", "SOLONETZ-SOLODIZADO").
+
+These readings are tried only when the first word gives no order, so a label
+that was read before is read the same.
+
+Left out on purpose, and still `NA` (101 labels):
+
+* names the book divides between orders by something the name does not say:
+  Hidromórfico Cinzento (Gleissolos without an abrupt textural change,
+  Planossolos with one), Solonchak (Gleissolos only with a glei horizon),
+  Alissolo;
+* names that are not in its correlation: Laterítico Bruno Avermelhado (which
+  is not Laterita Hidromórfica), Solos Brunos Ácidos, Solos Coluviais,
+  Mediterrâneo Vermelho-Amarelo;
+* labels that begin with a Soil Taxonomy name ("Typic Haplorthox ou Latossolo
+  ..."), "aterro", and the labels the database itself marks as doubtful
+  ("\*MUDAR\*", "\*CORRIGIR\*").
+
+On the national BDsolos export (7,714 profiles, 7,694 with a label), default
+mode of `classify_sibcs()`:
+
+|                         | 0.9.225 | 0.9.226 |
+|-------------------------|--------:|--------:|
+| Scored profiles         |   6,818 |   7,593 |
+| Order agreement (count) |   2,873 |   3,182 |
+| Order agreement         |   42.1% |   41.9% |
+
+775 labels are now scored and the key agrees with 309 of them. The agreement
+goes down by 0.2 point because of the Terra Roxa and Terra Bruna profiles: the
+key places none of the 147 in Nitossolos (without them the figure would be
+42.7%). That is not particular to the old names. In this run the key returns
+Nitossolos for none of the 7,694 profiles, and agrees with none of the 306
+labelled Plintossolos or the 61 labelled Vertissolos. The reference follows
+the book; the cause on the key's side has not been looked into here.
+
+FEBR is not affected: its 1,442 labels are all present-day orders and are read
+exactly as before.
+
+On the BDsolos panel of the EJSS article (800 profiles of AC, AL and AM), run
+at this version, the scored profiles go from 785 to 798 (the two left out are
+the "Classificação ?" and "Alissolo" labels). Agreement: 320 of 785 to 326 of
+798 in the default mode (40.8% to 40.9%), 382 of 785 to 388 of 798 in the
+morphological mode (48.7% to 48.6%). The article's own figures are of v0.9.189
+and do not change.
+
+At `level = "subordem"` an old name gives its order followed by the next word
+of the label, as the names already in the map did. That word is not a suborder
+of SiBCS 5 in general: the old names are for comparisons at the order level.
+
+# soilKey 0.9.225 (2026-10-11)
+
+## SiBCS benchmarks: a reference label counts only if it is a SiBCS order
+
+`normalise_febr_sibcs()` reads a reference label by its first word, and that
+word came out whatever it was. "CLASSIFICAÇÃO ? CAMBISSOLO HÁPLICO ..." was
+the class "Classificacaos", "Alissolo Crômico" was "Alissolos", "LATOSOL
+AMARELO" was "Latosois" and "ESPODOSSOLO." was "Espodossolo.s". No prediction
+can equal those, yet the benchmarks counted them as scored profiles and as
+errors: 631 of the 7,694 labels of the national BDsolos export, in 79 forms.
+
+* The result must now be one of the 13 orders of SiBCS 5 (the new internal
+  `.SIBCS_ORDERS`) after the legacy map. Anything else is `NA`, so the profile
+  is left out of the scored ones, as a label of the "Solos ..." kind already
+  was.
+* Punctuation around the first word is dropped first, so "ESPODOSSOLO.",
+  "Vertissolo." and "PLANOSSOLO(???)" are read as their orders.
+
+On the national BDsolos export (7,714 profiles, 7,694 with a label):
+
+|                         | 0.9.224 | 0.9.225 |
+|-------------------------|--------:|--------:|
+| Scored profiles         |   7,442 |   6,818 |
+| Order agreement (count) |   2,871 |   2,873 |
+| Order agreement         |   38.6% |   42.1% |
+
+624 labels stop being scored and 7 are now read as an order. The agreement
+rises because the 624 were errors by construction; the key did not change.
+Most of them are names of older editions that have a present-day order and no
+entry in `.SIBCS_LEGACY_ORDER_MAP` yet: "Terra Roxa ..." and other "Terra"
+names (147), "Latosol" (139), "Planosol" (54), "Brunizem" (43), "Bruno Não
+Cálcico" (40). They are left out here, not mapped: which order each one
+belongs to is a pedological decision for the map.
+
+FEBR is not affected: its 1,442 labels are all orders already.
+
+On the BDsolos panel of the EJSS article (800 profiles of AC, AL and AM), run
+at this version, the scored profiles go from 787 to 785: the "Classificação ?"
+and "Alissolo" labels are left out, and "ESPODOSSOLO." is read as Espodossolos
+(a hit in the morphological mode: 381 to 382 of them agree). The article's own
+numbers are those of v0.9.189 and do not change.
+
+# soilKey 0.9.224 (2026-10-10)
+
+## Pro app: every instance serves the scripts a drawn widget brings
+
+The Map tab could come up as a grey box, without base map or overlay, when
+Cloud Run had a second instance up. A map with provider tiles brings two
+scripts when it is drawn, the provider list and leaflet's plugin for it. They
+are not in the page, so the start-up registration of 0.9.215 left them out.
+Shiny registered them only in the R process that drew a map, and a request
+routed to another instance got HTTP 404. Seen on 2026-10-10 in the request
+logs of the live 0.9.222 and of a 0.9.223 test revision, with two sessions
+open at once: page and websocket on one instance, the two 404s on another.
+
+A local run through every tab, with each resource path logged, found the same
+for two other widgets: DT's DataTables core and plotly's plotly.js bundle are
+registered when the first table or plot is drawn. No 404 was seen for those.
+
+* `sk_register_widget_deps()`, called at start-up after the page is rendered,
+  registers what a table, a plot and a map with provider tiles bring: 34
+  prefixes at start-up in the local run, against 28. Only prefixes that are not
+  registered yet are added, so nothing of the page is re-pointed, and a
+  widget's own jQuery is left out.
+* Maps and map proxies get their provider tiles through `sk_provider_tiles()`.
+* A provider list in the temporary folder is never served from there. Shiny
+  serves the folder a dependency is in, whole, and leaflet has a fallback that
+  writes the provider list to the R session's temporary folder;
+  `sk_own_dependency()` moves such a dependency to a folder that holds only
+  its files. The container image does not take that fallback: there the list
+  comes from the installed leaflet.providers package folder, so no temporary
+  folder was served by the live app. (This note first said it was; a check
+  inside the 0.9.224 image showed otherwise.)
+
+Checked in a fresh local process, before any session: the two provider scripts
+answered 404 and now answer 200. In a session through every tab no prefix is
+re-pointed, and the only new one is the jQuery of plotly's crosstalk, which the
+browser does not ask for (the page's jQuery is there). The base map loads and
+changes with the selector.
+
+Checked on the container image: a fresh instance of 0.9.223 answered 404 for
+the five draw-time scripts before any session (the two provider scripts, the
+DataTables core, plotly.js and typedarray), and one of 0.9.224 answers 200.
+Four sessions at once, over three instances, drew every map, table and plot
+without a failed request.
+
+# soilKey 0.9.223 (2026-10-10)
+
+## The AfSP row of the benchmark suite
+
+`run_all_benchmarks()` has a row for the AfSP sample (WRB, Africa), and it was
+never there. `load_afsp_sample()` returns a list that holds the 120 profiles in
+`$pedons`, beside the date, source and filter of the snapshot. The suite cut
+that whole list to `max_n` and handed it to `benchmark_afsp()`, which stopped
+with "$ operator is invalid for atomic vectors". The suite dropped the error
+and went on without the row, and without a word (seen in 0.9.187 and 0.9.222).
+
+* `benchmark_afsp()` takes the list `load_afsp_sample()` returns, or its
+  `$pedons`. Anything that is not a list of `PedonRecord` objects is refused
+  with a message that says so.
+* The suite scores the sample's profiles and applies `max_n` to them. With the
+  sample cached, the summary has the row: n = 120, RSG agreement 25.0%
+  [17.5, 32.5], kappa 0.218 in the strict mode.
+* A sample that is present but cannot be scored is reported ("AfSP sample
+  present but could not be scored: ..."). An absent sample is skipped as
+  before, with a note when `verbose = TRUE`.
+* The help of `load_afsp_sample()` said 130 profiles over 26 RSGs. The sample
+  has 120 over 24.
+
+It went unseen because the AfSP tests only run with the sample in
+`inst/extdata`, and the suite test asked for "only the canonical row", which
+the missing row satisfied. That test now accepts the AfSP row, and the new
+tests use a three-profile stand-in for the sample.
+
+# soilKey 0.9.222 (2026-10-10)
+
+## BDsolos: every export read by one reader; loading several files no longer hangs
+
+`load_bdsolos_csv()` read each file with `data.table::fread()` and fell back
+to `utils::read.csv2()` when that failed. The export quotes every field. Its
+free-text fields hold line breaks and, in 11 of the 27 state files of the
+national export, quotation marks of their own (`formação "Camaquã"`). On those
+files `fread()` did one of two things:
+
+* **It split the records at the line breaks**, with a warning the loader
+  silenced. BA, GO, PI and RS were read this way: RS gave 3,853 rows for its
+  897 records. Lines of text became profiles of their own, 1,281 of the 8,995
+  "profiles" of the national export (553 in BA, 248 in GO, 69 in PI, 411 in
+  RS), and the real profiles of those states got broken horizons and, often,
+  no reference class.
+* **It stopped** with "attempt to set index N/N in SET_STRING_ELT" (DF, MT,
+  PA, PB, SP). The loader then used `read.csv2()`, which read the file right.
+  But the error came from inside an OpenMP critical section of `fread()`, which
+  stayed locked: the next `fread()` of the R session never returned. Loading
+  the state files in a loop, as `benchmark_unified()` and the
+  `download_bdsolos()` example do, hung at the first file after DF
+  (data.table 1.18.4).
+
+`read.csv2()` now reads every file (`.bdsolos_read_table()`), and the loader
+no longer calls `fread()`. Checked against the export's own structure, where a
+record ends with `";` at the end of a line: the same 8,550,304 cells in the 27
+files, except that it drops the quotation marks inside 231 text fields. The 27
+files load in one R session, with the same result as one session per file.
+
+What changes in the loaded data:
+
+* The national export has 7,714 profiles, not 8,995.
+* BA, GO, PI and RS have 1,424 profiles (were 2,705) with 5,344 horizons (were
+  13,045). 1,373 of them have a SiBCS reference class (were 1,017), and the
+  SiBCS order agrees with it in 33.5% (was 20.5%).
+* DF, MT, PA, PB, PE, RN and SP are identical.
+* In the other 16 states the profiles and their numbers are the same, and an
+  empty text field is now `NA`, as it already was in the 7 states above. It
+  was `""` (91,528 cells), which the keys took for a recorded value:
+  - 56 profiles go from Regosols to Cambisols, and 56 (54 of them the same)
+    from Entisols to Inceptisols (52) or Aridisols (4): a B horizon without
+    a structure description (`structure_grade` of `""`) counted as
+    structureless and failed the cambic horizon; it is now missing data;
+  - 220 profiles without a Munsell hue got a colour suborder by default
+    (Argissolos Vermelho-Amarelos 181, Latossolos Vermelho-Amarelos 22,
+    Luvissolos Háplicos 17) and are now "(cor a determinar)";
+  - 54 other SiBCS names change, 3 of them in the order (Neossolos to
+    Chernossolos), and 33 other WRB names in their qualifiers. The SiBCS
+    order agreement of these states stays at 39.6%.
+  - A line break inside a text field is `\n`; `fread()` kept the file's
+    `\r\n` (13 site fields).
+* Over the national export the SiBCS order agrees with the reference class in
+  38.6% (2,871 of 7,442 labelled profiles); it was 37.0% (2,619 of 7,086).
+
+The loader's comment blamed malformed UTF-8 for the `fread()` failures. The 27
+files are valid UTF-8.
+
+Earlier BDsolos figures in this file (8,995 profiles, n = 7,086) include the
+1,281 lines of text read as profiles.
+
+# soilKey 0.9.221 (2026-10-08)
+
+## BDsolos and FEBR: dithionite Fe and sulfuric-attack Fe2O3 kept apart
+
+Both loaders filled `fe_dcb_pct`, the dithionite (free) Fe that the WRB
+criteria read, with the Fe2O3 of the sulfuric attack, the total Fe as the oxide
+that the SiBCS férrico classes read. They also left it in g/kg, where soilKey
+stores %. So a BDsolos horizon with 43 g/kg Fe2O3 was recorded with 43% free Fe,
+and every horizon with a sulfuric attack passed the WRB Fe-dith limits (4% for
+the nitic horizon, 10% for Ferritic). This affects 23,021 layers of the
+national BDsolos export. `fe2o3_sulfuric_pct` stayed empty, so the SiBCS
+férrico and perférrico classes were never reached on these data.
+
+* `load_bdsolos_csv()`: "CDB - Ferro (g/kg)" goes to `fe_dcb_pct`, "Ataque
+  sulfúrico - Fe2O3" to `fe2o3_sulfuric_pct` and "Oxalato de Amônio - Ferro"
+  to `fe_ox_pct`, all converted from g/kg to %. The CDB column (667 layers)
+  comes after the sulfuric one in the export, so it used to be dropped.
+* `read_febr_pedons()` follows the FEBR dictionary codes, all in g/kg:
+  - `ferro_ditionito_*` (or `fe2o3_ditionito_*`, converted to the element)
+    to `fe_dcb_pct`;
+  - `ferro_oxalato_*` / `fe2o3_oxalato_*` to `fe_ox_pct`;
+  - `fe2o3_sulfurico_*` (or `ferro_sulfurico_*`, converted to the oxide) to
+    `fe2o3_sulfuric_pct`.
+
+  Until now the first `fe2o3_*` column of any method filled `fe_dcb_pct`:
+  sulfuric, aqua regia, oxalate or dithionite. The map also asked for a
+  `ferro_dcb` code the dictionary does not have.
+* Readers that took the sulfuric Fe2O3 for dithionite Fe on these data: the
+  WRB nitic horizon and the Ferric and Ferritic qualifiers; the SiBCS caráter
+  espódico (Fe-dith >= 0.5%, so every B with a sulfuric attack passed that
+  part); and the USDA Ferrudalfs (Fe-dith >= 4%).
+
+On the national BDsolos export (8,995 profiles in the 27 state files), 6,654
+profiles load with different Fe data. Classified before and after in the three
+systems, none changes RSG, SiBCS order or USDA order, and the SiBCS order
+agreement with their BDsolos labels stays at 36.5% (5,563 labelled). The names
+change:
+
+* WRB: Ferric falls from 2,298 names to 14. All 14 have CDB Fe; 7 of them
+  get it through the CDB column that used to be dropped.
+* SiBCS: 129 names gain an iron class (94 Distroférricos, 10 Aluminoférricos,
+  10 Eutroférricos, 9 Férricos, 6 Perférricos). Of the 68 profiles whose
+  BDsolos label has an iron class and whose sulfuric Fe2O3 reaches 18%, 42 are
+  now named with one (none before). 11 profiles lose the espodossólico
+  subgroup (Cambissolos and Neossolos).
+* USDA: Ferrudalfs fall from 403 to 6, all 6 with CDB Fe >= 4%. The others
+  are now Paleudalfs, Kandiudalfs, Hapludalfs or Rhodudalfs.
+
+Not changed: the REDAPE GeoTab loader maps `TEOR_FE` (values of 6-49, so g/kg)
+to `fe_dcb_pct`. The dataset does not say whether it is dithionite Fe or
+sulfuric Fe2O3, so it is left as it was until that is known. The sulfuric
+Al2O3 and SiO2 of BDsolos and FEBR (for Ki and Kr) are still not loaded.
+
+# soilKey 0.9.220 (2026-10-08)
+
+## WRB 2022 diagnostics checked against Chapter 3
+
+The qualifier audit of 0.9.217 found diagnostics that also decide RSGs and did
+not follow their WRB 2022 definitions. Each now reads its criteria: a
+criterion is `FALSE` when the data contradict it and `NA` when the data it
+needs are missing. Of the 44 example profiles, 8 change WRB name and none
+changes RSG; one, the Retisol, also changes SiBCS and USDA class (below).
+
+* **Nitic horizon** (Ch 3.1.22), `nitic_horizon()`:
+  - the structure and shiny-faces criterion (2) now decides: blocky
+    (moderate or strong) or polyhedral structure, and clay films
+    ("cerosidade") of "common" or more, the level the SiBCS B nitico asks for;
+    until now it never vetoed;
+  - Fe-ox >= 0.2% and Fe-ox / Fe-dith >= 0.05 (3) are read;
+  - a layer of a plinthic horizon is excluded (4), so the example Plinthosols
+    are no longer Nitic;
+  - a ferralic horizon elsewhere in the profile no longer excludes it
+    (Nitisols key out before Ferralsols);
+  - the reading of legacy profiles added in 0.9.18 (a Bt designation, a CEC
+    of 8-36 cmolc/kg clay and no albic E standing in for missing structure
+    and Fe data) now runs only with
+    `options(soilKey.morphological_inference = TRUE)`, like the other
+    designation-based readings.
+* **Nitisols** are keyed by the new `nitisol()`, the Chapter 4 entry: a nitic
+  horizon starting <= 100 cm, a clay content above it at least half of its
+  weighted average, no vertic horizon above it. It replaces a non-WRB veto on a
+  clay drop of more than 8 percentage points within 50 cm.
+  - The canonical Nitisol now records oxalate Fe (0.8-0.9%).
+  - On the 219 FEBR profiles with a WRB class, which record no structure,
+    clay films or Fe fractions, the 7 Nitisols keyed correctly all came
+    from the default inference: RSG agreement goes from 22.0% to 19.3%.
+  - With the option on it goes from 26.6% to 26.1%, still with 7 correct
+    Nitisols, but not the same ones. Six that matched before fail the
+    Chapter 4 clay rule (an A of 12-18% clay over a Bt of about 40%) or start
+    below 100 cm, and six others now pass.
+* **Continuous rock** (Ch 3.2.5), `continuous_rock()` and the Leptosol gate:
+  - R, RCr and R/Cr, also below a lithic discontinuity (2R);
+  - Cr, weathered or soft bedrock, no longer counts. It is not continuous
+    rock in WRB 2022 nor a contato litico in SiBCS 2018 ("rochas sas
+    (camada R) ... ou ... majoritariamente por rocha dura (RCr ou R/Cr)").
+* **Technic hard material** (Ch 3.3.18), `technic_hard_material()`:
+  - `technic_hardmaterial_pct` >= 95 or an asphalt or concrete designation;
+  - any strongly cemented layer counted before, so a petrocalcic horizon or
+    a duripan was technic, and so did a geomembrane.
+* **Claric material** (Ch 3.3.4), and the albic horizon that consists of it,
+  need the dry and the moist colour; either was enough. The example Acrisol,
+  Alisol, Lixisol and Luvisol lose Albic, and the Cryosol too: their E is 5/3
+  moist (claric) but 6/3 dry (not).
+* **Argic horizon** (Ch 3.1.3):
+  - criterion 2.a.i: a clay increase over a coarser layer of another
+    material (Ap over 2Bt) counts only with clay films of "common" or more
+    (illuvial clay, criterion 2.b). WRB only: the SiBCS B textural, whose
+    item (j) accepts such an increase by its textural ratio, and the USDA
+    keys call `argic(lithic_discontinuity = FALSE)`;
+  - a glossic, albeluvic or retic designation no longer voids it, in any
+    system. It was the WRB 2014 Albeluvisol logic; in WRB 2022 retic
+    properties belong to an argic or natric horizon. The example Retisol
+    gains Cutanic, Differentic, Epic and Profondic. In SiBCS it goes from
+    Neossolos Regoliticos to Luvissolos Cromicos Orticos, and in USDA from
+    Aeric Epiaquepts to Typic Albaqualfs: its Btg has twice the clay of the
+    E.
+* **Panpaic horizon** (Ch 3.1.23), `panpaic()`, was any designation with a "b",
+  AB included (matched ignoring case). It is now a buried surface horizon
+  (Ab, 2A) with >= 0.2% SOC, >= 25% and >= 0.2% more than the layer above, a
+  lithic discontinuity at its upper limit, >= 5 cm; the Panpaic qualifier only
+  adds the depth.
+* **Retic properties** (Ch 3.2.11), `retic_properties()`, need an argic or
+  natric horizon (criterion 1) and the interfingering recorded at its upper
+  limit (6); the designation stands in for the criteria no column holds.
+* **Lamellic**, `qual_lamellic()`, reads lamellae from the layers: 0.5-7.5 cm,
+  more clay than the layers above and below (argic 2.a) or clay films, >= 5 cm
+  together within 50 cm. A lamella designation alone gives `NA`.
+
+Not changed here: argic criteria 2.a.ii-iii (plough layer, transitional
+horizon <= 15 cm) and the "minimum clay above" reference of the clay-increase
+test; `lithic_discontinuity()`, which reads a 10-point jump in coarse
+fragments; and the Leptosol path through coarse fragments (WRB: < 20% fine
+earth averaged over 75 cm).
+
+# soilKey 0.9.219 (2026-10-08)
+
+* Pro app: the navbar is the espresso brown of the theme in both colour modes.
+  With the Flatly theme, bslib 0.7 (the container's) paints a light navbar with
+  the primary colour and a dark one with the success colour, and `page_navbar()`
+  chooses between them from the theme current when the page is built. Until
+  0.9.218 that theme was unknown on an instance that had not served a page yet,
+  so the navbar was brown or green depending on the instance; once 0.9.218 made
+  it known everywhere, the navbar was green. `soilkey.css` now sets it.
+
+# soilKey 0.9.218 (2026-10-08)
+
+## Pro app: pages no longer lose jQuery or their theme after a table or a map
+
+On the live app, an instance that had rendered a key-trace table or a map then
+served pages without jQuery (HTTP 404 for `jquery-3.6.0/jquery.min.js`), so they
+came up broken, until it was restarted. The page loads Shiny's jQuery from the
+resource path `jquery-3.6.0`; DT and leaflet widgets also carry jquerylib's
+jQuery, of the same version in the container's Shiny 1.8, under the same path,
+and rendering one re-pointed it to a folder without `jquery.min.js`. Found in
+the request logs of the 0.9.218 test revision: one instance answered 200, then
+404 from the moment a session there had rendered the table. `sk_datatable()`
+and the new `sk_leaflet()` drop the widgets' own jQuery; the page's is the one
+they use. A local install, on a newer Shiny (jQuery 3.7.1), never collides,
+which is why only the container showed it.
+
+The same test revision showed a second fault, of the multi-instance setup of
+0.9.215: a session that Cloud Run opened on an instance which had not yet served
+a page had no theme. Shiny records the theme when it serves a page with the app
+running, and app.R, where 0.9.215 renders the page at start-up, is sourced
+before that. Its tables then took DT's default style, and selectize and bslib's
+component CSS, rendered unthemed, re-pointed their resource paths to folders
+without the themed files, so pages that instance served next lost their select
+inputs' and layout's styles (404). `sk_register_page_deps()` now also makes the
+app's theme the theme of every session from start-up.
+
+Cloud Run's session affinity is best effort, and the request with which a
+server-side DT table fetches its rows (`/session/<id>/dataobj/<table>`) could
+reach an instance that did not hold the session: the table stayed empty. The
+app's tables are small, so they now send their rows with the table, over the
+session's websocket (`sk_renderDT()`, `server = FALSE`).
+
+## Pro app: readable dark mode, AA contrast in both themes
+
+A contrast check of every tab (WCAG 2.1 AA: 4.5:1 for text, 3:1 for large
+text), in dark and in light mode, found 21 failing combinations of text and
+background in dark mode and 17 in light mode. All now pass; the only text under
+4.5:1 left is the "Key" of the soilKey logotype, which WCAG exempts.
+
+* **Assistant replies were unreadable in dark mode**: light text on Bootstrap's
+  `--bs-light`, which stays near-white (1.0:1). Both chat bubbles now use the
+  app palette: the reply on the sand wash, the question on the brown (it was
+  white on light clay, 1.9:1 dark and 2.5:1 light).
+* **The key trace "criteria" cells** (met / not met / assigned / needs data)
+  kept their light pastel fills under light text in dark mode (1.0-1.1:1). The
+  fills are palette tokens now, with dark shades in dark mode; so are the
+  probability colours of the Uncertainty table.
+* **Plotly charts** (depth profile, spectrum, posterior) were white panels in
+  dark mode; they now draw on the card colour with light axis text and grid.
+* The terracotta accent is darkened from #B5652E to #9E5626 and the moss from
+  #5E7B3B to #557036 (CSS palette and `bs_theme()`), so white text on them,
+  and them as text on the light washes, reach 4.5:1 (buttons, links, the
+  footer version, `pre` output, the inactive result tabs were 3.7-4.3:1).
+* Dark mode: terracotta buttons and the Assistant button take dark text
+  (white on them was 2.4-2.6:1); outline buttons, `.text-success` and the
+  "results are up to date" style notes take the dark-mode shades (they were
+  2.4-4.2:1); the profile picker is no longer a white box.
+* Both themes: "Skip tour" is a plain link (it was muted text on a
+  terracotta button, 1.4-1.9:1); the table pager is brown, not Flatly's green with
+  near-white text (2.3:1); Docs in the navbar is styled like the other
+  navbar links (1.6:1); the footer licence line is 5:1 (2.8:1); the grade C
+  badge is a darker orange (white on it was 2.6:1).
+
+# soilKey 0.9.217 (2026-10-08)
+
+## WRB 2022 names follow WRB 2022: Chapter 4 lists, Chapter 2.2 rules
+
+soilKey called its WRB names "WRB 2022", but for most RSGs the qualifier lists
+were the longer WRB 2014 lists, and a list became a name by rules that were
+not WRB 2022's. Both are now the text's. **43 of the 44 example profiles
+change WRB name (the Neossolo, an Umbric Leptosol, keeps it); none changes
+RSG**, and SiBCS and USDA names are untouched. Names cited from earlier
+versions (the README, papers) need updating: the example Ferralsol, for
+instance, was "Geric Ferric Rhodic Ferralsol (Clayic, Humic, Eutric, Ochric,
+Rubic)" and is now "Geric Rhodic Ferralsol (Clayic, Epic, Eutric, Ferric,
+Humic)".
+
+* **The 32 lists are Chapter 4's.** `inst/rules/wrb2022/qualifiers.yaml` is
+  generated from the corrected text (18 December 2022) by
+  `data-raw/wrb2022_ch4_lists.py` and `data-raw/wrb2022_qualifiers_yaml.py`:
+  each RSG's principal qualifiers in their ranked order and its supplementary
+  ones, with alternatives kept as WRB writes them ("Rhodic/Xanthic").
+  Ferralsols had 29 principal qualifiers (Ferric, Hyperdystric, Plinthic,
+  Histic and Vitric among them) against WRB 2022's 13: Ferritic, Gibbsic,
+  Rhodic/Xanthic, Geric, Nitic, Pretic, Gleyic, Stagnic, Profundihumic,
+  Mollic/Umbric, Acric/Lixic, Skeletic, Haplic. Qualifiers that define the RSG
+  (Chernic for Chernozems, Calcic for Calcisols, Plinthic for Plinthosols,
+  Duric for Durisols, Stagnic for Planosols) are no longer in its own list.
+* **The rules for naming soils (Chapter 2.2)**, in `resolve_wrb_qualifiers()`:
+  - principal qualifiers are written right to left, "the uppermost qualifier
+    in the list is placed closest to the name of the RSG";
+  - supplementary qualifiers start with texture, then follow "the order of the
+    alphabet", by qualifier, not subqualifier (they kept the list order);
+  - in a slash group only the first qualifier that applies is used (the
+    example Ferralsol had both Humic and Ochric); every alternative is still
+    evaluated and traced;
+  - "Qualifiers conveying redundant information are not added ... Eutric is
+    not added if the Calcaric qualifier applies", nor its subqualifiers
+    (Hypereutric, Epieutric, Endoeutric), and likewise with Dolomitic;
+  - Haplic, "no other principal qualifier of the respective RSG applies", only
+    where the RSG lists it: 16 RSGs do not (their last entry, e.g.
+    Dystric/Eutric, applies to any soil with the data). A soil with no
+    principal qualifier in such an RSG is still written with its
+    supplementary ones ("Technosol (Loamic, Humic, Irragric, Mollic,
+    Terric)").
+* **A qualifier's own function is tried before reading its name as specifier
+  + qualifier.** Epic (ep) was read as Epi- + "c" and never evaluated.
+* **Epic, Endic and Dorsic** refer to "the uppermost respective diagnostic
+  horizon of the RSG" (the ferralic horizon in a Ferralsol, the argic in a
+  Luvisol, the cryic in a Cryosol) and now get the RSG from the resolver. Epic
+  passed for any profile with a horizon starting above 50 cm, and Dorsic read a
+  "ridge" microrelief field.
+* **Novic**, the one Chapter 4 qualifier without a function, is added (a
+  5-50 cm layer over a buried soil, read from the designation suffix `b`).
+  `coverage_report("wrb_qualifiers")` is 234 of 234.
+
+## The qualifiers that now reach names were checked against Chapter 5
+
+96 qualifiers of the WRB 2022 lists had never been in soilKey's lists; their
+functions, written from the qualifier's name in v0.9.63-64, now decide names.
+Each was compared with its Chapter 5 definition (and the diagnostic horizons,
+properties and materials it refers to): 68 were rewritten, 23 now return `NA`
+when soilKey holds no data for what the definition needs (and `FALSE` when
+the data rule it out), 5 were already right. A few of what they did:
+
+* Gibbsic took Al2O3 from sulfuric attack >= 25% for gibbsite >= 25%, which
+  many clayey Ferralsols reach; it is now `NA` without a gibbsite figure.
+* Oxyaquic passed on >= 5% redox features without a gley colour; WRB 2022
+  asks for a saturated layer and "not having gleyic properties and not having
+  stagnic properties" within 100 cm.
+* Epieutric passed on 29 of the 44 example profiles, ignoring "absent in the
+  major part between 20 and 100 cm" (Ch 2.3.1, rule 3); Mineralic on 42,
+  Neocambic on 18, Tonguic on 11 (any AB or BA horizon, or an irregular
+  boundary) and Panpaic on 9 (the panpaic diagnostic read an AB horizon as
+  buried).
+* Carbonic counted any organic carbon >= 5% ("that belongs to artefacts" in
+  WRB 2022), Fractic any shrink-swell crack (remnants of a broken-up petro-
+  horizon), Nechic any loess or dune description (uncoated grains in a darker
+  matrix at pH < 5).
+* New in the example names: Differentic on the Acrisol, Alisol, Lixisol,
+  Luvisol and Solonetz ("an argic or natric horizon that meets diagnostic
+  criterion 2.a"; it passed on a clay ratio of 1.2-1.4 between any two
+  horizons), Ferritic on the Nitisol, Hypernatric on the Solonetz, Pantofluvic
+  on the Fluvisol.
+
+Where the definition needs data soilKey cannot hold (soil-solution anions,
+gibbsite, uncoated grains, black carbon, subsurface water flow, ...) the
+qualifier is never `TRUE`; each function's comment quotes the definition and
+names what is missing.
+
+## Diagnostics and qualifiers corrected on the way
+
+* `hydragric()`: WRB 2022 Ch 3.1, criterion 1, the horizon "is overlain by an
+  anthraquic horizon". Any Bg/Brg/Bdg horizon of 20 cm passed (the example
+  Gleysols and Stagnosol did), and Chapter 4 lists Hydragric for Gleysols and
+  Stagnosols, so they would have been named as paddy soils.
+* Toxic: "toxic concentrations of organic or inorganic substances other than
+  ions of Al, Fe, Na, Ca and Mg". It passed on pH <= 3.5 or EC >= 16 dS/m, the
+  acidity and salts the definition leaves out (the example Solonchak passed;
+  Chapter 4 lists Toxic for every RSG but Chernozems, Kastanozems and
+  Phaeozems). It now needs a recorded `contamination_type` within 50 cm.
+* Protic: "showing no soil horizon development, with the exception of a cryic
+  horizon". It only checked for five subsurface horizons (cambic, argic,
+  spodic, ferralic, nitic), so the example Arenosol (sideralic properties) was
+  named Protic, and the function also passed on a Leptosol with an umbric
+  horizon and the Technosol with a mollic one.
+* Endo- qualifiers built on a diagnostic (Endocalcic, Endogleyic,
+  Endostagnic): "the layer starts >= 50 cm ...; and no such layer occurs
+  < 50 cm" (Ch 2.3.1). A horizon starting at 30 cm counted when one of its
+  layers started between 50 and 100 cm.
+  `qual_endocalcic()` was also defined twice, the copy in force taking any
+  calcic layer between 50 and 200 cm; one definition remains.
+* Endoeutric used the presence-only test that the audit replaced for
+  Endodystric, Epidystric and Epieutric.
+
+## Not changed here
+
+* The diagnostics the qualifiers call were reused as they are. The audit
+  found some that deserve their own review because they also decide RSGs:
+  `nitic_horizon()` accepts a horizon without the shiny ped faces WRB requires
+  (the example Plinthosol is named Nitic); `continuous_rock()` counts Cr
+  (weathered rock); `technic_hard_material()` accepts any strongly cemented
+  layer; `claric_material()` needs the dry or the moist colour, not both;
+  `argic()` does not check criterion 2.a.i (no lithic discontinuity).
+* The BDsolos and FEBR loaders put Fe2O3 from sulfuric attack into
+  `fe_dcb_pct` (dithionite Fe), which WRB's Ferric and Ferritic read and
+  SiBCS's ferrico does not.
+* Optional subqualifiers (Ch 2.3, rule 1, e.g. Hypereutric for Eutric) are not
+  used in place of the qualifier, and qualifiers that apply but are not in the
+  RSG's list are not added as supplementary (Ch 2.2, for polygenetic soils).
+
+# soilKey 0.9.216 (2026-10-08)
+
+## No WRB qualifier that WRB 2022 does not have
+
+* Ten names in soilKey's WRB 2022 qualifier lists do not occur anywhere in the
+  WRB 2022 text (4th edition, as corrected 18 December 2022): **Vetic**,
+  Melanic, Cumulic, Hyperalbic, Hyperskeletic, Hypersodic, Hypocalcic,
+  Hypogypsic, Hyposalic and Hyposodic. They are WRB 2014 qualifiers; Vetic, for
+  instance, became Geric ("ECEC < 6 cmolc kg-1 clay"). A profile could be named
+  with a qualifier the system it claims to follow does not define. All 88
+  entries are removed from the 32 lists, which are otherwise unchanged.
+* Seven of the 44 example profiles change name, each only by losing one of
+  these: the Andosol drops Melanic; the Chernozem, Gypsisol and Kastanozem show
+  Protocalcic where Hypocalcic stood (Protocalcic was already further down the
+  list); the Solonchak drops Hyposalic and Hyposodic, the Solonetz Hyposodic.
+  No class (RSG) changes. The Ferralsol keeps its name: Vetic never applied to
+  it.
+* **The lists need more than this.** Checked against WRB 2022 Chapter 4 with
+  `data-raw/wrb2022_ch4_lists.py` (which extracts each RSG's principal and
+  supplementary lists from the ISRIC PDF), soilKey's lists follow the much
+  longer WRB 2014 lists for most RSGs: qualifiers that WRB 2022 moved to the
+  supplementary list are still principal (Ferric, Hyperdystric and Plinthic
+  for Ferralsols, whose WRB 2022 principal list has 13 entries against
+  soilKey's 30), and some WRB 2022 principal qualifiers have no function yet
+  (Ferritic, Gibbsic, Profundihumic for Ferralsols). Realigning them changes the
+  name of most profiles and is left to its own release.
+* The functions behind the ten names stay, unused by the key.
+
+## The Assistant is told units and the direction of each limit
+
+* The evidence the Assistant reads listed values without units
+  ("values #2=12.5, #3=10 (limit 16)"), and the model filled them in: it
+  described the CEC per clay as "8 cmolc/kg per % clay". Values now carry their
+  unit (cmolc/kg clay, cm, %), and a limit says whether it is strict: the WRB
+  ferralic horizon reads "must be below 16", the USDA oxic horizon "must be 16
+  or less" (0.9.212). `test_cec_per_clay()` records `inclusive` in its details
+  for this.
+
+## README
+
+* The app screenshots are retaken from the live app (0.9.216): the Classify
+  tab, the Map with the live SoilGrids overlay of Rio de Janeiro, and the
+  Assistant answering why the example profile is a Ferralsol. The old ones
+  showed 0.9.184, a GPL-3 footer and the synthetic demo map; the Assistant one,
+  removed in 0.9.213, is back with a grounded answer.
+
+# soilKey 0.9.215 (2026-10-08)
+
+## Every app instance serves the page's scripts and styles
+
+* Shiny registers a page dependency (jQuery, Bootstrap, bslib, Shiny's own
+  scripts, selectize, the widgets) only when it renders the page in that R
+  process; an R process that had not rendered one answered 404 for all of them.
+  On Cloud Run, with more than one instance (up to three since 0.9.207), the
+  40-odd requests of one page load were not all routed to the instance that
+  rendered the page, because session affinity is best effort. Some visitors got
+  the page without its styles or scripts: an unstyled list of links, no Shiny.
+  The request logs of 2026-10-08 show it for one page load: 200s from one
+  instance, 404s from the other.
+* `app.R` now renders the page once at start-up through Shiny's own renderer,
+  which registers every dependency on every instance (`sk_register_page_deps()`
+  in the app's `R/utils_ui.R`). bslib builds its themed dependencies from its
+  global theme outside a running app, so the app's theme is set for that
+  render; otherwise selectize and Shiny's styles came out unthemed, under other
+  file names. Checked against a local app: before any page, 4 of the page's 40
+  scripts and styles were served; now all 40 are.
+
+# soilKey 0.9.214 (2026-10-07)
+
+* Pro app, Map: the class colours past 12 (0.9.212) included Polychrome 36's
+  near-white grey and pale cream. Seen live on the SoilGrids overlay of Rio de
+  Janeiro, Alisols got the grey, which in the legend's white box and on the
+  map read as "no class". Both are left out; up to 34 classes still get
+  distinct colours.
+
+# soilKey 0.9.213 (2026-10-07)
+
+## A profile with no soil property has no evidence grade
+
+* Horizons with only depths and designations ran through every key and ended
+  at its catch-all: an "A / Bt1 / Bt2" profile came out Haplic Regosol,
+  Neossolos Regoliticos and Typic Udorthents, each with **evidence grade A**,
+  because a pedon with no provenance recorded is read as measured. Nothing in
+  those classes was verified; they were reached by elimination.
+* `classify_wrb2022()`, `classify_sibcs()` and `classify_usda()` now return
+  `evidence_grade = NA` for such a profile and add a warning that says why. The
+  class itself is unchanged and still returned: depths and designations are
+  kept as they are, and refusing the profile (as 0.9.208 does for one with no
+  horizons) would hide what little it says. `print()` shows "Evidence grade:
+  none".
+* A profile counts as having properties as soon as any horizon has a value
+  outside depth, designation and boundary: a laboratory value, a Munsell
+  colour, structure, consistence, any field observation. One is enough for the
+  grade to be read from provenance as before, so every profile that had a
+  property keeps its grade.
+* SiBCS turned a missing grade into "C" when the colour of the B horizon was
+  unknown; a profile without properties now stays without a grade.
+* The Pro app shows "No measured data" / "Sem dados medidos" instead of a
+  letter, with a note in the result card; the HTML and PDF reports print "none
+  (no soil property measured)"; the Assistant is told the same.
+
+## Also
+
+* `horizonte_histico()` took the maximum of an all-missing column on every
+  organic profile and warned "no non-missing arguments to max". The value
+  only fed a comparison it could not pass either way; no result changes.
+* README: the evidence-grade section described an A-D scale with rules the
+  code does not follow; it now gives the A-E scale as computed, and the new
+  NA. The Assistant screenshot is removed: it showed an answer from a model
+  Groq has since retired that explained the Ferralsol wrongly ("Geric" as a
+  clay content, a ferric horizon as diagnostic of Ferralsols). The logo is
+  stored at 320 px instead of 1254 px and the remaining screenshots with a
+  256-colour palette, taking the tarball from 8.4 to 5.5 MB.
+
+# soilKey 0.9.212 (2026-10-07)
+
+## A CEC limit the books write as "less than" no longer accepts the limit itself
+
+* **WRB 2022 and SiBCS write these limits strictly; soilKey read them as "or
+  less".** The ferralic horizon needs a CEC (1 M NH4OAc, pH 7) "< 16 cmolc kg-1
+  clay" (WRB 2022, Ch 3.1.10, criterion 3); the cohesic horizon, sideralic
+  properties and the argic horizon of Acrisols and Lixisols "< 24"; the SiBCS B
+  latossolico "menor que 17 cmolc kg-1 de argila" (Cap 2), whose complement,
+  the B incipiente, is "17 ... ou maior". The shared test accepted a value equal
+  to the limit, so a horizon at exactly 16 was ferralic, one at exactly 17 was
+  latossolic, and an argic horizon at exactly 24 was low-activity (Acrisol,
+  Lixisol) and high-activity (Alisol, Luvisol, ">= 24") at once, the key order
+  deciding which. The test is now strict.
+* **USDA keeps "or less".** The oxic horizon asks for "16 cmol(+) or less per
+  kg clay" (KST 13, Ch 3, criterion 6), and `oxic_usda()` delegates to
+  `ferralic()`. `ferralic()` gains `cec_inclusive = FALSE`; `oxic_usda()`
+  passes `TRUE`, so a horizon at exactly 16 is now oxic (USDA) but not ferralic
+  (WRB), as the two texts say.
+* Values are compared after rounding to 9 decimals: `cec * 100 / clay` is
+  15.999999999999998 for 2.32 cmolc and 14.5% clay, which would otherwise pass
+  a strict 16, and 16.000000000000004 for 1.12 and 7%, which would fail an
+  inclusive one.
+* Only values exactly at a limit change. The example Ferralsol's A horizon is
+  one (8.0 cmolc, 50% clay: 16.0); it no longer counts as ferralic, which
+  changes no class because the B horizons below it qualify.
+
+## Pro app
+
+* **Map classes each have their own colour.** leaflet's "Set3" palette has 12
+  colours; with more classes (the SoilGrids overlay of Rio de Janeiro shows 19)
+  leaflet interpolated between them, so neighbouring classes got near-identical
+  shades and the server log carried RColorBrewer's "n too large" warning. Up to
+  12 classes keep Set3's colours; beyond that each class gets a distinct colour
+  from Polychrome 36.
+* The Settings module's header comment still said the engine and strict mode
+  were written to `options()`; it now describes the per-session storage of
+  0.9.211.
+
+## Hosting
+
+* **soilkeypro.com is checked every hour.** A scheduled GitHub Actions workflow
+  (`.github/workflows/uptime.yaml`) asks for the home page, allows for a cold
+  start, and fails if the app does not answer; GitHub e-mails the failure.
+  Free on a public repository. The September outage (billing closed) went
+  unnoticed for 12 days.
+
+# soilKey 0.9.211 (2026-10-07)
+
+## In the Pro app, Settings belong to the visitor who chose them
+
+* The Settings tab wrote the diagnostic engine and Tier-3 strict mode with
+  `options()`, and R options are per process. On the hosted app, where one R
+  process serves several visitors, switching the engine to "aqp" or turning
+  strict mode on changed the classifications every other visitor on that
+  server got, with nothing on their screen to say so. A profile with about 18
+  cmolc of CEC per kg clay, for instance, is a Ferralsol under one engine and a
+  Nitisol under the other.
+* Both settings now live in the session and are applied around each
+  classification that session runs: in the background workers (with the job's
+  other options) and in the Shiny process (the Assistant's context, the HTML
+  and PDF reports, the Map's multi-profile report), restored afterwards. The
+  process options remain the default for sessions that have not chosen.
+* Same fix as the interface language in 0.9.210.
+
+# soilKey 0.9.210 (2026-10-07)
+
+## What a visitor of the Pro app saw wrong
+
+* **The language was shared by everyone on a server.** The EN/PT selector set
+  a process-wide option, so on the hosted app one visitor's choice became every
+  other visitor's language at their next page load. The language is now per
+  session: the page asks for it in its URL (`?lang=pt`, which the selector sets),
+  and the app default (`run_classify_app(lang=)`) applies otherwise.
+* **Much of the Portuguese interface was English.** About 150 help texts (field
+  explanations, button tips, section descriptions, the Thanks tab's
+  contributions), the table controls ("Search", "Showing 1 to 10 of 25",
+  "Previous", "Next") and the support e-mail template now come from the
+  catalogue in both languages. A test walks the tabs' code and fails on any
+  help text written as an English literal.
+* **Buttons that changed tab did nothing in Portuguese.** "Load example" and
+  the welcome tour selected tabs by their title ("Pedon", "Classify"), which is
+  translated. Tabs now have fixed values.
+* **"Download PDF" handed over an HTML file.** The web build has no LaTeX. The
+  PDF button now appears only where `report(format = "pdf")` can work; the HTML
+  report carries a Print / Save as PDF button (left off the printed page), keeps
+  its badge colours in print, prints on A4, and declares its language in
+  `<html lang>`.
+* **The report downloads sat in a sidebar that is often collapsed**, where
+  their links were not even bound. They are now in the body of the Report tab.
+* **The Map opens on live SoilGrids, and reading it no longer freezes the
+  server.** The overlay and the prediction grid are read in a background worker
+  (like the other slow handlers since 0.9.209), the map shows a note while it
+  loads, and a cached overlay is redrawn instead of re-read when only the
+  profile changes. The overlay credits its source in the map's corner, as CC BY
+  4.0 requires: SoilGrids 2.0, ISRIC; the offline raster is labelled as a
+  synthetic demo, not SoilGrids.
+* **The live overlay had never drawn on a current terra.** Recoding the
+  categorical SoilGrids raster called `terra::levels(x) <- NULL`, which goes to
+  `terra::levels<-`, a function terra does not export. Every live read failed
+  and the map fell back to the demo raster without saying so. It now uses the
+  base `levels<-` generic, which dispatches to terra.
+* **Spectral gap-fill wrote placeholder values into the profile.** No Open Soil
+  Spectral Library reference ships with soilKey, and the public OSSL subsets
+  `download_ossl_subset()` fetched now answer HTTP 404, so the Spectra tab's
+  gap-fill and Classify's "Attached Vis-NIR spectra" option produced invented
+  values (warning only afterwards) that a classification could then use. Both
+  are now off unless a real library is configured, and the Spectra tab says
+  why; the spectral treatment still works. `fill_from_spectra()` takes its
+  library from `options(soilKey.ossl_library =, soilKey.ossl_models =)` when
+  none is passed, so one setting reaches every path.
+
+# soilKey 0.9.209 (2026-10-07)
+
+## In the Pro app, one user's long computation no longer freezes everyone else
+
+The app runs as one R process per server instance, and every session on that
+instance waited while any one of them computed. Measured on a laptop (Cloud
+Run's single vCPU is slower): a classification with SoilGrids gap-fill took
+78 s, the Map's class prior at a point 49 s, an uncertainty analysis 15-20 s,
+the same over a group of 12 points 15 s, a Map batch of 12 profiles 4 s, and a
+reply from the Assistant several seconds.
+
+* **These handlers now run in the background.** Classify, Uncertainty (one
+  profile, a group, and the per-point drill-in), and the Map's point prior and
+  batch are `shiny::ExtendedTask` objects whose work runs in background R
+  processes (two mirai workers, about 90 MB each when idle); the Shiny process
+  only hands the job over and draws the result. The Assistant awaits Groq with
+  `ellmer`'s asynchronous call, which needs no worker. Their buttons show that
+  they are busy, and the Assistant shows a "Thinking..." bubble.
+* **Measured with two sessions on one local app:** while session A ran an
+  uncertainty analysis (200 runs with sensitivity, 18.6 s), loading the example
+  profile in session B took 11.0 s before this change and 0.39 s after it
+  (0.25 s with nothing else running). While the Assistant waited for Groq, the
+  same step in session B took 0.40 s.
+* **Without mirai** (a local install that lacks it, or
+  `options(soilKey.app_workers = 0)`), the work runs in the app's own process
+  as before. Workers are new R processes that see a fresh session's library
+  paths; where mirai is not on them, `mirai::daemons()` waits for ever, so the
+  app checks with a fresh R first and, until a worker has connected, runs jobs
+  in its own process. The deployment image installs mirai and its build check
+  starts a worker.
+* **The gap-fill fallback never ran.** When a gap-fill failed (no internet for
+  SoilGrids, no spectra attached), Classify was meant to classify without it
+  and say so. `classify_all()` turns each system's failure into a warning and
+  a `NULL` result, so the error never reached that fallback and the result
+  cards came back empty. The failure is now read from those warnings: a system
+  lost to gap-fill is classified again without it, and the notification gives
+  the reason.
+* **At Groq's per-minute limit the Assistant asks the user to wait a minute.**
+  Since v0.9.207 another model, gpt-oss-120b, answered whenever Qwen was at its
+  limit, with a note saying so. In live use it got the SiBCS rules wrong where
+  Qwen had them right (it called Distrófico "a ferralic horizon without clay
+  increase"), so a wrong answer is no longer offered as a stand-in for a right
+  one. gpt-oss is still used if Groq offers no Qwen model at all.
+* **Groq calls fail fast.** The app sets `options(ellmer_max_tries = 1)`.
+  ellmer otherwise waits out Groq's `Retry-After`, up to a minute, before
+  trying again, and a synchronous call (Photo) held the process meanwhile.
+* Still synchronous, each taking a few seconds: Photo extraction, the WoSIS
+  search and profile load, the PDF report, and the Map's SoilGrids overlay and
+  prediction grid.
+
+# soilKey 0.9.208 (2026-10-07)
+
+## A profile with no horizons is refused, not classified with grade A
+
+* `classify_all()` on a `PedonRecord` with zero horizons answered Haplic
+  Regosol, Neossolos Regolíticos Distróficos típicos and Typic Udorthents, all
+  with evidence grade A. With no layer to read, every class failed or passed on
+  emptiness, each key ended at its catch-all group, and the grade came out A
+  because a pedon with no provenance recorded is read as measured.
+  `classify_wrb2022()`, `classify_sibcs()` and `classify_usda()` now stop with
+  an error of class `soilKey_no_horizons`, as `PedonRecord$validate()` ("No
+  horizons defined") and `pedon_to_spc()` already did for the same input.
+  `classify_all()` reports it as a warning and a `NULL` result per system, like
+  any other failure, and the benchmark functions count such a profile as an
+  error rather than a prediction.
+* **SiBCS asserted low base saturation with no base saturation at all.**
+  `eutrofico()` answered `FALSE` when it had no layer to read, and
+  `distrofico()`, its negation, then passed. It now answers `NA` with `bs_pct`
+  missing, as it already did when layers existed but carried no value.
+* Unchanged for every profile with horizons: the 45 exported example profiles
+  classify byte-identically before and after (names, orders, evidence grades
+  and missing data, in all three systems).
+* Not changed here: a profile with horizons but no measured properties still
+  classifies with grade A, its trace showing every class it could not check.
+  The grade describes the provenance of the values present; how to grade the
+  absence of values is left as a separate decision.
+
+# soilKey 0.9.207 (2026-10-07)
+
+## The Photo tab and the Assistant work again, and the Assistant sticks to the evidence
+
+* **Groq retired the models both features used.** `qwen/qwen3.6-27b` (Photo)
+  and `llama-3.3-70b-versatile` (Assistant) were withdrawn, so the Photo tab
+  failed with HTTP 404 and every Assistant reply fell back to the built-in
+  summary, while its status still read "connected". It is the second time a
+  fixed model name broke the app (Groq retired Llama 4 Scout in August). The
+  model is now chosen when it is needed, from Groq's own list of what the key
+  can use (`GET /models`, which costs no tokens, read at most once an hour), by
+  an order of preference in which a newer version of the same model wins. If a
+  model is retired within that hour, the list is read again and the call is
+  retried once on another model. `options(soilKey.groq_vision_model=,
+  soilKey.groq_text_model=)` and `$GROQ_VISION_MODEL` / `$GROQ_TEXT_MODEL` still
+  pick a model, as long as Groq still offers it. The status names the model in
+  use, or says that none is available.
+* **The Assistant explained classifications it was never shown.** It was given
+  the three class names and a list of horizon depths. Asked why a profile was a
+  Ferralsol and not an Acrisol, the models invented redoximorphic features the
+  profile did not have and "higher-activity clays" for Acrisols. The answer was
+  in the key: Ferralsols come before Acrisols, so Acrisols are never tested. The
+  model now receives what the keys used: every horizon with labelled values
+  (unlabelled table columns were misread, Al saturation taken for base
+  saturation); for each of the three systems, the classes tested in key order
+  with their outcome, the criteria behind the class assigned with the
+  horizons, values and limits they were met with, and the classes after it,
+  never tested; the candidates at the lower levels; and each WRB qualifier in
+  the name with the rule soilKey applied (Eutric in WRB 2022 compares
+  exchangeable bases with exchangeable Al; it is not base saturation at pH 7).
+  The instructions now forbid thresholds or rules that are not in that evidence
+  and ask the model to say so, with the reference, when the answer is not
+  there. The site record (parent material, country, source) is passed on, and
+  with no profile loaded the model says to load one.
+* **Qwen answers; gpt-oss stands in.** The same grounded questions went to both
+  models Groq offers. Qwen 3.8 kept to the evidence. gpt-oss-120b twice placed
+  Alisols after Luvisols in the WRB key (they come before, and the trace said
+  so) and made up SiBCS rules. Both answer at temperature 0.2.
+* **Groq's free tier allows about one question a minute per model** (Qwen:
+  7,000 input and 1,000 output tokens a minute; a question with its evidence is
+  about 3,600). The Assistant no longer waits out the limit, which held the R
+  process and every session on it for up to a minute: the next model in line
+  answers at once, with the conversation so far, and the reply says which model
+  answered. When all are at their limit, it says to try again in a minute.
+* Verified live against Groq on 2026-10-07: a Photo extraction in 2.7 seconds;
+  in the app, the Ferralsol, Distrófico and Oxisol questions answered from the
+  evidence, the third by gpt-oss-120b after Qwen reached its limit.
+
+# soilKey 0.9.206 (2026-10-06)
+
+## The WoSIS picker works, and stays within ISRIC's terms
+
+The Pro app's WoSIS source has listed nothing in production since v0.9.202, and
+even a listed profile would have loaded with no horizons. Both are fixed, and
+the picker now does what it was meant to: browse real ISRIC profiles, load one
+with its horizons, and classify it.
+
+* **The search asked for more than ISRIC allows.** With the licence filter on it
+  requested 200 profiles in one go; ISRIC accepts at most 100 and answered HTTP
+  400, so every search in the app failed. Earlier tests passed because they used
+  a small `n_max` the app never uses. Profiles are now read in pages of 100, in
+  a stable order, examining at most 300 per search.
+* **A listed profile loaded no horizons.** `wosis_profile_to_pedon()` built the
+  site only. The new `read_wosis_layers_graphql()` reads the profile's layers and
+  maps them onto the soilKey schema with units taken from ISRIC's own catalogue
+  (`wosisLatestObservations`): organic carbon, total nitrogen and carbonate
+  equivalent arrive in g/kg and become %. Only properties whose method matches
+  the soilKey column are mapped (volumetric coarse fragments, saturated-paste EC,
+  gravimetric water retention, CEC at pH 7; bulk density from BDFI33, else
+  BDFIOD), and every value carries a provenance note with its WoSIS code, unit
+  and analytical method. WoSIS serves no exchangeable bases, base saturation or
+  Fe/Al oxides, so those stay empty and are reported as missing, not invented.
+* **A profile with no layers crashed the search.** It is now left out and
+  counted.
+* **Light on a free service.** ISRIC's database cancels statements that run
+  over about 30 seconds, and cost grows with layers x properties. Layers are
+  counted first with a cheap query and then read in pages of 10. Profiles
+  recorded as fine depth increments (one has 90 one-centimetre layers) are not
+  loaded in the app, and the message says why; `max_layers` lifts the limit in
+  R. Queries identify soilKey in the User-Agent.
+* **The listing shows layers and depth,** from one light query, so a single
+  topsoil sample can be told from a full profile before loading it.
+* **User input is sent as a GraphQL variable**, never pasted into the query
+  text, so a country name with quotes cannot alter the query sent to ISRIC.
+* **Attribution, as the ISRIC data policy requires.** `wosis_citation()` returns
+  the citation ISRIC asks for, with the date the data were read. The app shows
+  the source, the licence (linked) and the citation above the horizon table
+  whenever WoSIS data is loaded, flags NonCommercial profiles, writes all of it
+  into the pedon, and the HTML and PDF reports print it. When the layers carry a
+  more restrictive licence than the listing reported, the stricter one is kept.
+* **An unknown licence was labelled "CC BY 3.0".** `nzchar(NA)` is TRUE, so a
+  missing licence fell through to the last branch. It now shows as unknown.
+* Verified against the live endpoint across six countries: 16 of 18 profiles
+  loaded and classified, 0 errors, about 3 seconds each; the other two were
+  depth-increment profiles, refused with an explanation.
+
+# soilKey 0.9.205 (2026-10-06)
+
+## Three things the Pro app got wrong in the navigation bar
+
+* **A hovered link in the navbar disappeared.** Bootstrap sets
+  `--bs-nav-link-hover-color` to the theme brown, `#7A5230`, which is the exact
+  colour this navbar is painted with, so hovering Settings (or any tab) turned
+  the text the colour of its own bar. Navbar links now stay white on hover and
+  focus.
+* **The Assistant button covered the footer.** It is fixed to the bottom right,
+  and the footer's links and copyright ran underneath it. The footer now
+  reserves that lane, and on phones the button gets its own row.
+* **The logo was not a way home.** It is now a link back to the first tab, with
+  a keyboard focus ring and a localized label.
+
+# soilKey 0.9.204 (2026-09-22)
+
+## soilKey ships no third-party data
+
+This release finishes what v0.9.199 started. That release removed the bundled
+soil observations; an audit for a public repository then found reference data
+that soilKey was still carrying on other people's behalf.
+
+* **The SoilTaxonomy datasets are read from the installed package.** Until now
+  `WRB_4th_2022`, `ST_criteria_13th` and `ST_features` were vendored under
+  `inst/extdata/canonical/`. They come from the `SoilTaxonomy` package, which
+  is GPL-3, and redistributing GPL-3 material inside an MIT package grants
+  rights the GPL withholds. `canonical_reference()` now loads them from
+  SoilTaxonomy (Suggests, `>= 0.2.8`) and explains how to install it when it is
+  missing. The vendored copies were `identical()` to SoilTaxonomy 0.2.8, so no
+  result changes. `prefer_pkg` is kept for compatibility and no longer selects
+  a source.
+* **The KST 13th-edition JSON files are downloaded on first use.**
+  `2022_KST_codes.json` and `2022_KST_criteria_EN.json` come from
+  `SoilKnowledgeBase`, whose DESCRIPTION declares GPL-3; soilKey's own header
+  had called it a "BSD-style USDA license", which was wrong. They are now
+  fetched from a pinned commit, checked by MD5 and cached in
+  `tools::R_user_dir("soilKey", "cache")`; `options(soilKey.kst13_dir = )`
+  points at a local copy for offline use. The pinned files match the former
+  copies by SHA-256. Only `kst13_codes()` and `coverage_report()` read them:
+  the classification keys never did, so classifying still works offline.
+* **Benchmark reports are no longer part of the package.** They are results
+  computed from KSSL, LUCAS, BDsolos and other databases; one held 1,679 rows of
+  KSSL pedon identifiers with their reference classes. The 22 scripts that
+  produce them stay in `inst/benchmarks/`.
+* **The demonstration spectrum is synthetic, and says so.** The previous file
+  had no generator on record. `data-raw/make_demo_spectrum.R` now builds one
+  per horizon of the example Ferralsol, with the features such a soil has, so
+  the Spectra tab shows a red 2.5YR colour instead of a grey one.
+* **`inst/DATA-PROVENANCE.md` accounts for every data file,** now shipped with the installed package, including the CIE 1931
+  colour-matching functions and illuminant D65 in `R/sysdata.rda`, now cited
+  with their CIE DOIs, and it corrects a function it named that does not exist.
+* **The app footer says MIT.** It said GPL-3.
+* `coverage_report()`'s example now runs offline; the USDA axis, which needs
+  the download, is shown in `\donttest{}` behind `try()`.
+
+# soilKey 0.9.203 (2026-09-22)
+
+## A negative Chroma now reaches munsellinterpol, so it can say so
+
+munsellinterpol 3.6-0 (G. Davis, on CRAN in September 2026) warns when a
+Munsell Chroma is negative. That condition is distinct from the tiny positive
+residual that `ctol` exists to absorb: a negative Chroma means the spectral
+integration or the chromatic adaptation went wrong upstream, and the warning was
+requested precisely so that it would be visible.
+
+`predict_munsell_from_spectra(round_chip = FALSE)` could never show it. The
+continuous-notation path set the neutral axis to exactly 0 *before* calling
+`MunsellNameFromHVC()`, so a negative value had already become 0 by the time it
+arrived. The default `round_chip = TRUE` path passes the raw value to
+`roundHVC()`, which meant the same input raised a warning on one path and was
+silent on the other, depending on a formatting flag.
+
+The name is now built from the raw Chroma, and the reported chroma column is set
+to 0 on the neutral axis afterwards, as before. Nothing in the output changes on
+any path: every negative is below `ctol`, so it is neutral either way. What
+changes is that the warning gets through on both.
+
+It should stay quiet on real data. Across flat grey spectra from 1% to 100%
+reflectance, `XYZtoMunsell()` returns a Chroma of exactly 0, or +7e-15 on the
+darkest one, and never a negative, so a warning from here means something.
+Verified against munsellinterpol 3.6-0 in a separate library: every Munsell test
+passes, and the only warning in that set pre-dates this change.
+
+# soilKey 0.9.202 (2026-08-31)
+
+## The WoSIS picker is back, live, and licence-aware
+
+soilKey distributes no soil observations. The Pedon tab's WoSIS source now
+queries ISRIC's GraphQL endpoint directly, per search, and keeps the answer only
+in the session for as long as the user is looking at it. Nothing is written to
+disk, so soilKey never holds a copy and never redistributes.
+
+* **`read_wosis_profiles_graphql()`** is new and exported. It did not exist
+  before -- earlier error messages and documentation pointed users at it anyway,
+  which was a defect in its own right.
+* **Licence filtering is the load-bearing part.** WoSIS is licensed *per
+  profile* as each provider specified, and roughly half of `wosis_latest` is
+  CC BY-NC. The default (`licence_filter = "permissive"`) lists only profiles
+  free of that restriction; an unknown or missing licence is treated as
+  *not* permissive, because unknown terms are not permissive terms.
+* **The picker says what it withheld and why.** A country whose data is entirely
+  NonCommercial otherwise looks like a broken query; it now reads "20 withheld
+  as NonCommercial (CC BY-NC 4.0)", with a switch to include them.
+* **Attribution travels with the data.** Every row shows its licence and source
+  dataset, and `wosis_profile_to_pedon()` carries both onto the PedonRecord's
+  site metadata. CC BY requires attribution on reuse, and the snapshot this
+  replaces had dropped exactly those fields -- which is what turned a licensed
+  use into an unattributed one.
+# soilKey 0.9.201 (2026-08-31)
+
+## The copyright holder is now declared, and the licence is confirmed
+
+`Authors@R` claimed only `aut` and `cre`. The `LICENSE` file named Hugo
+Rodrigues as copyright holder, but the package metadata never said so, which is
+the field CRAN and every downstream tool actually read. The `cph` role is now
+present, so the two agree.
+
+The licence itself is unchanged and stays **MIT**, after checking the question
+that decides whether that choice was the author's to make. The University of
+Florida Intellectual Property Policy treats computer software as a "Work" and
+provides, verbatim, that "a work that is made in the course of independent
+efforts is the property of the creator" while "a University-supported work is
+the property of the University". For faculty it then excludes from
+University-supported works "scholarly or artistic works, the intended purpose of
+which is to disseminate the results of academic research", unless the University
+expressly commissioned or assigned the work in writing. soilKey was written as
+independent scholarly effort with no such written assignment, so it falls in
+that exception.
+
+MIT is also the only workable choice for a package that carries third-party
+data: CRAN does not accept non-commercial licences, so a package can never be
+made CC BY-NC to accommodate CC BY-NC data. Where such data is involved the
+answer is to filter it out, not to restrict the package.
+
+# soilKey 0.9.200 (2026-08-28)
+
+## The WoSIS source button is offered only when it leads somewhere
+
+v0.9.199 removed the bundled WoSIS profiles but left the **WoSIS** button in the
+Pedon tab's source selector. Choosing it opened an empty table with no
+explanation: a path that goes nowhere, which is worse than no path at all.
+
+The selector now derives its options from whether profiles are actually
+available. A deployment with none shows *Fixture / Upload CSV / Blank*; one that
+has mounted its own copy -- obtained from ISRIC under ISRIC's terms -- gets the
+button back with no code change.
+
+# soilKey 0.9.199 (2026-08-25)
+
+## soilKey no longer ships any third-party soil observations
+
+An audit of everything the package distributes found one file of real
+third-party data in the published tarball: `inst/extdata/wosis_sa_sample.rds`,
+40 WoSIS profiles pulled from `https://graphql.isric.org/wosis/graphql` on
+2026-05-03, carrying profile identifiers, country, real coordinates and layer
+measurements. It is removed, together with the four larger benchmark caches
+(AfSP, KSSL, KSSL+NASIS, WoSIS stratified) that were kept in the development
+repository.
+
+The principle, now written down in `DATA-PROVENANCE.md`: **soilKey ships the
+code that reads soil databases, never the observations.** Those belong to the
+institutions that built them, and those institutions are the ones entitled to
+distribute them and to set the terms.
+
+* `load_wosis_sample()` and the benchmark cache loaders now explain where the
+  data comes from and how to obtain it from the provider, instead of failing
+  with a missing-file error.
+* `download_extdata_cache()` no longer offers soilKey's own copy. It keeps its
+  `release` argument so anyone who has mirrored the caches under their own
+  agreement with the providers can still point the machinery at that mirror.
+* `DATA-PROVENANCE.md` records, artefact by artefact, what is synthetic, what
+  was constructed by hand, what is taxonomic criteria rather than observation,
+  and where each real source must be obtained from.
+
+Everything the package still contains is either synthetic (`ossl_demo_sa`, the
+SoilGrids demo raster), constructed by hand (the 24 canonical WRB fixtures, the
+worked example), or the classification criteria themselves. The full test suite
+passes with no real data present at all.
+
+# soilKey 0.9.197 (2026-07-29)
+
+## The continuous Munsell notation is now the canonical one
+
+* **`munsellinterpol::MunsellNameFromHVC()` produces the continuous notation**
+  where it is available. soilKey spelled it out by hand because until
+  munsellinterpol 3.5-0 that function could not reproduce it: `digits` was a
+  single value applied to the hue *and* the value *and* the chroma (6 widened
+  the hue to `4.33793R`, 2 truncated value and chroma -- no setting matched),
+  and the achromatic test was a strict `0 < C` with no tolerance, which would
+  have re-introduced the `10RP`-on-a-grey leak fixed in v0.9.184. v0.9.185
+  declined the swap for exactly those two reasons; G. Davis addressed both
+  (per-component `digits`, plus `ctol`), and 3.5-1 reached CRAN.
+* **Verified against the CRAN build before adopting**, not against the
+  pre-release: byte-identical on 28 fixtures including `HVC(0, 6, 1e-15)` ->
+  `"N 6/"`, and across a sweep of the achromatic boundary (C = 0, 1e-15, 5e-5,
+  9.99e-5, 1e-4, 1.01e-4, 2e-4). `ctol` compares strictly, exactly as the
+  `C < 1e-4` test beside it does, so the two agree even at the threshold itself.
+* **No hard version floor.** munsellinterpol is a Suggests and the hand-rolled
+  spelling stays as the fallback, so an older or absent install is not broken --
+  the version is checked at call time instead. Both paths are exercised, and
+  `test-v09197` asserts they agree wherever the newer function is present.
+
+# soilKey 0.9.196 (2026-07-29)
+
+Photo extraction merged its results *beside* the user's horizons instead of
+into them, and fixing that surfaced a latent data-loss path in the provenance
+authority check.
+
+## A photograph's estimated depths now find the horizons they describe
+
+* **`find_or_append_horizon()` recognised an existing row only when BOTH
+  boundaries agreed within 1 cm.** That is right for a description PDF, where
+  the depths are *read*. A model looking at a photograph *estimates* them from
+  pixels and cannot know the surveyor's measured boundaries, so the rule
+  essentially never held: every extracted band was appended as a duplicate. A
+  3-horizon pedon came back with 6 -- the user's three carrying no colour at
+  all, beside three overlapping new ones that carried it, a profile that is not
+  even geometrically valid. The photo route now matches on depth **overlap**
+  (best-overlapping horizon, needing at least half of the shorter interval);
+  the surveyor's depths are kept and the model contributes only colour. The PDF
+  route keeps the exact rule, so its fixtures are unchanged.
+
+## A value you typed is no longer silently replaceable
+
+* **`PedonRecord$add_measurement()`'s authority check consulted only the
+  provenance table.** A value supplied directly in the `horizons` table -- typed
+  in the app, uploaded in a CSV -- has no provenance row, so the check read it as
+  "nothing here" and any source could overwrite it even with
+  `overwrite = FALSE`. Invisible while extraction only ever appended fresh rows;
+  a real data-loss path the moment it began merging into the user's own
+  horizons, where an extracted `H1` replaced a typed `A`. An unprovenanced value
+  now counts as `measured`, the highest-trust source: an extraction or a spatial
+  prior cannot displace it, while a genuine `measured` write still proceeds.
+
+# soilKey 0.9.195 (2026-07-29)
+
+A report from ISRIC on reference profile ZW005: six attributes -- `clay_pct`,
+`silt_pct`, `sand_pct`, `oc_pct`, `cec_cmol`, `caco3_pct` -- were listed as
+missing on the Classification page although the upload carried them, which read
+as the app rejecting numeric composition fields.
+
+## Nothing was rejected -- the panel was under-reporting
+
+The values arrived intact and numeric, drove the keys, and produced a sensible
+name (Mollic Luvisol (Clayic, Chromic)). They appear in the list because the
+profile's two lowest horizons (BCk, CBk) carry no laboratory data, and a
+predicate that scans the whole profile records an attribute as soon as **one**
+horizon lacks it. Isolated by re-running the same profile three ways: as sent,
+all six are listed; with the bottom two horizons filled, none are; with the
+bottom two removed, none are.
+
+* **Each "Missing data" entry now says how much of the attribute the pedon
+  actually carries** -- "you provided this in 5 of 7 horizons". An attribute the
+  profile never carries is left unannotated, so the badge marks exactly the case
+  that used to be ambiguous: a partially-filled column, previously
+  indistinguishable from one that had been thrown away. Bilingual (en / pt-BR),
+  and purely additive -- no predicate, trace or classification changes.
+
+## Also
+
+* A pointer at the hand-rolled continuous Munsell notation recording that
+  `munsellinterpol::MunsellNameFromHVC(digits = c(2, 6, 6), ctol = 1e-4)` is now
+  a verified byte-safe drop-in (28/28 fixtures, including the residual-chroma
+  neutral `HVC(0, 6, 1e-15)` -> `"N 6/"`), blocked only on that release reaching
+  CRAN. v0.9.185 declined the swap for two reasons G. Davis has since fixed.
+
+# soilKey 0.9.194 (2026-07-29)
+
+v0.9.193 fixed the retired-model HTTP 404, but verifying the deployed app
+through its real code path showed photo extraction still failed -- now with
+HTTP 413 `Request too large`. One error had been traded for another. Measured
+against the live endpoint, a single Munsell extraction asked for **15,597
+tokens** against a free-tier ceiling of **8,000 per minute**, so the request was
+rejected before the model ever ran. Three changes bring it to **3,546**.
+
+## The photo route asks for colour, not for the whole horizon
+
+* **`extract_munsell_from_photo()` injected the full 35-property horizon schema
+  and then discarded all but five fields** -- the function already narrowed its
+  result to `top_cm`, `bottom_cm`, `designation`, `munsell_moist`,
+  `munsell_dry`. The prompt now carries `inst/schemas/munsell.json`, a strict
+  subset (12,868 -> 2,946 bytes, ~2,480 tokens saved), **derived** from
+  `horizon.json` by `data-raw/generate_munsell_schema.R` so the field
+  definitions cannot drift. `additionalProperties` stays unrestricted, so a
+  model that volunteers extra attributes is still accepted.
+
+## The request no longer reserves tokens it never uses
+
+* **`max_tokens` is charged as reserved, not as used.** ellmer's default alone
+  accounted for roughly 7,000 of those 15,597 tokens. The app now sets
+  `max_tokens = 1500`, comfortably above what a Munsell or site JSON needs.
+* **`reasoning_effort = "none"`** turns off Qwen3's `<think>` preamble. It spent
+  output tokens on reasoning the task does not need, and at a low `max_tokens`
+  it could consume the whole allowance and truncate the JSON mid-object. (The
+  v0.9.193 `<think>` stripping stays: it is what makes any reasoning model
+  safe here, including one an operator repoints to.)
+* **Photos are downscaled to 512 px** (768 px for field sheets). Measured, the
+  image alone costs ~2,300 tokens at 256 px and ~2,950 at 512 px.
+
+Verified end to end through the app's own provider path against the deployed
+key: the extraction now succeeds **on the first attempt** and returns three
+horizons with plausible colours.
+
+# soilKey 0.9.193 (2026-07-28)
+
+A second report from Jelle Janssen (ISRIC -- World Soil Information): both
+Photo-tab extractions (Munsell colour, site metadata) failed with
+
+    VLM provider call failed on attempt 1: HTTP 404 Not Found.
+    The model `meta-llama/llama-4-scout-17b-16e-instruct` does not exist
+    or you do not have access to it.
+
+Groq retired that model. Querying the live models endpoint with the deployed
+key confirmed it is gone, and that no Llama-4 vision model remains available on
+it. Three separate defects were found and fixed.
+
+## The vision model is repointed -- and repointable without a rebuild
+
+* **The default is now `qwen/qwen3.6-27b`**, verified against the deployed key:
+  it reads colour correctly (blue/green control images identified) and returns a
+  schema-valid three-horizon extraction from the real Munsell prompt.
+* **The model is no longer hardcoded.** `.groq_vision_model()` resolves
+  `options(soilKey.groq_vision_model=)` > `$GROQ_VISION_MODEL` > default, at call
+  time, so the next retirement is a config change rather than a new image.
+  `mod_chat.R` no longer carries its own copy of the name.
+
+## The extractor survives a reasoning model
+
+* **Qwen3 is a reasoning model: it emits `<think>...</think>` before the JSON.**
+  `strip_code_fence()` only removed ``` fences, so a perfectly good extraction
+  would have failed the JSON parse. `strip_reasoning_block()` now removes those
+  blocks first, including an unterminated one (response truncated at the token
+  cap).
+* **`extract_json_object()`** rescues an object wrapped in prose ("Here is the
+  extraction: {...}") on the same attempt instead of burning a retry. Output
+  still has to parse *and* validate against the schema, so robustness does not
+  become permissiveness -- a response with no JSON at all still fails.
+
+## Photos are downscaled before they are sent
+
+* **A phone photo blew the free-tier request cap.** Groq's on-demand tier allows
+  8,000 tokens per minute; a full-size upload plus the injected schema exceeded
+  it and failed with "Request too large" even once the model was right. Photos
+  are now resized to a 768 px long edge (1024 px for field sheets, which are
+  handwriting) before the call. Best-effort: without \pkg{magick}, or on any
+  error, the original file is sent exactly as before.
+
+# soilKey 0.9.192 (2026-07-28)
+
+A usability report from Jelle Janssen (ISRIC -- World Soil Information) found
+that a column named `pH_H2O` was silently ignored while `ph_h2o` worked. The
+schema gate matched attribute names with an exact, case-sensitive comparison, so
+any capitalisation the user chose that did not match the canonical name was
+dropped without warning -- the data simply never reached the keys.
+
+## Attribute names are now recognised tolerantly
+
+* **`ensure_horizon_schema()` no longer requires exact-case column names.**
+  Provided names are matched to the canonical schema case-insensitively and
+  separator-insensitively, so `pH_H2O`, `PH.H2O`, `ph h2o` and `pH-H2O` are all
+  recognised as `ph_h2o`. This is the gate every path goes through
+  (`PedonRecord$new()`, `classify_csv()`, the Pro app CSV upload), so the fix
+  reaches the R API and the web app alike.
+* **A small, documented table of common abbreviations is accepted** (the
+  "accepted aliases" column of the new reference): `Clay` -> `clay_pct`,
+  `SOC`/`OC` -> `oc_pct`, `CEC` -> `cec_cmol`, `BS` -> `bs_pct`, `Ca`/`Mg`/`K` ->
+  `*_cmol`, `CaCO3` -> `caco3_pct`, `BD` -> `bulk_density_g_cm3`, and so on.
+  Ambiguous single letters are deliberately excluded so recognition never
+  silently mis-maps a column onto the wrong attribute.
+* **Recognition is non-destructive.** An exact canonical name always wins and is
+  never overwritten; each canonical target receives at most one source column
+  (first match wins); unrecognised columns are preserved verbatim and simply not
+  read by the keys.
+
+## An authoritative attribute reference ships with the package
+
+* **`inst/ATTRIBUTES.md`** lists every recognised attribute (110 of them),
+  grouped by theme, with its canonical name, unit, R type, meaning, and accepted
+  aliases. It is generated straight from `horizon_column_spec()` and the alias
+  table (`data-raw/generate_attributes_doc.R`) with a coverage assertion, so it
+  can never drift from the code. `soilKey::horizon_column_spec()` remains the
+  programmatic source of the canonical names and types.
+
+# soilKey 0.9.191 (2026-07-23)
+
+An audit of what the deployed web app actually does at runtime found the
+spectroscopy module reporting placeholder values as OSSL predictions. The
+numbers were never wrong by accident -- the synthetic predictor is deliberate
+and documented in `inst/benchmarks/reports/audit_ossl_2026-04-30.md` -- but
+nothing that reached the user said so.
+
+## The provenance ledger now names the backend that actually ran
+
+* **`fill_from_spectra()` labelled every note `OSSL/<method>/<region>`,
+  regardless of backend.** Without an `ossl_library` (the default, and what the
+  Shiny app passes) the values come from `.predict_synthetic()`: `runif()` draws
+  inside plausibility ranges, not spectral predictions. Recording those as OSSL
+  is the one thing a provenance ledger must not do. Notes now read
+  `SYNTHETIC/<method>/<region>` whenever the placeholder backend runs, and
+  `OSSL/...` only when `resemble` or pre-trained models genuinely produced the
+  number.
+* **The backend is now visible to callers** as `pedon$spectra$gapfill_backend`
+  (`"synthetic"`, `"resemble"` or `"pretrained"`), so a caller that suppresses
+  `verbose` can still tell the two apart.
+
+## soilKey Pro tells the user what it did
+
+* **The app called `fill_from_spectra(verbose = FALSE)`**, so the existing
+  "NOT real spectral predictions" warning never reached a web user -- gap-fill
+  reported a plain green success either way. The Spectra tab now raises a
+  15-second warning when the placeholder backend ran, and keeps the success
+  message for a real prediction.
+* **A UI string promised something no code path delivered.** "First use
+  downloads an OSSL cache; this can take a minute and needs network access"
+  described a download the app never performs. Both locales now state that no
+  OSSL reference library ships with soilKey and what that means for the values.
+
+Regression tests pin all of it (`test-v09191-spectra-backend-label.R`), and the
+v0.9.190 test that asserted the `OSSL/` prefix was corrected -- it had pinned
+the wrong label.
+
+# soilKey 0.9.190 (2026-07-21)
+
+Field-testing feedback from David G. Rossiter on the soilKey Pro web app
+surfaced a cluster of problems around Technosols. Diagnosing them turned up two
+genuine defects in the key itself, not only in the interface.
+
+## WRB fidelity: artefacts are a weighted average, not any single layer
+
+* **`test_artefacts_concentration()` implemented the wrong criterion.** WRB 2022
+  keys Technosols on artefacts of ">= 20 % (by volume, by weighted average) in
+  the upper 100 cm"; soilKey tested "any single layer >= 20 %". A 5 cm lens of
+  pure rubble over clean soil (weighted average 5 %) therefore keyed to
+  Technosols. The test now computes the thickness-weighted average over the
+  0-100 cm window. Missing values are bounded rather than guessed: the
+  unmeasured thickness is bracketed between 0 % and 100 % artefacts, so the test
+  answers TRUE when even the lowest possible average clears the threshold, FALSE
+  when even the highest cannot, and only reports "data needed" when the gap
+  genuinely straddles it.
+* **The canonical Technosol fixture did not meet the criterion.** It carried
+  30/12/3 % artefacts, a weighted average of 16.5 %, and passed only because of
+  the looser rule. It is now 35/25/3 % (24.1 %), so the exemplar keys to
+  Technosols on its merits. All 31 canonical fixtures still resolve to their
+  expected class.
+
+## soilKey Pro: the Technosol criteria are now reachable at all
+
+* **Site-level technic (anthropogenic) features.** A new site control asks once
+  whether the profile has technic features -- None / Present / Unknown -- and, if
+  present, whether a constructed geomembrane starts within 100 cm and at what
+  depth. The answers are written onto the horizons at build time, preserving the
+  depth semantics the key needs. Answering "None" sets artefacts and technic hard
+  material to 0 % and the geomembrane to FALSE, which is what an ordinary field
+  description means; previously every ordinary profile reported the Technosol
+  criteria as "data needed" indefinitely, with no way to answer them.
+* **Yes/no cells no longer swallow the answer.** `DT::editData()` coerces an
+  edited cell to the column type, and `as.logical("no")` is NA, so answering
+  "no" to a logical attribute silently produced a missing value. The editor now
+  understands the ordinary spellings in both app languages and reports an
+  unreadable entry instead of discarding it.
+* **Anthropogenic attributes in the starter table.** `artefacts_pct` and
+  `technic_hardmaterial_pct` are part of the blank horizon template, so a
+  Technosol can be specified without loading a fixture first.
+* **Loading a profile now brings its site metadata.** Fixtures (and the new
+  WoSIS picker) populate the Site panel from the source's own `$site` instead of
+  leaving the previous profile's coordinates in place. Only fields the source
+  actually carries are written.
+* **WoSIS profile picker.** A new source browses the ISRIC WoSIS stratified
+  sample -- profile, country, WoSIS reference WRB class, coordinates and horizon
+  count -- and loads the chosen profile's horizons and site metadata directly.
+  The panel states that many of these legacy profiles are attribute-sparse, so
+  the key often stops at a catch-all class.
+
+# soilKey 0.9.189 (2026-07-18)
+
+## Redape loader: capture soil structure and clay films (real accuracy gain)
+
+* **The Redape (SiBCS) benchmark loader was silently discarding soil structure.**
+  `.redape_horizon_to_soilkey()` set `structure_grade/size/type = NA` with a
+  "numeric code -> categorical TBD" placeholder, so every Redape profile was
+  classified *without* its structure even though the source GeoTab carries
+  `ESTRUTURA_GRAU/TAMANHO/TIPO` integer codes (and `CEROSIDADE_*` clay-films
+  codes). This release maps those codes to the categorical strings the
+  diagnostic engine consumes (via `.redape_code_to_str()` and the
+  `.REDAPE_STRUCT_*` / `.REDAPE_CEROS_*` vocabularies — the inverse of the
+  `.smartsolos_struct_*` encoders). Structure is now populated on 284 of 444
+  Redape horizons (previously 0). Effect on the Redape gold-standard benchmark:
+  **Order accuracy 63.8% -> 67.0% (strict), 67.0% -> 69.1% (morphological)**;
+  the deeper levels also improve. The strict lab-only default elsewhere is
+  unchanged. This was surfaced by a soilKey-vs-SmartSolos-Expert cross-check:
+  the two rule engines agreed on 63.8% of Redape orders, and closing the
+  structure gap that SmartSolos's native input did not have lifted agreement to
+  67.0%.
+
+* **KSSL+NASIS loader: capture the clay-films distinctness (cerosidade grade).**
+  `load_kssl_pedons_with_nasis()` already SELECTed `phpvsf.pvsfdistinct`
+  (Faint/Distinct/Prominent) but discarded it, leaving `clay_films_strength`
+  empty. It is now mapped (Faint -> weak, Distinct -> moderate, Prominent ->
+  strong, strongest expression per horizon), the same pattern as the Redape
+  fix. This is a correctness fix that feeds the SiBCS/WRB cerosidade
+  (clay-films-grade) evidence path; it is **benchmark-neutral for the USDA
+  KSSL+NASIS panel** (no USDA diagnostic reads clay-film strength — the argillic
+  path uses clay-film *amount*, which was already captured), verified by a
+  controlled injection test (0 of 99 order labels change).
+
+* **Scope note (audited, data-density-dependent).** The "map all available
+  morphology" audit was run on the WRB (AfSP, WoSIS) and USDA (KSSL+NASIS)
+  loaders. KSSL already maps NASIS structure (grade/size/type); WoSIS carries no
+  structure in its source. The AfSP loader copies raw FAO-ISRIC structure codes
+  verbatim, but decoding them did **not** improve WRB agreement on AfSP (its
+  structure is sparse and the reference is RSG-level), so it was left unchanged.
+  The take-away: closing structure/clay-film data-loss is a real gain only where
+  the source morphology is dense (SiBCS/Redape), not a universal rule.
+
+# soilKey 0.9.188 (2026-07-18)
+
+## Correctness & orthography (three targeted fixes; no change to the strict lab-only default)
+
+* **Region-aware `Bw`/`Bo` designation inference.** The horizon-designation ->
+  diagnostic mapping (`.designation_indicates`) now reads a `Bw`/`Bo`
+  designation as the *cambic* horizon by default (temperate/USDA usage) and as
+  the latossolic *ferralic* B only in a tropical regime, resolved per pedon by a
+  new internal `.pedon_is_tropical()` (Brazil, or |lat| <= 23.5). Previously
+  `Bw`/`Bo` mapped unconditionally to ferralic, so under the opt-in
+  morphological-inference mode a *temperate* `Bw` fired `ferralic()`, whose
+  presence tripped the `cambic()` `not_ferralic` exclusion and mis-routed the
+  profile to Ferralsol instead of Cambisol. The same region gate is applied to
+  the `test_ferralic_texture()` `engine="aqp"` fallback. Brazilian latossolic
+  fixtures are unchanged (they classify on measured CEC/clay); the strict
+  lab-only default is byte-identical.
+* **WRB 2022 Dystric/Eutric confirmed and hardened (no behaviour change).** An
+  audit against the official WRB 2022 4th-edition text confirmed that
+  Dystric/Eutric are defined by *exchangeable Al vs exchangeable bases* over
+  20-100 cm (Dystric p.130-131, Eutric p.131-132) -- **not** base saturation,
+  which was the WRB 2014 rule removed in v0.9.129. The implementation already
+  matches the 2022 criterion; this release adds page citations to the code
+  reference string and a self-contained anti-regression test so the criterion
+  cannot silently revert to a base-saturation rule.
+* **SiBCS names now emitted with correct Portuguese diacritics (UTF-8).** All
+  1,159 taxon labels in `inst/rules/sibcs5/` and the 5th-level *família* value
+  strings now carry their accents. For example `classify_sibcs(...)$name` now
+  returns `Latossolos Vermelhos Distróficos típicos` (previously the
+  ASCII-folded `Latossolos Vermelhos Distroficos tipicos`). The labels were
+  never transliterated at run time — they had simply been authored without
+  accents; they are added at source (`inst/` UTF-8 data; família value literals
+  in R use `\uXXXX` escapes to keep the R source ASCII-portable). Benchmark
+  scoring is unaffected because the reference and prediction are accent-folded
+  symmetrically. Internal dimension keys and the strict lab-only classifications
+  are unchanged. Two subgroup terms (`êndicos`, `êutricos`) are accented per the
+  Portuguese proparoxytone rule but were not confirmable against an official
+  SiBCS taxon list — flagged for author review.
+
+
+
+## Horizon-designation morphological inference (opt-in) -- large accuracy gain on legacy data
+
+Legacy soil archives record a field pedologist's horizon **designation** (Bt,
+Bw, Bi, ...) far more often than the quantitative lab attributes a diagnostic
+horizon test needs (a measured clay gradient, CEC per clay, ...). A benchmark
+post-mortem found that on such profiles the quantitative tests could not fire
+and the key fell through to the catch-all order (Neossolos / Regosols): on the
+FEBR repository, most Argissolos and Latossolos were being reported as
+Neossolos purely because a 2-sample legacy profile cannot express an
+A-to-B clay increase, even though its "Bt"/"Bw" designation states the diagnosis.
+
+* **New `R/designation-inference.R`.** `.designation_indicates()` maps the
+  subordinate letters of a subsurface designation to the diagnostic horizon the
+  surveyor recorded (t -> argic, w/o -> ferralic, i -> cambic, h/s -> spodic,
+  n -> natric, g -> gleyic, f -> plinthic, ss/v -> vertic), with a precedence
+  that lets the order-defining process win (e.g. Btn = natric, Btf/Btg keep
+  argic, a bare Bf/Bg keys plinthic/gleyic). `.apply_morph_inference()` then
+  lets a diagnostic pass on that morphology, at a downgraded evidence grade and
+  a `"morphological_designation"` provenance tag, **only when the quantitative
+  test could not fire**.
+
+* **Opt-in via `options(soilKey.morphological_inference = TRUE)`** (default
+  `FALSE`). Wired into `argic()` and `ferralic()` -- shared by SiBCS
+  (Argissolo/Latossolo) and WRB (Acrisol/Lixisol/Luvisol/Ferralsol) -- and, so
+  the mode is uniform across the diagnostic set, into `spodic()`, `gleyic_
+  properties()`, `plinthic()` and `natric_horizon()` (the last three already had
+  their own opt-in designation paths, now also honoured under the global mode).
+
+* **Measured effect** (order/RSG level, on the classifiable subset -- profiles
+  that actually carry a diagnostic designation or >= 2 clay values):
+  SiBCS FEBR 30.1 -> 60.4%, SiBCS Redape (curated gold standard) 63.8 -> 70.2%,
+  WRB FEBR 32.9 -> 39.0%; per-order, Argissolos 20 -> 83% and Cambissolos
+  55 -> 90%, with Neossolo recall held at 83-85% (no over-firing).
+
+Default (`FALSE`) is **byte-identical**: all 44 canonical fixtures unchanged,
+full suite green (+21 new tests). This is the first step of a cross-system
+accuracy pass; follow-ups extend the mechanism to USDA and add fair-denominator
+benchmark reporting.
+
+## Benchmark harness -- dirty reference-label normalization
+
+The dense national archives (Embrapa BDsolos) carry OCR/legacy typos and old
+nomenclature in their `reference_sibcs` strings that were scored as misses
+purely because the *reference* was malformed, not the prediction.
+`.SIBCS_LEGACY_ORDER_MAP` (used by `normalise_febr_sibcs()`, shared by the FEBR
+and BDsolos benchmark loaders) now maps them: `Latosolos`->Latossolos and
+`Cambissoos`/`Gleiossolos`/`Esposdossolos` (typos), and `Podzois`->Espodossolos,
+`Gleys`->Gleissolos, `Areias`->Neossolos, `Lateritas`->Plintossolos (legacy
+names). Modern labels are unchanged; this only affects benchmark scoring, never
+classification.
+
+# soilKey 0.9.186 (2026-07-15)
+
+## WRB 2022 diagnostic completeness is now auditable, not hand-asserted
+
+The README previously carried hand-maintained "diagnostic horizons 32/32,
+properties 17/17, materials 16/16" tallies. `coverage_report()` audited USDA
+levels and WRB qualifiers by name, but **not** the WRB diagnostic
+horizons/properties/materials -- so those three headline numbers were asserted,
+not measured, and two of them were wrong (an *undercount*: the official WRB
+2022 4th-edition Chapter 3 lists **40** diagnostic horizons and **19**
+diagnostic materials, not 32 and 16).
+
+* **New canonical reference.** `inst/extdata/canonical/wrb2022_diagnostics.csv`
+  transcribes the official Chapter 3 section headers -- 40 horizons + 17
+  properties + 19 materials -- and crosswalks each to its implementing soilKey
+  function (built by `data-raw/wrb2022_diagnostics_canonical.R`).
+
+* **`coverage_report()` gains four WRB axes:** `"wrb_horizons"`,
+  `"wrb_properties"`, `"wrb_materials"` and `"wrb_rsg"`. Each diffs the
+  canonical set against the implemented functions, exactly like the existing
+  USDA/qualifier axes: "covered" means the mapped function exists **and** has a
+  genuine body (not an unconditional `passed = NA` stub). The tallies are now
+  reproducible from a single command; the README cites them accordingly.
+
+* **Two genuinely-missing horizons implemented** (they were the only real gaps
+  the audit surfaced), faithful to the manual's criteria:
+  * `cohesic()` -- WRB 2022 3.1.7, the kaolinitic, hard-setting subsurface
+    horizon of the Brazilian coastal "Tabuleiros" (SiBCS *carater coeso*):
+    < 0.5% organic carbon, >= 15% clay, CEC < 24 cmol_c/kg clay, massive or
+    weak subangular blocky, not cemented, at least hard when dry, >= 10 cm.
+  * `folic()` -- WRB 2022 3.1.12, the aerobic twin of the histic horizon:
+    organic material saturated with water < 30 consecutive days and >= 10 cm.
+  * `cryic_horizon()` -- WRB 2022 3.1.8, a thin wrapper exposing the existing
+    `cryic_conditions()` permafrost logic under the canonical horizon name.
+
+* **Contract test over all 76 canonical diagnostics.** A new test proves every
+  crosswalked function is callable on a valid pedon and returns a well-formed
+  `DiagnosticResult`, retiring the "untested diagnostics" gap with a whole-set
+  safety net (plus targeted positive/negative tests for the three new horizons).
+
+## Corrected, regenerated numbers (all reproduced from this release)
+
+* **WRB qualifier coverage: 233/234** (224 implemented + 9 specifier-derived),
+  **one** honest gap (Novic), **zero** inert stubs -- the README's stale
+  "229/234, 5 gaps" is corrected.
+* **USDA subgroup coverage: 2049/2715 (75.5%)** by name -- corrected from the
+  stale 2003/2715 (73.8%) and the self-referential "1288/1288" table cell.
+* **Ferralsol showcase corrected.** The canonical Ferralsol classifies to
+  `Geric Ferric Rhodic Ferralsol (Clayic, Humic, Eutric, Ochric, Rubic)` -- the
+  README previously showed a spurious *Chromic* qualifier and *Dystric* base
+  status. It is **Eutric** under WRB (exchangeable bases >= exchangeable Al in
+  the major part of 20-100 cm) yet *Distrofico* under SiBCS (base saturation
+  < 50%): a legitimate divergence between two different base-status definitions,
+  not a bug. The full WRB/USDA/SiBCS names are now pinned in a test so they
+  cannot silently drift.
+
+No classification behaviour changed: all pre-existing fixtures remain
+byte-identical. The new functions and coverage axes are purely additive.
+
+# soilKey 0.9.185 (2026-07-08)
+
+## Colour science -- the neutral axis is exact
+
+* **`predict_munsell_from_spectra()` now reports an exact zero chroma on the
+  neutral axis.** Following the exchange with Glenn Davis (author of
+  `munsellinterpol`): the `C < 1e-4` guard added in v0.9.184 already collapsed
+  the undefined hue to `"N"`, but the *reported* chroma was still the raw
+  residual -- a dark flat grey keys out at `C ~ 7e-15` here -- so a row whose
+  hue already said `"N"` carried a non-zero chroma beside it. That is internally
+  inconsistent, and it is the wedge a platform with a larger BLAS residual would
+  use to leak a chromatic hue back in. Chroma is now clamped to exactly `0`
+  there, so the invariant no longer depends on local floating-point noise.
+  Genuinely chromatic spectra are untouched, and the Munsell string is unchanged
+  (the neutral notation never used the chroma). New tests pin
+  `identical(chroma, 0)` across the reflectance range, including the dark end.
+
+* Dropped a stale code comment that credited G. Davis's white-point sketch with
+  omitting the D65 weighting. The sketch he sent includes the weighting, and it
+  is what soilKey has shipped since v0.9.158.
+
+* **Considered and declined** replacing the hand-rolled continuous notation with
+  `munsellinterpol::MunsellNameFromHVC()`. It is not a byte-safe drop-in: its
+  `digits` argument is forwarded to the hue *and* the value *and* the chroma, so
+  `digits = 6` reproduces soilKey's value/chroma exactly but widens the hue
+  (`4.3R` -> `4.33793R`, not a Munsell page notation, and inconsistent with the
+  `munsell_hue_moist` column beside it), while its default `digits = 2` truncates
+  the value/chroma. Its achromatic test is also a strict `0 < C` with no
+  tolerance, so adopting it would have re-introduced the very `10RP`-on-a-grey
+  leak that v0.9.184 fixed.
+
 # soilKey 0.9.184 (2026-07-07)
 
 Neutral hue is "N" in continuous notation too; Photo-tab colour-route text corrected.
@@ -10135,9 +13855,9 @@ WRB Acrisols 0/10, all routed to Oxisols / Ferralsols). A second
 failure cluster is **mollic / umbric horizon detection** (USDA
 Mollisols 0/34, WRB Phaeozems 0/6).
 
-These per-Order findings are the v1.0 roadmap. See
-[inst/benchmarks/reports/embrapa_febr_2026-05-01.md](inst/benchmarks/reports/embrapa_febr_2026-05-01.md)
-for the full breakdown.
+These per-Order findings are the v1.0 roadmap. The full breakdown was
+written to `inst/benchmarks/reports/embrapa_febr_2026-05-01.md`, a report
+that is no longer part of the package.
 
 ## New code
 
@@ -10575,7 +14295,8 @@ include Munsell + base saturation + dominant chemistry; (b) derive
 BS from sum-of-bases / CEC; (c) provide a "WoSIS-curated" attribute
 shim that maps available WoSIS variables into soilKey's expected
 schema. Tracked in
-[`inst/benchmarks/reports/wosis_graphql_2026-04-30.md`](https://github.com/HugoMachadoRodrigues/soilKey/blob/main/inst/benchmarks/reports/wosis_graphql_2026-04-30.md).
+`inst/benchmarks/reports/wosis_graphql_2026-04-30.md` (removed in 0.9.204
+with the other benchmark reports).
 
 ## Documentation
 

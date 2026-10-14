@@ -6,6 +6,27 @@
 # ambiguities, and the measurements that would refine the result.
 # =============================================================================
 
+# How much of a horizon attribute the pedon actually carries, as "5 / 7".
+#
+# The "Missing data" list names an attribute as soon as ONE predicate could not
+# read it in ONE horizon. A user who filled the attribute in every horizon but
+# the bottom two then sees its name listed and reasonably concludes the upload
+# was rejected -- reported from ISRIC on a profile whose lowest two horizons had
+# no laboratory data. Returns NULL when the attribute is not a horizon column
+# (site fields, composite hints such as "al_sat_pct (or ca+mg+...)") or when the
+# pedon carries none of it, in which case "missing" is the whole story.
+.classify_attr_coverage <- function(attr, pedon) {
+  if (is.null(pedon) || is.null(pedon$horizons)) return(NULL)
+  h <- pedon$horizons
+  if (!attr %in% names(h)) return(NULL)
+  n <- nrow(h)
+  if (!n) return(NULL)
+  v <- h[[attr]]
+  filled <- sum(!is.na(v) & !(is.character(v) & !nzchar(as.character(v))))
+  if (filled == 0L) return(NULL)
+  list(filled = filled, n = n)
+}
+
 # Turn a raw horizon/site attribute name into a readable label with its unit,
 # for the "Missing data" list (e.g. "clay_pct" -> "Clay (%)").
 .classify_pretty_attr <- function(x) {
@@ -30,22 +51,23 @@ classify_ui <- function(id) {
       sk_section(
         i18n("classify.run_classification"),
         icon = "play",
-        desc = "Choose which classification systems to run on the current pedon, then start the key.",
+        desc = i18n("classify.desc_run"),
         shiny::checkboxGroupInput(
           ns("systems"),
           sk_label(
             i18n("classify.systems"),
-            "Tick every system you want a name for; each is scored independently from the same pedon."
+            i18n("classify.help_systems")
           ),
           choices  = c("WRB 2022" = "wrb2022", "SiBCS 5" = "sibcs",
                        "USDA ST 13" = "usda"),
           selected = c("wrb2022", "sibcs", "usda")
         ),
         bslib::tooltip(
-          shiny::actionButton(ns("run"), i18n("classify.run"),
-                              icon = shiny::icon("play"),
-                              class = "btn-primary w-100"),
-          "Run the deterministic keys and show the WRB, SiBCS and USDA names with their decision traces."
+          bslib::input_task_button(ns("run"), i18n("classify.run"),
+                                   icon = shiny::icon("play"),
+                                   label_busy = i18n("classify.classifying"),
+                                   type = "primary", class = "w-100"),
+          i18n("classify.tip_run")
         ),
         # Tells the user whether the shown results reflect the current settings,
         # or whether an input changed and they must press Classify again.
@@ -54,21 +76,15 @@ classify_ui <- function(id) {
       shiny::tags$hr(),
       # ---- Complete a partial profile before classifying ------------------
       sk_section(
-        "Complete missing data",
+        i18n("classify.complete_missing"),
         icon = "wand-magic-sparkles",
-        desc = paste("Optional. Fill blank attributes so an incomplete profile",
-                     "can still be classified. Filled values are flagged as",
-                     "predicted, so the evidence grade drops honestly (A to B/C)."),
+        desc = i18n("classify.desc_complete"),
         shiny::checkboxGroupInput(
           ns("gapfill_methods"),
           sk_label(
-            "Fill missing attributes from",
-            paste("Applied in order, to blank cells only, on a copy of the",
-                  "pedon -- your entered values are never overwritten.")),
-          choices = c(
-            "Interpolation within the profile"      = "interp",
-            "SoilGrids at the coordinates (online)" = "soilgrids",
-            "Attached Vis-NIR spectra"              = "spectra"),
+            i18n("classify.fill_from"),
+            i18n("classify.help_fill_from")),
+          choices = .classify_gapfill_choices(),
           selected = character(0)),
         shiny::helpText(shiny::icon("arrow-up"), " ",
                         i18n("classify.applies_on_run"))
@@ -81,19 +97,19 @@ classify_ui <- function(id) {
       sk_section(
         i18n("classify.deepest_level"),
         icon = "sliders",
-        desc = "Optional finer levels. These stay in sync with the same switches on the Settings tab.",
+        desc = i18n("classify.desc_deepest"),
         shinyWidgets::materialSwitch(
           ns("include_family"),
           sk_label(
             i18n("classify.usda_family"),
-            "Add the USDA family level (texture, mineralogy, temperature) below the subgroup when data allow."
+            i18n("classify.help_usda_family")
           ),
           value = FALSE, status = "primary"),
         shinyWidgets::materialSwitch(
           ns("specifiers"),
           sk_label(
             i18n("classify.wrb_depth_specifiers"),
-            "Append WRB depth specifiers (e.g. Epi-, Endo-) that record where a qualifier occurs in the profile."
+            i18n("classify.help_specifiers")
           ),
           value = FALSE, status = "primary"),
         shiny::helpText(shiny::icon("arrow-up"), " ",
@@ -107,6 +123,60 @@ classify_ui <- function(id) {
     ),
     shiny::uiOutput(ns("body"))
   )
+}
+
+# Where the Classify tab may fill missing attributes from. Spectra only when a
+# real OSSL reference library is configured (.spectra_gapfill_available()):
+# without one, fill_from_spectra() writes placeholder values, and a profile
+# classified on them would carry an invented class.
+.classify_gapfill_choices <- function() {
+  ch <- c(interp = i18n("classify.gapfill_interp"),
+          soilgrids = i18n("classify.gapfill_soilgrids"),
+          spectra = i18n("classify.gapfill_spectra"))
+  if (!.spectra_gapfill_available()) ch <- ch[names(ch) != "spectra"]
+  stats::setNames(names(ch), unname(ch))
+}
+
+# The classification run, done in a background worker (.sk_async()): it may use
+# only its arguments and package functions. Gap-fill can fail (no internet for
+# SoilGrids, no attached spectra). classify_all() turns that into a warning and
+# a NULL result for the system, so the error never reached the tryCatch that
+# was meant to catch it, and the cards came back empty. The failures are now
+# read from those warnings: a system lost to gap-fill is classified again
+# without it, and the reason rides along as attr(, "gapfill_error").
+.classify_job <- function(pedon, systems, on_missing, include_familia,
+                          include_family, specifiers, gapfill_methods) {
+  run_all <- function(gapfill_arg) soilKey::classify_all(
+    pedon,
+    systems         = systems,
+    on_missing      = on_missing,
+    include_familia = include_familia,
+    include_family  = include_family,
+    specifiers      = specifiers,
+    gapfill         = gapfill_arg)
+  if (length(gapfill_methods) == 0L) return(run_all(FALSE))
+  why <- character(0)
+  res <- tryCatch(
+    withCallingHandlers(
+      run_all(list(method = gapfill_methods)),
+      warning = function(w) {
+        m <- conditionMessage(w)
+        if (grepl("^classify_[a-z0-9]+ failed: ", m)) {
+          why <<- c(why, sub("^classify_[a-z0-9]+ failed: ", "", m))
+          invokeRestart("muffleWarning")
+        }
+      }),
+    error = function(e) { why <<- c(why, conditionMessage(e)); NULL })
+  keys <- c(wrb2022 = "wrb", sibcs = "sibcs", usda = "usda")[systems]
+  lost <- if (is.null(res)) keys else keys[vapply(keys, function(k) is.null(res[[k]]),
+                                                    logical(1))]
+  if (!length(lost)) return(res)
+  plain <- run_all(FALSE)
+  if (is.null(res)) res <- plain
+  for (k in lost) res[k] <- list(plain[[k]])
+  res$summary <- plain$summary
+  attr(res, "gapfill_error") <- why[1] %||% "gap-fill failed"
+  res
 }
 
 classify_server <- function(id, rv, settings) {
@@ -146,43 +216,45 @@ classify_server <- function(id, rv, settings) {
     # (endless spinner). has_run only becomes TRUE once Classify is pressed.
     has_run <- shiny::reactiveVal(FALSE)
     stale   <- shiny::reactiveVal(FALSE)
-    shiny::observeEvent(input$run, { has_run(TRUE); stale(FALSE) })
     shiny::observeEvent(
       list(input$systems, input$gapfill_methods, input$include_family,
            input$specifiers, rv$pedon),
       { if (has_run()) stale(TRUE) }, ignoreInit = TRUE)
 
-    results <- shiny::eventReactive(input$run, {
+    # The keys run in a background worker (utils_async.R): with SoilGrids
+    # gap-fill a run reads the network for over a minute, and in this process it
+    # froze every other session on the instance. The button stays busy while it
+    # runs; results() waits for it.
+    classify_task <- shiny::ExtendedTask$new(function(args)
+      .sk_async(.classify_job, args))
+    bslib::bind_task_button(classify_task, "run")
+    shiny::observeEvent(input$run, {
       shiny::req(rv$pedon)
       cfg <- settings()
-      sys <- input$systems
-      if (length(sys) == 0L) {
+      if (length(input$systems) == 0L) {
         shiny::showNotification(i18n("classify.pick_one_system"), type = "warning")
-        return(NULL)
+        return()
       }
-      gf <- input$gapfill_methods
-      run_all <- function(gapfill_arg) soilKey::classify_all(
-        rv$pedon,
-        systems         = sys,
+      has_run(TRUE); stale(FALSE)
+      classify_task$invoke(list(
+        pedon           = rv$pedon,
+        systems         = input$systems,
         on_missing      = cfg$on_missing,
         include_familia = cfg$include_familia,
         include_family  = isTRUE(cfg$include_family),
         specifiers      = isTRUE(cfg$specifiers),
-        gapfill         = gapfill_arg)
-      shiny::withProgress(message = i18n("classify.classifying"), value = 0.5, {
-        if (length(gf) == 0L) return(run_all(FALSE))
-        # Gap-fill can fail (no internet for SoilGrids, no attached spectra):
-        # fall back to classifying as-is rather than erroring the whole tab.
-        tryCatch(
-          run_all(list(method = gf)),
-          error = function(e) {
-            shiny::showNotification(
-              sprintf("Gap-fill could not run (%s) - classified without it.",
-                      conditionMessage(e)),
-              type = "warning", duration = 8)
-            run_all(FALSE)
-          })
-      })
+        gapfill_methods = input$gapfill_methods))
+    })
+    results <- shiny::reactive(.sk_task_value(classify_task))
+    # Gap-fill can fail (no internet for SoilGrids, no attached spectra); the
+    # job then classifies as-is and says why.
+    shiny::observe({
+      msg <- attr(tryCatch(classify_task$result(), error = function(e) NULL),
+                  "gapfill_error")
+      if (!is.null(msg))
+        shiny::showNotification(
+          i18n("classify.gapfill_fallback", msg),
+          type = "warning", duration = 8)
     })
 
     output$engine_note <- shiny::renderUI({
@@ -209,7 +281,7 @@ classify_server <- function(id, rv, settings) {
                           style = "color:#8a5a00;font-weight:600;",
                           shiny::icon("triangle-exclamation"), " ",
                           i18n("classify.hint_stale")))
-      shiny::div(class = "small mt-2", style = "color:#3f6024;",
+      shiny::div(class = "small mt-2 sk-ok",
                  shiny::icon("circle-check"), " ", i18n("classify.hint_current"))
     })
 
@@ -221,6 +293,10 @@ classify_server <- function(id, rv, settings) {
                           shiny::icon("play"),
                           i18n("classify.press_classify")))
       }
+      if (inherits(results(), "error"))
+        return(shiny::div(class = "alert alert-danger m-3",
+                          shiny::icon("triangle-exclamation"), " ",
+                          conditionMessage(results())))
       shiny::tagList(
         if (isTRUE(stale())) shiny::div(
           class = "alert alert-warning py-2 px-3 small mb-2 d-flex align-items-center gap-2",
@@ -255,9 +331,9 @@ classify_server <- function(id, rv, settings) {
       )
     })
 
-    output$trace_table <- DT::renderDT({
+    output$trace_table <- sk_renderDT({
       res <- results()
-      shiny::req(res)
+      shiny::req(res, !inherits(res, "error"))
       r <- res[[input$trace_sys %||% "wrb"]]
       # v0.9.165: the trace shape differs by system (flat for WRB, nested phases
       # for SiBCS/USDA). key_trace_table() normalises every shape to one ordered
@@ -266,7 +342,7 @@ classify_server <- function(id, rv, settings) {
       tr <- if (is.null(r)) NULL
             else tryCatch(soilKey::key_trace_table(r), error = function(e) NULL)
       if (is.null(tr) || nrow(tr) == 0L) {
-        return(DT::datatable(
+        return(sk_datatable(
           stats::setNames(data.frame(i18n("classify.no_trace_available")),
                           i18n("classify.note_col")),
           rownames = FALSE, options = list(dom = "t")))
@@ -293,7 +369,7 @@ classify_server <- function(id, rv, settings) {
       colnames_loc <- c(if (has_phase) i18n("classify.col_phase"),
                         i18n("classify.col_code"), i18n("classify.col_name"),
                         i18n("classify.col_status"), i18n("classify.col_missing"))
-      DT::datatable(disp, rownames = FALSE, colnames = colnames_loc,
+      sk_datatable(disp, rownames = FALSE, colnames = colnames_loc,
                     options = list(pageLength = 15, dom = "tip")) |>
         # "not met" is the NORMAL case (most candidate classes don't apply), so
         # colour it neutral grey -- not alarming red. Only the assigned class and
@@ -302,12 +378,14 @@ classify_server <- function(id, rv, settings) {
           "status",
           backgroundColor = DT::styleEqual(
             c(pass_lbl, fail_lbl, lbl[["selected"]], lbl[["indeterminate"]]),
-            c("#d1e7dd", "#eef1f3", "#cfe2ff", "#fff3cd")))
+            # palette tokens (soilkey.css), so dark mode has its own shades
+            c("var(--sk-st-met)", "var(--sk-st-fail)", "var(--sk-st-sel)",
+              "var(--sk-st-na)")))
     })
 
     output$ambiguities <- shiny::renderUI({
       res <- results()
-      shiny::req(res)
+      shiny::req(res, !inherits(res, "error"))
       amb <- res$wrb$ambiguities %||% list()
       if (length(amb) == 0L) {
         return(shiny::div(class = "text-muted p-2",
@@ -327,7 +405,7 @@ classify_server <- function(id, rv, settings) {
 
     output$missing <- shiny::renderUI({
       res <- results()
-      shiny::req(res)
+      shiny::req(res, !inherits(res, "error"))
       # Per-system so the user sees which measurement each key still wants.
       blocks <- list()
       for (nm in c("wrb", "sibcs", "usda")) {
@@ -339,10 +417,17 @@ classify_server <- function(id, rv, settings) {
           class = "mb-3",
           shiny::tags$strong(c(wrb = "WRB 2022", sibcs = "SiBCS 5",
                                usda = "USDA ST 13")[[nm]]),
-          shiny::tags$ul(class = "sk-missing-list", lapply(m, function(a)
+          shiny::tags$ul(class = "sk-missing-list", lapply(m, function(a) {
+            cov <- .classify_attr_coverage(a, rv$pedon)
             shiny::tags$li(
               .classify_pretty_attr(a),
-              shiny::tags$code(class = "ms-2", a)))))
+              shiny::tags$code(class = "ms-2", a),
+              # Say WHERE it is missing when the pedon has it somewhere, so a
+              # partially-filled column never reads as a rejected upload.
+              if (!is.null(cov)) shiny::tags$span(
+                class = "text-muted small ms-2",
+                sprintf(i18n("classify.attr_coverage"), cov$filled, cov$n)))
+          })))
       }
       if (length(blocks) == 0L)
         return(shiny::div(class = "text-muted p-2",

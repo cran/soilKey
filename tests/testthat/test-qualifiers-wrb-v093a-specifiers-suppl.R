@@ -113,6 +113,8 @@ test_that("Polyalbic requires >= 2 disjoint contiguous albic runs", {
     designation = c("Oa", "E1", "Bt", "E2", "BC"),
     munsell_value_moist = c(2, 7, 4, 7, 5),
     munsell_chroma_moist = c(1, 1, 4, 1, 3),
+    munsell_value_dry = c(3, 8, 5, 8, 6),     # v0.9.220: claric material
+    munsell_chroma_dry = c(1, 1, 4, 1, 3),    # needs the dry colour too
     clay_pct = c(2, 1, 25, 1, 5),
     silt_pct = c(5, 3, 30, 3, 5),
     sand_pct = c(93, 96, 45, 96, 90),
@@ -215,6 +217,7 @@ test_that("Supragleyic requires gleyic layers above a barrier (rock or petric)",
 # ---- Supplementary-qualifier engine path ----------------------------------
 
 test_that("resolve_wrb_qualifiers exposes a supplementary slot", {
+  skip_on_cran()
   pr <- make_ferralsol_canonical()
   res <- resolve_wrb_qualifiers(pr, "FR")
   expect_true("supplementary" %in% names(res))
@@ -228,6 +231,7 @@ test_that("resolve_wrb_qualifiers exposes a supplementary slot", {
 })
 
 test_that("classify_wrb2022 stores supplementary in qualifiers and renders the name", {
+  skip_on_cran()
   pr  <- make_ferralsol_canonical()
   cls <- classify_wrb2022(pr, on_missing = "silent")
   expect_true("supplementary" %in% names(cls$qualifiers))
@@ -241,6 +245,7 @@ test_that("classify_wrb2022 stores supplementary in qualifiers and renders the n
 # ---- 31-fixture regression check ------------------------------------------
 
 test_that("v0.9.3.A specifier + engine extensions do not regress 31 fixtures", {
+  skip_on_cran()
   expected <- c(
     HS = "Histosols", AT = "Anthrosols", TC = "Technosols", CR = "Cryosols",
     LP = "Leptosols", SN = "Solonetz",   VR = "Vertisols", SC = "Solonchaks",

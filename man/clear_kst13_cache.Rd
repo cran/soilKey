@@ -10,6 +10,7 @@ clear_kst13_cache()
 \code{NULL}, invisibly. Called for its side effect of emptying the KST 13th-edition lookup cache.
 }
 \description{
-Useful when the vendored JSON files are updated mid-session.
+Useful after pointing \code{options(soilKey.kst13_dir)} at other copies
+of the files mid-session.
 Frees ~3.1 MB.
 }

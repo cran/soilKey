@@ -170,6 +170,14 @@ report <- function(x,
 
 #' Grade -> CSS class
 #' @noRd
+#' The evidence grade as printed: the letter, or "none" when the profile had
+#' no soil property to grade (v0.9.213).
+#' @noRd
+.grade_label <- function(g) {
+  if (is.null(g) || length(g) == 0L || is.na(g)) .report_msg("report.grade_none")
+  else as.character(g)
+}
+
 .grade_class <- function(g) {
   if (is.null(g) || is.na(g)) return("grade grade-na")
   switch(as.character(g),
@@ -185,7 +193,7 @@ report <- function(x,
 .html_head <- function(title) {
   paste0(
     '<!DOCTYPE html>\n',
-    '<html lang="en"><head>\n',
+    '<html lang="', .report_lang(), '"><head>\n',
     '<meta charset="utf-8">\n',
     '<meta name="viewport" content="width=device-width, initial-scale=1">\n',
     '<title>', .html_escape(title), '</title>\n',
@@ -231,11 +239,24 @@ report <- function(x,
     '.profile-page{margin-top:1.6rem;padding-top:.4rem;}\n',
     '.profile-page h2:first-child{border-left:none;padding-left:0;color:#4A3226;',
     'border-bottom:2px solid #e3ddd0;}\n',
+    # v0.9.210: a print button at the top (the app's web build has no LaTeX,
+    # so this is how a report becomes a PDF), kept off the printed page; badge
+    # colours survive printing; A4 margins.
+    '.print-bar{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin:0 0 1rem;',
+    'padding:.55rem .8rem;background:#faf6ef;border:1px solid #e3ddd0;border-radius:8px;}\n',
+    '.print-bar button{font:inherit;font-weight:600;padding:.35rem .9rem;border-radius:6px;',
+    'border:1px solid #7A5230;background:#7A5230;color:#fff;cursor:pointer;}\n',
+    '@page{size:A4;margin:15mm;}\n',
     '@media print{body{max-width:none;margin:0;}h2{page-break-after:avoid;}',
     '.system-card,.map-card{page-break-inside:avoid;}',
-    '.profile-page{page-break-before:always;}}\n',
+    '.profile-page{page-break-before:always;}',
+    '.print-bar{display:none;}',
+    '*{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}\n',
     '</style>\n',
-    '</head>\n<body>\n'
+    '</head>\n<body>\n',
+    '<div class="print-bar"><button type="button" onclick="window.print()">',
+    .html_escape(.report_msg("report.print_button")), '</button>',
+    '<span class="muted">', .html_escape(.report_msg("report.print_hint")), '</span></div>\n'
   )
 }
 
@@ -334,7 +355,7 @@ report <- function(x,
               .html_escape(res$system %||% "?"),
               .html_escape(res$rsg_or_order %||% "?"),
               .grade_class(res$evidence_grade),
-              .html_escape(res$evidence_grade %||% "NA")),
+              .html_escape(.grade_label(res$evidence_grade))),
     if (length(qual_html) > 0)
       sprintf('<div class="qualifiers">%s</div>\n', paste(qual_html, collapse = "")),
     prior_html,
@@ -421,7 +442,7 @@ report <- function(x,
       .html_escape(r$system %||% "?"),
       .html_escape(r$name   %||% "(unnamed)"),
       .grade_class(r$evidence_grade),
-      .html_escape(r$evidence_grade %||% "NA")
+      .html_escape(.grade_label(r$evidence_grade))
     )
   }, character(1))
   paste0(
@@ -465,6 +486,11 @@ report <- function(x,
   if (!is.null(s$elevation_m))      bits[[.report_msg("report.site_elevation")]] <- s$elevation_m
   if (!is.null(s$slope_pct))        bits[[.report_msg("report.site_slope")]]    <- s$slope_pct
   if (!is.null(s$date))             bits[[.report_msg("report.site_date")]]         <- s$date
+  # Data obtained from a provider (WoSIS) keeps its attribution and citation in
+  # the report: the ISRIC data policy requires reports that use the data to
+  # reference the provider.
+  if (!is.null(s$attribution))      bits[[.report_msg("report.site_source")]]   <- s$attribution
+  if (!is.null(s$citation))         bits[[.report_msg("report.site_citation")]] <- s$citation
   if (length(bits) == 0) return("")
   rows <- vapply(seq_along(bits), function(i)
     sprintf("<tr><th>%s</th><td>%s</td></tr>",

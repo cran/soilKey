@@ -383,7 +383,7 @@ back in with simulated OSSL predictions in §3.</p>
 <p>The classification on this incomplete pedon already differs:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>res_partial <span class="ot">&lt;-</span> <span class="fu">classify_wrb2022</span>(pr_partial, <span class="at">on_missing =</span> <span class="st">&quot;silent&quot;</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>res_partial<span class="sc">$</span>rsg_or_order</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Nitisols&quot;</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Cambisols&quot;</span></span>
 <span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>res_partial<span class="sc">$</span>evidence_grade</span>
 <span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;A&quot;</span></span></code></pre></div>
 <p>The evidence grade reflects the missing data – the per-RSG trace
@@ -554,7 +554,7 @@ predicted source.</p>
 <span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>res_filled<span class="sc">$</span>evidence_grade</span>
 <span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;B&quot;</span></span>
 <span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>res_filled<span class="sc">$</span>name</span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Geric Ferric Rhodic Ferralsol (Clayic, Humic, Eutric, Ochric, Rubic)&quot;</span></span></code></pre></div>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Geric Rhodic Ferralsol (Clayic, Epic, Eutric, Ferric, Humic)&quot;</span></span></code></pre></div>
 <p>The evidence grade ladder for the same profile across the three
 workflows:</p>
 <table>

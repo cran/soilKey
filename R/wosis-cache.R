@@ -50,7 +50,16 @@ load_wosis_sample <- function() {
     if (file.exists(dev_path)) path <- dev_path
   }
   if (!nzchar(path) || !file.exists(path))
-    stop("Bundled WoSIS sample not found at inst/extdata/wosis_sa_sample.rds.")
+    stop(
+      "No WoSIS sample is bundled with soilKey.\n",
+      "soilKey ships code that reads WoSIS, never WoSIS observations: the data ",
+      "belongs to ISRIC and is theirs to distribute, so each user obtains it ",
+      "under their own agreement with the source.\n",
+      "Pull your own snapshot with:\n",
+      "  read_wosis_profiles_graphql(country = \"Argentina\", n_max = 40)\n",
+      "and save it wherever you like, or run run_wosis_benchmark_graphql() to ",
+      "benchmark straight off the live API.",
+      call. = FALSE)
   readRDS(path)
 }
 

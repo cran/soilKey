@@ -26,16 +26,13 @@ qres <- resolve_wrb_qualifiers(pr, "FR")
 qres$principal
 
 ## ----principal-table, echo = FALSE--------------------------------------------
-data.frame(
-  Qualifier   = qres$principal,
-  Why = c(
-    Geric   = "ECEC = sum of bases + Al_KCl <= 1.5 cmol+/kg fine earth in some layer of the upper 100 cm. Layer 4 (Bw1, top = 65 cm) has ECEC = 1.18 cmol+/kg.",
-    Ferric  = "Iron-rich subsoil (Fe_dcb >= 5%); fe_dcb_pct hits 8-9% in this fixture.",
-    Rhodic  = "Hue 2.5YR moist, value < 4 in 25-150 cm. Bw1 has value = 4 (failing in some layers but BA satisfies value 3).",
-    Chromic = "Hue redder than 7.5YR + chroma > 4 in 25-150 cm subsoil. Bw1 chroma = 6 satisfies."
-  )[qres$principal],
-  row.names = NULL
-)
+fr <- unlist(yaml::read_yaml(system.file("rules/wrb2022/qualifiers.yaml",
+                                         package = "soilKey"))$rsg_qualifiers$FR$principal)
+rank <- vapply(qres$principal, function(q)
+  which(vapply(strsplit(fr, "/", fixed = TRUE), function(a) q %in% a, logical(1)))[1],
+  integer(1))
+data.frame(Qualifier = qres$principal, `Rank in Chapter 4` = rank,
+           check.names = FALSE, row.names = NULL)
 
 ## ----principal-trace----------------------------------------------------------
 trace_df <- do.call(
@@ -55,13 +52,12 @@ qres$supplementary
 ## ----suppl-table, echo = FALSE------------------------------------------------
 data.frame(
   Qualifier = qres$supplementary,
-  Why = c(
-    Clayic  = "Clay >= 60 % over a layer thicker than 30 cm in the upper 100 cm; Bw1 has clay = 60% over 65 cm.",
-    Humic   = "Weighted OC >= 1 % in the upper 50 cm; weighted OC ~ 1.1 % here.",
-    Dystric = "BS < 50 % throughout 20-100 cm; BS = 13-24 % across all four upper layers.",
-    Ochric  = "OC >= 0.2 % in upper 10 cm + no mollic + no umbric; surface has OC = 2.0 %.",
-    Rubic   = "Hue <= 5YR + chroma >= 4 in upper 100 cm (less strict than Rhodic). 2.5YR / 6 satisfies."
-  )[qres$supplementary],
+  Reference = vapply(qres$supplementary, function(q) {
+    fn <- get0(paste0("qual_", tolower(q)), envir = asNamespace("soilKey"))
+    r <- tryCatch(if ("rsg_code" %in% names(formals(fn))) fn(pr, rsg_code = "FR") else fn(pr),
+                  error = function(e) NULL)
+    if (is.null(r$reference)) "" else r$reference
+  }, character(1)),
   row.names = NULL
 )
 
@@ -72,12 +68,14 @@ format_wrb_name(
   supplementary = qres$supplementary
 )
 
+## ----redundant----------------------------------------------------------------
+soilKey:::.drop_redundant_qualifiers(c("Calcaric", "Hypereutric"),
+                                     c("Calcaric", "Hypereutric"))
+
 ## ----families-----------------------------------------------------------------
 str(soilKey:::.wrb_qualifier_families)
-
-## ----suppress-demo------------------------------------------------------------
 soilKey:::.suppress_qualifier_siblings(
-  c("Mollic", "Calcic", "Hypocalcic", "Protocalcic", "Cambic")
+  c("Mollic", "Hypercalcic", "Calcic", "Protocalcic", "Cambic")
 )
 
 ## ----grade--------------------------------------------------------------------

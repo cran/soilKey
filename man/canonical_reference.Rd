@@ -2,7 +2,7 @@
 % Please edit documentation in R/canonical-references.R
 \name{canonical_reference}
 \alias{canonical_reference}
-\title{Load a canonical reference dataset from soilKey or SoilTaxonomy}
+\title{Load a canonical reference dataset from the SoilTaxonomy package}
 \usage{
 canonical_reference(
   name = c("WRB_4th_2022", "ST_criteria_13th", "ST_features"),
@@ -13,23 +13,17 @@ canonical_reference(
 \item{name}{One of \code{"WRB_4th_2022"}, \code{"ST_criteria_13th"},
 \code{"ST_features"}.}
 
-\item{prefer_pkg}{If \code{TRUE} (default), prefer the installed
-SoilTaxonomy package over the vendored copy. Set to
-\code{FALSE} to force the vendored copy (e.g. for
-reproducibility of a specific soilKey release).}
+\item{prefer_pkg}{Retained for compatibility and no longer used. Until
+v0.9.203 \code{FALSE} selected a copy bundled with soilKey; there is
+no bundled copy any more, so the data always come from SoilTaxonomy.}
 }
 \value{
 The dataset as the original R object (list or data.frame).
 }
 \description{
-Resolution order:
-\enumerate{
-  \item If the \code{SoilTaxonomy} package is installed AND the
-        \code{prefer_pkg} argument is \code{TRUE} (default), load
-        the dataset from the installed package (always fresh).
-  \item Otherwise, load from the vendored copy at
-        \code{inst/extdata/canonical/<name>.rda}.
-}
+Reads one of the parsed WRB 2022 / Keys to Soil Taxonomy datasets from the
+installed \pkg{SoilTaxonomy} package (NCSS-tech, GPL-3). soilKey ships no
+copy of these data: install SoilTaxonomy from CRAN to use this function.
 }
 \seealso{
 \code{\link{wrb2022_canonical}}, \code{\link{kst13_canonical}},

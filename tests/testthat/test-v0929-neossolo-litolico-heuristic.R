@@ -117,6 +117,7 @@ test_that("neossolo_litolico FALSE when contato_litico explicitly returned FALSE
 # ---- regression: classify_sibcs end-to-end on FEBR-style input -------------
 
 test_that("classify_sibcs returns 'Neossolos Litolicos' on FEBR-style shallow single-A", {
+  skip_on_cran()
   p <- PedonRecord$new(
     site = list(id = "febr-style", lat = -22, lon = -43, country = "BR",
                   parent_material = "rocha gnaissica"),
@@ -128,5 +129,5 @@ test_that("classify_sibcs returns 'Neossolos Litolicos' on FEBR-style shallow si
   )
   res <- classify_sibcs(p, on_missing = "silent")
   expect_match(res$rsg_or_order %||% "", "Neossolos")
-  expect_match(res$name %||% "", "Litolicos|Litolico")
+  expect_match(res$name %||% "", "Litólicos|Litólico")
 })

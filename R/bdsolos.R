@@ -73,6 +73,20 @@
   structure_type    = "(estrutura_tipo|tipo_estrutura|^forma_1)",
   clay_films_amount = "(cerosidade_quantidade|cerosidade_qtd)",
   clay_films_strength = "(cerosidade_grau|grau_cerosidade|cerosidade_grau_de_desenvolvimento)",
+  # v0.9.232: "Superficie de friccao - Quantidade" (Pouca / Comum / Abundante),
+  # kept as written; test_slickensides_present() reads both languages.
+  slickensides      = "(superficies?_de_friccao_quantidade)",
+  # v0.9.245: "Descricao Original", the text of the field description of the
+  # horizon. It is not stored; the slickensides and the wedge-shaped or
+  # parallelepipedic structure it names are read from it where the
+  # structured columns are empty (.bdsolos_description_reads()).
+  description_raw   = "(^descricao_original$)",
+  # v0.9.241: "Transicao de horizonte subjacente - Nitidez" (Abrupta / Clara /
+  # Gradual / Difusa) and "- Topografia", of the transition to the horizon
+  # below; kept as written. The distance of a mudanca textural abrupta
+  # (7.5 cm) is read from the first.
+  boundary_distinctness = "(^transicao.*nitidez)",
+  boundary_topography   = "(^transicao.*topografia)",
   consistence_dry   = "(consistencia_seco|consistencia_seca|grau_de_consistencia_seca)",
   consistence_moist = "(consistencia_umido|consistencia_umida|grau_de_consistencia_umida)",
   # ---- texture (BDsolos g/kg -> soilKey %)
@@ -102,7 +116,20 @@
   # ---- physics ----
   bulk_density_g_cm3 = "(densidade_solo_aparente|densidade_solo|densidade_aparente|^ds$|^bd$)",
   # ---- iron / aluminium oxides ----
-  fe_dcb_pct        = "(cdb_ferro|ataque_sulfurico_fe2o3|fe2o3|ferro_dcb|fe_dcb)",
+  # v0.9.221: dithionite (CDB) Fe and sulfuric-attack Fe2O3 are different
+  # determinations. "Ataque sulfurico - Fe2O3" (total Fe as oxide, g/kg; what
+  # the SiBCS ferrico / perferrico classes read) goes to fe2o3_sulfuric_pct;
+  # "CDB - Ferro (g/kg)" (free Fe, element; what WRB's Fe-dith criteria read)
+  # to fe_dcb_pct. Until v0.9.220 the sulfuric column, which comes first in the
+  # export, filled fe_dcb_pct, unconverted (43 g/kg read as 43%), and the CDB
+  # column was dropped.
+  fe_dcb_pct        = "(cdb_ferro|ferro_dcb|fe_dcb)",
+  fe2o3_sulfuric_pct = "(^ataque_sulfurico_fe2o3$)",
+  # v0.9.243: "Ataque sulfurico - SiO2" and "- Al2O3" (g/kg), from which the
+  # Ki index is computed (compute_ki). The export has a Ki column of its own,
+  # which the computed index reproduces.
+  sio2_sulfuric_pct  = "(^ataque_sulfurico_sio2$)",
+  al2o3_sulfuric_pct = "(^ataque_sulfurico_al2o3$)",
   fe_ox_pct         = "(oxalato_de_amonio_ferro)",
   al_ox_pct         = "(oxalato_de_amonio_aluminio)",
   si_ox_pct         = "(oxalato_de_amonio_silica)",
@@ -110,7 +137,18 @@
   # BDsolos export ordinal "pouco / comum / abundante" -> percent via
   # .bdsolos_mosqueado_to_pct(). Used by gleyic_properties / glei_horizon
   # to fire Gleissolos diagnostics on perfis hidromorficos.
-  mottles_quantity_ord = "(mosqueado_quantidade|qtd_mosqueado|mosq_qtd)"
+  mottles_quantity_ord = "(mosqueado_quantidade|qtd_mosqueado|mosq_qtd)",
+  # ---- v0.9.235: the colours of a variegated horizon and of the mottles
+  # ("Variegado - Matiz / Valor / Croma", "Mosqueado - Matiz / Valor /
+  # Croma"). A cell lists one entry per colour, separated by ":" ("10YR:5YR",
+  # "6:5", "3:6"); .bdsolos_colour_list() joins the three cells into the
+  # notations of `variegated_colors` and `mottle_colors`.
+  variegated_hue_raw    = "(^variegado_matiz$)",
+  variegated_value_raw  = "(^variegado_valor$)",
+  variegated_chroma_raw = "(^variegado_croma$)",
+  mottle_hue_raw        = "(^mosqueado_matiz$)",
+  mottle_value_raw      = "(^mosqueado_valor$)",
+  mottle_chroma_raw     = "(^mosqueado_croma$)"
 )
 
 
@@ -170,6 +208,9 @@
   reference_wrb   = "(^classificacao_fao_wrb$|^classificacao_wrb$|^taxon_wrb$)",
   reference_st    = "(^classificacao_soil_taxonomy$|^taxon_st$|^taxon_soil_taxonomy$)",
   drainage        = "(^classe_de_drenagem$|^drenagem$)",
+  # v0.9.242: "Tipo", the kind of sampling point: "Perfil completo", "Perfil
+  # parcial" or "Amostra extra".
+  sampling_type   = "(^tipo$)",
   parent_material = "(^material_de_origem$|^material_origem$)",
   vegetacao       = "(^uso_atual$|^vegetacao$|^fase_de_vegetacao_primaria$)",
   lat_graus       = "(^latitude_graus$)",
@@ -439,6 +480,57 @@ inspect_bdsolos_csv <- function(path, sep = NULL) {
 #' schema. Texture (argila / silte / areia) is converted from g/kg to
 #' percent (BDsolos canonical unit).
 #'
+#' Iron (v0.9.221): \code{"CDB - Ferro (g/kg)"} (dithionite-citrate-
+#' bicarbonate, free Fe as the element) goes to \code{fe_dcb_pct}, which
+#' the WRB Fe-dith criteria read (nitic horizon, Ferric, Ferritic);
+#' \code{"Ataque sulfurico - Fe2O3"} (total Fe of the sulfuric attack, as
+#' the oxide) goes to \code{fe2o3_sulfuric_pct}, which the SiBCS
+#' ferrico / perferrico classes read; \code{"Oxalato de Amonio - Ferro"}
+#' goes to \code{fe_ox_pct}. All three are converted from g/kg to \%.
+#' Until v0.9.220 the sulfuric Fe2O3 filled \code{fe_dcb_pct}, unconverted.
+#'
+#' Silica and alumina (v0.9.243): \code{"Ataque sulfurico - SiO2"} and
+#' \code{"- Al2O3"} go to \code{sio2_sulfuric_pct} and
+#' \code{al2o3_sulfuric_pct}, converted from g/kg to \%. The Ki index
+#' (molecular SiO2 / Al2O3), which SiBCS asks of the B latossolico, is
+#' computed from them; it reproduces the Ki column of the export.
+#'
+#' Text of the horizon description (v0.9.245): the column
+#' \code{"Descricao Original"} holds the field description of each horizon
+#' as the survey wrote it. Two things are read from it where the structured
+#' columns are empty, and the text itself is not kept: the amount of
+#' slickensides written beside the term (\code{"''slickenside'' comum e
+#' moderado"} fills \code{slickensides} with \code{"Comum"}; a mention with
+#' no amount fills nothing), and a wedge-shaped or parallelepipedic
+#' structure (\code{"cuneiforme"}, \code{"paralelepipedica"}, added to
+#' \code{structure_type}; a structure "com tendencia a paralelepipedica" is
+#' not one). SiBCS knows the vertic horizon by these two features, and the
+#' surveys that predate the structured sheet describe them only there.
+#' Since v0.9.251 the amount and the grade of the cerosidade are read the
+#' same way (\code{"cerosidade comum e moderada"} fills
+#' \code{clay_films_amount} with \code{"Comum"} and
+#' \code{clay_films_strength} with \code{"Moderada"}), each where its own
+#' cell is empty.
+#'
+#' Reading (v0.9.222): the file is read with \code{utils::read.csv2}. The
+#' export quotes every field, and its free-text fields hold line breaks and,
+#' in some states, quotation marks of their own; \code{read.csv2} returns
+#' the export's records for all 27 state files. \code{data.table::fread},
+#' used until v0.9.221, split such records at the line breaks (in BA, GO, PI
+#' and RS, where the lines of text became profiles of their own) or stopped
+#' with an error that left the next \code{fread()} of the R session waiting
+#' forever (after DF, MT, PA, PB or SP). An empty text field is \code{NA} in
+#' every file; a quotation mark inside a text field is dropped.
+#'
+#' Kind of sampling point (v0.9.242): the column \code{"Tipo"} of the export
+#' goes to \code{site$sampling_type}, as written: \code{"Perfil completo"},
+#' \code{"Perfil parcial"} or \code{"Amostra extra"}. An extra sample is, in
+#' most cases, two sampled layers of a point (a topsoil and a subsoil sample,
+#' often with a gap between them), not a described profile: the thickness of
+#' its layers is that of the samples. About a third of the records of the
+#' national export are extra samples; \code{\link{benchmark_bdsolos}}
+#' reports the kinds apart.
+#'
 #' Profile-id columns are auto-detected: looks for any column whose
 #' normalised name matches
 #' \code{"id_perfil|profile_id|cod_perfil|^perfil$|sample_id|^id$"};
@@ -465,41 +557,7 @@ load_bdsolos_csv <- function(path, sep = NULL, verbose = TRUE) {
     sep <- .bdsolos_detect_sep(path, header_line = hdr_line)
   }
   skip <- max(0L, hdr_line - 1L)
-  # data.table::fread is fast but strict; ~25% of real BDsolos UF
-  # exports (DF, MT, PA, PB, PE, RN, SP in the May 2026 audit)
-  # contain malformed UTF-8 sequences that trip fread with
-  # "attempt to set index N/N in SET_STRING_ELT". Fall back to
-  # base R utils::read.csv2 (much slower, much more lenient) when
-  # fread errors out.
-  d <- tryCatch(
-    suppressWarnings(suppressMessages(
-      data.table::fread(path, sep = sep, encoding = "UTF-8",
-                          skip = skip, header = TRUE,
-                          fill = TRUE, blank.lines.skip = TRUE)
-    )),
-    error = function(e) NULL
-  )
-  if (is.null(d) || nrow(d) == 0L) {
-    if (isTRUE(verbose)) {
-      cli::cli_alert_info(
-        "fread failed on this file; falling back to utils::read.csv2 (slower).")
-    }
-    d <- tryCatch(
-      data.table::as.data.table(
-        utils::read.csv2(path, skip = skip, header = TRUE,
-                          fileEncoding = "UTF-8",
-                          stringsAsFactors = FALSE,
-                          sep = sep,
-                          na.strings = c("", "NA", "n.d.", "ND"))
-      ),
-      error = function(e) {
-        stop(sprintf(
-          "load_bdsolos_csv(): both fread and read.csv2 failed on '%s': %s",
-          path, conditionMessage(e)
-        ))
-      }
-    )
-  }
+  d <- .bdsolos_read_table(path, sep = sep, skip = skip)
   if (is.null(d) || nrow(d) == 0L) {
     stop("load_bdsolos_csv(): CSV is empty.")
   }
@@ -588,6 +646,7 @@ load_bdsolos_csv <- function(path, sep = NULL, verbose = TRUE) {
       reference_wrb   = safe_field(site_cols$reference_wrb),
       reference_st    = safe_field(site_cols$reference_st),
       drainage        = safe_field(site_cols$drainage),
+      sampling_type   = gsub("\\s+", " ", safe_field(site_cols$sampling_type)),
       parent_material = safe_field(site_cols$parent_material),
       land_cover      = safe_field(site_cols$vegetacao),
       reference_source = "Embrapa BDsolos"
@@ -613,14 +672,87 @@ load_bdsolos_csv <- function(path, sep = NULL, verbose = TRUE) {
 }
 
 
+#' Read the table of a BDsolos CSV export
+#'
+#' Base R's reader, for every file. The export quotes every field, and its
+#' free-text fields hold line breaks and, in some states, quotation marks of
+#' their own. \code{utils::read.csv2} returns the export's records for all 27
+#' state files of the national export (checked against its record terminator,
+#' \code{";} at the end of a line).
+#'
+#' \code{data.table::fread} does not, so it is not used here (v0.9.222):
+#' \itemize{
+#'   \item with quotation marks inside a field it gives up on quoted line
+#'         breaks and returns one row per line of text (RS: 3,853 rows for
+#'         897 records), without an error;
+#'   \item on other such files it stops with "attempt to set index N/N in
+#'         SET_STRING_ELT" from inside an OpenMP critical section, which
+#'         stays locked: the next \code{fread()} in the R session never
+#'         returns (data.table 1.18.4).
+#' }
+#' @noRd
+.bdsolos_read_table <- function(path, sep, skip) {
+  tryCatch(
+    data.table::as.data.table(
+      utils::read.csv2(path, skip = skip, header = TRUE,
+                        fileEncoding = "UTF-8",
+                        stringsAsFactors = FALSE,
+                        sep = sep,
+                        na.strings = c("", "NA", "n.d.", "ND"))
+    ),
+    error = function(e) {
+      stop(sprintf("load_bdsolos_csv(): could not read '%s': %s",
+                   path, conditionMessage(e)), call. = FALSE)
+    }
+  )
+}
+
+
+#' A Munsell hue as the BDsolos export types it, in the notation the
+#' diagnostics read: no spaces, and a dot for the decimal comma ("7,5YR" and
+#' "7,5 YR" are "7.5YR"). Anything else is left as it is.
+#' @noRd
+.bdsolos_hue <- function(x) {
+  x <- gsub("[[:space:]]+", "", as.character(x))
+  sub("^([0-9]+),([0-9]+)", "\\1.\\2", x)
+}
+
+
+#' The colours of a variegated horizon, or of its mottles, as the BDsolos
+#' export gives them: three cells (hue, value, chroma), each listing one entry
+#' per colour separated by ":" ("10YR:5YR", "6:5", "3:6"). Returns, for each
+#' horizon, the Munsell notations separated by ";" ("10YR 6/3; 5YR 5/6"), or
+#' NA when no hue is recorded. Any of the three may be NULL (column absent).
+#' @noRd
+.bdsolos_colour_list <- function(hue, value, chroma) {
+  n <- max(length(hue), length(value), length(chroma))
+  if (n == 0L) return(character(0))
+  cell <- function(x, i) {
+    if (is.null(x) || is.na(x[i])) return(character(0))
+    strsplit(as.character(x[i]), ":", fixed = TRUE)[[1]]
+  }
+  vapply(seq_len(n), function(i)
+    .munsell_notation_list(cell(hue, i), cell(value, i), cell(chroma, i)),
+    character(1))
+}
+
+
 #' Convert a subset of BDsolos rows (one perfil) to a soilKey horizons table
 #' @noRd
 .bdsolos_rows_to_horizons <- function(rows, sk_map) {
   spec <- horizon_column_spec()
   hz_list <- list()
+  colour_raw <- list()
   for (raw in names(sk_map)) {
     sk <- sk_map[[raw]]
     val <- rows[[raw]]
+    # v0.9.235: the three cells of the variegated colours, and of the mottle
+    # colours, are joined after the loop.
+    if (grepl("^(variegated|mottle)_(hue|value|chroma)_raw$", sk) ||
+          identical(sk, "description_raw")) {
+      colour_raw[[sk]] <- val
+      next
+    }
     # v0.9.61: BDsolos "Mosqueado - Quantidade" is an ordinal class
     # (pouco / comum / abundante). Map to representative percent and
     # write to the schema column `redoximorphic_features_pct` so that
@@ -652,14 +784,75 @@ load_bdsolos_csv <- function(path, sep = NULL, verbose = TRUE) {
         med <- stats::median(val[is.finite(val)], na.rm = TRUE)
         if (is.finite(med) && med > 25) val <- val / 10
       }
+      # v0.9.221: BDsolos reports the iron determinations in g/kg ("CDB -
+      # Ferro (g/kg)", "Ataque sulfurico - Fe2O3"); soilKey stores %.
+      if (sk %in% c("fe_dcb_pct", "fe_ox_pct", "fe2o3_sulfuric_pct",
+                    "sio2_sulfuric_pct", "al2o3_sulfuric_pct") &&
+            grepl("(g_kg|^ataque_sulfurico|^cdb_)", raw_norm)) {
+        val <- val / 10  # g/kg -> %
+      }
+      # v0.9.232: "Fracoes da amostra total - Cascalho (g/kg)" is a mass
+      # fraction in g/kg too; it was stored as it came, so that 560 g/kg of
+      # gravel read as 560 %.
+      if (sk == "coarse_fragments_pct" && grepl("g_kg", raw_norm)) {
+        val <- val / 10  # g/kg -> %
+      }
     } else if (type_target == "integer") {
       val <- suppressWarnings(as.integer(val))
     } else if (type_target == "character") {
       val <- as.character(val)
+      # v0.9.232: a Munsell hue typed with a decimal comma ("7,5YR") is the
+      # hue "7.5YR", as the FEBR loader already reads it.
+      if (sk %in% c("munsell_hue_moist", "munsell_hue_dry")) {
+        val <- .bdsolos_hue(val)
+      }
     } else if (type_target == "logical") {
       val <- as.logical(val)
     }
     hz_list[[sk]] <- val
+  }
+  if (!is.null(colour_raw$variegated_hue_raw)) {
+    hz_list[["variegated_colors"]] <- .bdsolos_colour_list(
+      colour_raw$variegated_hue_raw, colour_raw$variegated_value_raw,
+      colour_raw$variegated_chroma_raw)
+  }
+  if (!is.null(colour_raw$mottle_hue_raw)) {
+    hz_list[["mottle_colors"]] <- .bdsolos_colour_list(
+      colour_raw$mottle_hue_raw, colour_raw$mottle_value_raw,
+      colour_raw$mottle_chroma_raw)
+  }
+  # v0.9.245: what the text of the description says and the structured
+  # columns do not
+  if (!is.null(colour_raw$description_raw)) {
+    rd <- .bdsolos_description_reads(colour_raw$description_raw)
+    if (any(!is.na(rd$slickensides))) {
+      sl <- hz_list[["slickensides"]] %||% rep(NA_character_, nrow(rows))
+      fill <- (is.na(sl) | !nzchar(trimws(sl))) & !is.na(rd$slickensides)
+      sl[fill] <- rd$slickensides[fill]
+      hz_list[["slickensides"]] <- sl
+    }
+    if (any(!is.na(rd$structure))) {
+      st <- hz_list[["structure_type"]] %||% rep(NA_character_, nrow(rows))
+      add <- !is.na(rd$structure) &
+        !grepl("cuneiform|paralelepip", .field_term(st))
+      blank <- is.na(st) | !nzchar(trimws(st))
+      st[add & blank]  <- rd$structure[add & blank]
+      st[add & !blank] <- paste(st[add & !blank], rd$structure[add & !blank],
+                                sep = "; ")
+      hz_list[["structure_type"]] <- st
+    }
+    # v0.9.251: the cerosidade, its amount and its grade, each where its
+    # own cell is empty
+    fr <- .bdsolos_films_reads(colour_raw$description_raw)
+    for (k in c("amount", "grade")) {
+      col <- c(amount = "clay_films_amount", grade = "clay_films_strength")[[k]]
+      if (any(!is.na(fr[[k]]))) {
+        v <- hz_list[[col]] %||% rep(NA_character_, nrow(rows))
+        fill <- (is.na(v) | !nzchar(trimws(v))) & !is.na(fr[[k]])
+        v[fill] <- fr[[k]][fill]
+        hz_list[[col]] <- v
+      }
+    }
   }
   if (length(hz_list) == 0L) {
     return(make_empty_horizons(nrow(rows)))
@@ -954,4 +1147,166 @@ download_bdsolos <- function(out_path,
   out <- chromote_session$Runtime$evaluate(js, returnByValue = TRUE)
   if (is.null(out$result)) return(NULL)
   out$result$value
+}
+
+
+#' What the text of a horizon description says of slickensides and of
+#' wedge-shaped or parallelepipedic structure (v0.9.245).
+#'
+#' The export of BDsolos carries, beside its structured columns, the text of
+#' the field description of each horizon ("Descricao Original"). The surveys
+#' that predate the structured sheet describe there what the vertic horizon
+#' is known by: "''slickenside'' comum e moderado", "superficies de friccao
+#' abundantes", "moderada media paralelepipedica composta de blocos".
+#'
+#' \code{slickensides}: the amount written beside the term, as the
+#' structured column words it ("Pouca", "Comum", "Abundante"; "muito" is
+#' read as abundant). See \code{.bdsolos_amount_beside()}. A mention with no
+#' amount gives NA: the vertic horizon asks for an amount, and a term alone
+#' states none.
+#'
+#' \code{structure}: "cuneiforme", "paralelepipedica" or both, where the text
+#' names them as the structure of the horizon. A structure "com tendencia a
+#' paralelepipedica" is not one, nor is one the text denies.
+#'
+#' The terms are matched in the spellings the export has ("slikenside",
+#' "silkensides", "suoerficies de friccao", "paralelepedica"). Vectorised
+#' over the rows.
+#' @noRd
+.bdsolos_description_reads <- function(x) {
+  t <- gsub("[[:space:]]+", " ", .field_term(x))
+  n <- length(t)
+  amount <- rep(NA_character_, n)
+  structure <- rep(NA_character_, n)
+  term  <- .BDSOLOS_SLICKENSIDES_TERM
+  shape <- "cuneiform|paralelep[a-z]*d"
+  for (i in which(!is.na(t) & (grepl(term, t) | grepl(shape, t)))) {
+    phrases <- strsplit(t[i], "[;.]")[[1]]
+    for (p in phrases[grepl(term, phrases)]) {
+      parts <- strsplit(p, ",")[[1]]
+      for (q in parts[grepl(term, parts)]) {
+        a <- .bdsolos_amount_beside(q, term)
+        if (!is.na(a)) { amount[i] <- a; break }
+      }
+      if (!is.na(amount[i])) break
+    }
+    ph <- phrases[grepl(shape, phrases)]
+    # up to the next comma, what a tendency or a denial is said of
+    ph <- gsub("(tend(e|em|encia|endo)|sem|ausencia de|nao ha|nao apresenta) [^,]*",
+               " ", ph)
+    wedge <- any(grepl("cuneiform", ph))
+    paral <- any(grepl("paralelep[a-z]*d", ph))
+    if (wedge && paral) structure[i] <- "cuneiforme e paralelepipedica"
+    else if (wedge) structure[i] <- "cuneiforme"
+    else if (paral) structure[i] <- "paralelepipedica"
+  }
+  list(slickensides = amount, structure = structure)
+}
+
+#' The slickensides of a horizon description, in the spellings of the
+#' export: "slickenside(s)", "slikenside", "silkensides", "slikeside",
+#' "superficie(s) de friccao", "suoerficies de friccao".
+#' @noRd
+.BDSOLOS_SLICKENSIDES_TERM <-
+  "s[lit][a-z]{1,4}k[a-z]{0,3}sides?|su[a-z]{1,2}erficies? de fricc?[a-z]+"
+
+#' The amount written beside a term in a part of a horizon description:
+#' directly before the term ("abundantes superficies de friccao", "muitos
+#' slickensides", "presenca comum de superficies de friccao") or after it
+#' ("slickenside comum e moderado", "fraco e pouco"). NA when the part
+#' denies the feature, compares it ("mais abundantes que o horizonte
+#' superior") or states no amount. An amount that stands before the term
+#' with other words between is that of another feature ("cerosidade forte e
+#' abundante apresentando slickensides") and is not read.
+#' @noRd
+.bdsolos_amount_beside <- function(q, term) {
+  if (grepl(paste0("(sem|ausencia de|nao ha|nao apresenta) [^,;]*(", term, ")"), q))
+    return(NA_character_)
+  amt <- "(pouc|rar|comu|a?bund|muit)[a-z]*"
+  q <- gsub(paste0("\\b(mais|menos) ", amt), " ", q)
+  # a "muito" that qualifies a grade, a size or a consistence is no amount
+  q <- gsub("\\bmuit[oa]s? (fort|frac|moderad|pequen|grand|dur|firm|plast|pegaj|coerent|coes|argil)",
+            "\\1", q)
+  cls <- function(w) {
+    if (grepl("^(a?bund|muit)", w)) "Abundante"
+    else if (grepl("^comu", w)) "Comum"
+    else "Pouca"
+  }
+  m <- regmatches(q, regexpr(paste0("\\b", amt, " (de )?[^a-z]*(", term, ")"), q))
+  if (length(m)) return(cls(m))
+  after <- sub(paste0("^.*?(", term, ")"), "", q, perl = TRUE)
+  w <- regmatches(after, regexpr(paste0("\\b", amt), after))
+  if (length(w)) return(cls(w))
+  NA_character_
+}
+
+
+#' Cerosidade in the spellings of the export ("serosidade", "crosidade").
+#' @noRd
+.BDSOLOS_FILMS_TERM <- "[cs]e?rosidade"
+
+#' The amount and the grade of cerosidade written beside the term in the text
+#' of a horizon description (v0.9.251): "cerosidade comum e moderada",
+#' "cerosidade fraca e pouca", "pouca cerosidade". Returns
+#' \code{list(amount, grade)}, as the structured columns word them ("Pouca",
+#' "Comum", "Abundante"; "Fraca", "Moderada", "Forte"; two of them as a
+#' range, "Fraca a moderada"). NA where the text states none: a bare mention,
+#' a denial, or words that are of something else ("cor da cerosidade (10YR
+#' 4/4) com mosqueado pouco"). Vectorised over the rows.
+#' @noRd
+.bdsolos_films_reads <- function(x) {
+  t <- gsub("[[:space:]]+", " ", .field_term(x))
+  n <- length(t); amount <- rep(NA_character_, n); grade <- rep(NA_character_, n)
+  for (i in which(!is.na(t) & grepl(.BDSOLOS_FILMS_TERM, t))) {
+    for (p in strsplit(t[i], "[;.]")[[1]]) {
+      if (!grepl(.BDSOLOS_FILMS_TERM, p)) next
+      for (q in strsplit(p, ",")[[1]]) {
+        if (!grepl(.BDSOLOS_FILMS_TERM, q)) next
+        r <- .bdsolos_films_beside(q)
+        if (is.na(amount[i])) amount[i] <- r[1]
+        if (is.na(grade[i]))  grade[i]  <- r[2]
+      }
+      if (!is.na(amount[i]) || !is.na(grade[i])) break
+    }
+  }
+  list(amount = amount, grade = grade)
+}
+
+#' The amount and the grade written beside "cerosidade" in a part of a
+#' horizon description: the words right after the term, as long as they are
+#' amounts, grades or words that join them, or the one word right before it.
+#' @noRd
+.bdsolos_films_beside <- function(q) {
+  none <- c(NA_character_, NA_character_)
+  term <- .BDSOLOS_FILMS_TERM
+  if (grepl(paste0("(sem|ausencia de|nao ha|nao apresenta|nao foi observada|nao se observ[a-z]*) [^,;]*(", term, ")"), q)) return(none)
+  # the words right after the term, up to the first sign that is no letter
+  # (a parenthesis, a figure, a dash) or the first word that is neither an
+  # amount, a grade nor a word that joins them
+  after  <- sub(paste0("^.*?(", term, ")"), "", q, perl = TRUE)
+  after  <- sub("[^a-z ].*$", "", after)
+  before <- sub(paste0("(", term, ").*$"), "", q)
+  w  <- strsplit(trimws(after), " +")[[1]]; w <- w[nzchar(w)]
+  wb <- strsplit(trimws(gsub("[^a-z ]", " ", before)), " +")[[1]]; wb <- wb[nzchar(wb)]
+  is_amt <- function(z) grepl("^(pouc[ao]s?|rar[ao]s?|comum|comuns|abundantes?|muit[ao]s?)$", z)
+  is_grd <- function(z) grepl("^(frac[ao]s?|moderad[ao]s?|fortes?)$", z)
+  fill   <- function(z) z %in% c("e", "a", "ou") | grepl("^(des)?continu[ao]s?$", z)
+  run <- character(0); j <- 1L
+  while (j <= length(w) && (is_amt(w[j]) || is_grd(w[j]) || fill(w[j]))) {
+    # "muito" counts when what follows is still of the description of the
+    # cerosidade ("muita e moderada", "muito pouca"), not of something else
+    # ("comum e moderada muito firme")
+    if (grepl("^muit", w[j]) && j < length(w) && !(is_amt(w[j + 1L]) || is_grd(w[j + 1L]) || fill(w[j + 1L]))) break
+    run <- c(run, w[j]); j <- j + 1L
+  }
+  if (!length(run) && length(wb) && (is_amt(wb[length(wb)]) || is_grd(wb[length(wb)]))) run <- wb[length(wb)]
+  if (!length(run)) return(none)
+  # "muito" before a grade or before "pouca" qualifies it; alone it is an amount
+  amt <- character(0); grd <- character(0)
+  for (m in seq_along(run)) { z <- run[m]; nx <- if (m < length(run)) run[m + 1L] else ""
+    if (grepl("^muit", z)) { if (is_grd(nx) || grepl("^pouc", nx)) next else amt <- c(amt, "Abundante") }
+    else if (grepl("^(pouc|rar)", z)) amt <- c(amt, "Pouca") else if (grepl("^comu", z)) amt <- c(amt, "Comum") else if (grepl("^abund", z)) amt <- c(amt, "Abundante")
+    else if (grepl("^frac", z)) grd <- c(grd, "Fraca") else if (grepl("^moderad", z)) grd <- c(grd, "Moderada") else if (grepl("^fort", z)) grd <- c(grd, "Forte") }
+  rng <- function(v, lv) { v <- unique(v); if (!length(v)) return(NA_character_); v <- v[order(match(v, lv))]; if (length(v) == 1L) v else paste0(v[1], " a ", tolower(v[length(v)])) }
+  c(rng(amt, c("Pouca", "Comum", "Abundante")), rng(grd, c("Fraca", "Moderada", "Forte")))
 }

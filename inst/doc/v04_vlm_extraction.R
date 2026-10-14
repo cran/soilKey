@@ -107,7 +107,7 @@ head(prov[, .(horizon_idx, attribute, source, confidence)])
 # )
 # 
 # res$classifications$wrb$name
-# #> "Geric Ferric Rhodic Chromic Ferralsol (Clayic, Humic, Dystric, Ochric, Rubic)"
+# #> "Geric Rhodic Ferralsol (Clayic, Dystric, Epic, Ferric, Humic)"
 # 
 # res$classifications$sibcs$name
 # #> "Latossolos Vermelhos Distroficos tipicos, argilosa, moderado"

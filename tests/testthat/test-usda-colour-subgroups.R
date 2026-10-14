@@ -83,12 +83,14 @@ test_that("calcic honours the per-subgroup depth window", {
 # specific than -- and within the same great group as -- the former Typic.
 
 test_that("canonical Vertisol fixture keys to Chromic Hapluderts", {
+  skip_on_cran()
   res <- classify_usda(make_vertisol_canonical())
   expect_equal(res$rsg_or_order, "Vertisols")
   expect_equal(res$name, "Chromic Hapluderts")
 })
 
 test_that("USDA subgroup coverage reflects the +57 colour subgroups", {
+  skip_if_no_kst13()
   cov <- coverage_report("usda_subgroup")
   # >= rather than == so later fronts that add subgroups don't break this test
   # (the exact current total is pinned in test-usda-intergrade-subgroups.R).

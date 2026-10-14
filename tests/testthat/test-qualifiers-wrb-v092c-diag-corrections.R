@@ -66,7 +66,14 @@ test_that("Brunic respects cambic's depth-gate fix on A-over-C profiles", {
     horizons = ensure_horizon_schema(hz)
   )
   expect_false(isTRUE(qual_brunic(pr)$passed))
-  expect_true(isTRUE(qual_protic(pr)$passed))
+  # v0.9.217: WRB 2022 Ch 5, Protic is "showing no soil horizon development,
+  # with the exception of a cryic horizon". The A horizon (granular, 0.8% OC)
+  # is horizon development, so A-over-C is not Protic; a C-only sand is.
+  expect_false(isTRUE(qual_protic(pr)$passed))
+  hz$designation <- c("C1", "C2"); hz$structure_grade <- "single grain"
+  hz$structure_type <- "single grain"; hz$oc_pct <- c(0.1, 0.1)
+  bare <- PedonRecord$new(site = pr$site, horizons = ensure_horizon_schema(hz))
+  expect_true(isTRUE(qual_protic(bare)$passed))
 })
 
 
@@ -169,6 +176,7 @@ test_that("sombric FIRES when a deeper layer has higher OC than the layer above"
 # ---- 31-fixture regression check ------------------------------------------
 
 test_that("v0.9.2.C diagnostic corrections do not regress 31 fixtures", {
+  skip_on_cran()
   expected <- c(
     HS = "Histosols", AT = "Anthrosols", TC = "Technosols", CR = "Cryosols",
     LP = "Leptosols", SN = "Solonetz",   VR = "Vertisols", SC = "Solonchaks",

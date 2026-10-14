@@ -10,42 +10,43 @@ test_that("v0.9.1 YAML lists the canonical Bloco C principal qualifiers", {
   if (!nzchar(qfile)) qfile <- "inst/rules/wrb2022/qualifiers.yaml"
   qrules <- yaml::read_yaml(qfile)
 
-  expect_gt(length(qrules$rsg_qualifiers$PZ$principal), 18L)
-  expect_gt(length(qrules$rsg_qualifiers$PT$principal), 18L)
-  expect_gt(length(qrules$rsg_qualifiers$PL$principal), 25L)
-  expect_gt(length(qrules$rsg_qualifiers$ST$principal), 22L)
-  expect_gt(length(qrules$rsg_qualifiers$NT$principal), 18L)
-  expect_gt(length(qrules$rsg_qualifiers$FR$principal), 25L)
+  # v0.9.217: the lists are WRB 2022 Chapter 4's, shorter than the WRB 2014
+  # lists the old length checks were written for. Alternatives share one
+  # entry, so names are looked up in the flattened lists.
+  flat <- function(x) unlist(strsplit(unlist(x), "/", fixed = TRUE))
+  p   <- function(r) flat(qrules$rsg_qualifiers[[r]]$principal)
+  sup <- function(r) flat(qrules$rsg_qualifiers[[r]]$supplementary)
 
   # Spodic family on Podzols
-  expect_true("Hyperspodic" %in% qrules$rsg_qualifiers$PZ$principal)
-  expect_true("Carbic"      %in% qrules$rsg_qualifiers$PZ$principal)
-  expect_true("Rustic"      %in% qrules$rsg_qualifiers$PZ$principal)
-  expect_true("Ortsteinic"  %in% qrules$rsg_qualifiers$PZ$principal)
-  expect_true("Placic"      %in% qrules$rsg_qualifiers$PZ$principal)
-  expect_true("Densic"      %in% qrules$rsg_qualifiers$PZ$principal)
+  expect_true("Carbic"      %in% p("PZ"))
+  expect_true("Rustic"      %in% p("PZ"))
+  expect_true("Ortsteinic"  %in% p("PZ"))
+  # supplementary in WRB 2022, principal in the WRB 2014 lists
+  expect_true("Hyperspodic" %in% sup("PZ"))
+  expect_true("Placic"      %in% sup("PZ"))
+  expect_true("Densic"      %in% sup("PZ"))
 
   # Low-CEC family on tropical RSGs
-  expect_true("Geric"  %in% qrules$rsg_qualifiers$FR$principal)
-  expect_true("Vetic"  %in% qrules$rsg_qualifiers$FR$principal)
-  expect_true("Posic"  %in% qrules$rsg_qualifiers$FR$principal)
-  expect_true("Geric"  %in% qrules$rsg_qualifiers$NT$principal)
-  expect_true("Vetic"  %in% qrules$rsg_qualifiers$NT$principal)
-  expect_true("Geric"  %in% qrules$rsg_qualifiers$PT$principal)
+  expect_true("Geric"  %in% p("FR"))
+  expect_true("Geric"  %in% p("NT"))
+  expect_true("Geric"  %in% p("PT"))
+  expect_true("Posic"  %in% sup("FR"))
+  # v0.9.216: Vetic and Hyperalbic are WRB 2014 qualifiers, absent from
+  # WRB 2022, and no longer listed
+  expect_false("Vetic" %in% c(p("FR"), sup("FR")))
+  expect_false("Vetic" %in% c(p("NT"), sup("NT")))
+  for (r in c("PL", "ST", "PZ"))
+    expect_false("Hyperalbic" %in% c(p(r), sup(r)), info = r)
 
-  # Hyperalbic for deep-bleach RSGs
-  expect_true("Hyperalbic" %in% qrules$rsg_qualifiers$PL$principal)
-  expect_true("Hyperalbic" %in% qrules$rsg_qualifiers$ST$principal)
-  expect_true("Hyperalbic" %in% qrules$rsg_qualifiers$PZ$principal)
-
-  # Sombric on FR (and not on PZ since spodic excludes sombric)
-  expect_true("Sombric" %in% qrules$rsg_qualifiers$FR$principal)
+  # Sombric on FR, as a supplementary qualifier in WRB 2022
+  expect_true("Sombric" %in% sup("FR"))
 })
 
 
 # ---- Per-fixture qualifier resolution --------------------------------------
 
 test_that("PZ canonical fixture resolves to an Albic Podzol", {
+  skip_on_cran()
   pr  <- make_podzol_canonical()
   res <- resolve_wrb_qualifiers(pr, "PZ")
   expect_true("Albic" %in% res$principal)
@@ -58,22 +59,27 @@ test_that("PZ canonical fixture resolves to an Albic Podzol", {
   expect_match(cls$name, "Albic Podzol")
 })
 
-test_that("PT canonical fixture resolves to a Plinthic Plinthosol", {
+test_that("PT canonical fixture: Plinthic is not a qualifier of Plinthosols", {
+  skip_on_cran()
   pr  <- make_plinthosol_canonical()
   res <- resolve_wrb_qualifiers(pr, "PT")
-  expect_true("Plinthic" %in% res$principal)
+  # v0.9.217: the plinthic horizon defines the RSG, so WRB 2022 Chapter 4
+  # does not list Plinthic for Plinthosols (the WRB 2014 list did).
+  expect_false("Plinthic" %in% c(res$principal, res$supplementary))
 
   cls <- classify_wrb2022(pr, on_missing = "silent")
   expect_equal(cls$rsg_or_order, "Plinthosols")
   expect_match(cls$name, "Plinthosol")
-  expect_match(cls$name, "Plinthic")
 })
 
-test_that("PL canonical fixture resolves to an Albic Stagnic <chemistry> Planosol", {
+test_that("PL canonical fixture resolves to an Albic Planosol", {
+  skip_on_cran()
   pr  <- make_planosol_canonical()
   res <- resolve_wrb_qualifiers(pr, "PL")
   expect_true("Albic"  %in% res$principal)
-  expect_true("Stagnic" %in% res$principal)
+  # v0.9.217: stagnic properties define Planosols, so Chapter 4 does not list
+  # Stagnic for them (the WRB 2014 list did).
+  expect_false("Stagnic" %in% res$principal)
   # Hyperalbic must NOT fire on a 10-cm E (sand 50%, clay 12%).
   expect_false("Hyperalbic" %in% res$principal)
 
@@ -84,6 +90,7 @@ test_that("PL canonical fixture resolves to an Albic Stagnic <chemistry> Planoso
 })
 
 test_that("ST canonical fixture resolves to an Albic Stagnosol", {
+  skip_on_cran()
   pr  <- make_stagnosol_canonical()
   res <- resolve_wrb_qualifiers(pr, "ST")
   expect_true("Albic" %in% res$principal)
@@ -96,12 +103,15 @@ test_that("ST canonical fixture resolves to an Albic Stagnosol", {
   expect_match(cls$name, "Stagnosol")
 })
 
-test_that("NT canonical fixture resolves to a Luvic Ferric Chromic Nitisol", {
+test_that("NT canonical fixture resolves to a Luvic Nitisol", {
+  skip_on_cran()
   pr  <- make_nitisol_canonical()
   res <- resolve_wrb_qualifiers(pr, "NT")
   expect_true("Luvic"   %in% res$principal)
-  expect_true("Ferric"  %in% res$principal)
-  expect_true("Chromic" %in% res$principal)
+  # v0.9.217: Ferric is a supplementary qualifier of Nitisols in WRB 2022, and
+  # Chromic is not in their lists
+  expect_true("Ferric"  %in% res$supplementary)
+  expect_false("Chromic" %in% c(res$principal, res$supplementary))
   # NT fixture has CEC/clay ~ 32 cmol+/kg clay -> NOT Vetic (threshold 6).
   expect_false("Vetic" %in% res$principal)
   # ECEC ~ 6-8 cmol+/kg fine earth -> NOT Geric (threshold 1.5).
@@ -112,11 +122,12 @@ test_that("NT canonical fixture resolves to a Luvic Ferric Chromic Nitisol", {
   expect_match(cls$name, "Nitisol")
 })
 
-test_that("FR canonical fixture resolves to a Geric Ferric Rhodic Ferralsol", {
+test_that("FR canonical fixture resolves to a Geric Rhodic Ferralsol", {
+  skip_on_cran()
   pr  <- make_ferralsol_canonical()
   res <- resolve_wrb_qualifiers(pr, "FR")
   expect_true("Geric"   %in% res$principal)
-  expect_true("Ferric"  %in% res$principal)
+  expect_true("Ferric"  %in% res$supplementary)   # v0.9.217: Ch 4 FR list
   expect_true("Rhodic"  %in% res$principal)
   # WRB 2022: Chromic does NOT apply when the soil meets Rhodic (v0.9.131).
   expect_false("Chromic" %in% res$principal)
@@ -299,6 +310,8 @@ test_that("Hyperalbic accumulates only contiguous eluvial-evidence albic", {
     munsell_hue_moist = c("10YR", "10YR", "10YR", "10YR", "7.5YR"),
     munsell_value_moist = c(2, 7, 7, 7, 4),
     munsell_chroma_moist = c(1, 1, 1, 1, 4),
+    munsell_value_dry = c(3, 8, 8, 8, 5),     # v0.9.220: claric material
+    munsell_chroma_dry = c(1, 1, 1, 1, 4),    # needs the dry colour too
     oc_pct = c(20, 0.3, 0.2, 0.1, 1.5),
     al_ox_pct = c(0.05, 0.02, 0.02, 0.02, 0.5),
     fe_ox_pct = c(0.05, 0.02, 0.02, 0.02, 0.4),
@@ -368,6 +381,7 @@ test_that("Densic / Placic / Ortsteinic key on physical/cementation fields", {
 # ---- 31-fixture regression check ------------------------------------------
 
 test_that("Bloco C YAML / qualifier additions do not regress 31 fixtures", {
+  skip_on_cran()
   expected <- c(
     HS = "Histosols", AT = "Anthrosols", TC = "Technosols", CR = "Cryosols",
     LP = "Leptosols", SN = "Solonetz",   VR = "Vertisols", SC = "Solonchaks",

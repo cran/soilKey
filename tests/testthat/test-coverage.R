@@ -3,6 +3,7 @@
 # (Aeolic / Fragic / Limonic / Tsitelic).
 
 test_that("coverage_report(usda_subgroup) measures by name against KST 13ed", {
+  skip_if_no_kst13()
   skip_on_cran()
   cov <- coverage_report("usda_subgroup")
   expect_type(cov, "list")
@@ -23,6 +24,7 @@ test_that("coverage_report(usda_subgroup) measures by name against KST 13ed", {
 })
 
 test_that("coverage_report(wrb_qualifiers) counts only genuine implementations", {
+  skip_if_no_soiltaxonomy()
   skip_on_cran()
   cov <- coverage_report("wrb_qualifiers")
   expect_equal(cov$overall$system, "wrb2022")
@@ -37,11 +39,12 @@ test_that("coverage_report(wrb_qualifiers) counts only genuine implementations",
   # v0.9.145: +4 over the v0.9.122 baseline of 229. Petrosalic (vendored as the
   # upstream-corrupted "etrosalic") is now normalised to its complete
   # qual_petrosalic; Sideralic/Panpaic/Claric gained thin wrappers over their
-  # existing diagnostics. Only Novic remains (schema-blocked: deposition age).
-  expect_equal(cov$overall$covered_n, 233L)
+  # existing diagnostics. v0.9.217: Novic, the last one, has a function, and
+  # Epic/Endic/Dorsic delegate to the RSG-horizon helper the detector follows.
+  expect_equal(cov$overall$covered_n, 234L)
   expect_false(any(c("etrosalic", "Petrosalic", "Sideralic", "Panpaic",
-                     "Claric") %in% cov$missing))
-  expect_true("Novic" %in% cov$missing)
+                     "Claric", "Novic", "Epic", "Endic", "Dorsic") %in% cov$missing))
+  expect_length(cov$missing, 0L)
   expect_true(all(cov$stubs %in% cov$missing))     # (vacuously true: no stubs)
   expect_equal(cov$overall$covered_n + cov$overall$missing_n, cov$overall$canonical_n)
   # specifier-derived qualifiers (Endo-/Epi-/...) count as covered
@@ -49,6 +52,7 @@ test_that("coverage_report(wrb_qualifiers) counts only genuine implementations",
 })
 
 test_that("coverage_report extends to USDA great-group / suborder levels", {
+  skip_if_no_kst13()
   skip_on_cran()
   gg <- coverage_report("usda_great_group")
   expect_equal(gg$overall$level, "great_group")

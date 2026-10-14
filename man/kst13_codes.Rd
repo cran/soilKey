@@ -11,8 +11,9 @@ A data.frame with columns \code{code, name}.
 }
 \description{
 Returns the 3,153-row data.frame from
-\code{inst/rules/usda/canonical/2022_KST_codes.json}, vendored from
-NCSS-tech/SoilKnowledgeBase. Each row is a (code, name) pair.
+\code{2022_KST_codes.json} in NCSS-tech/SoilKnowledgeBase (GPL-3), which
+soilKey downloads on first use and caches (it ships no copy; see
+\code{\link{clear_kst13_cache}}). Each row is a (code, name) pair.
 }
 \details{
 Code structure:

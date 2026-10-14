@@ -107,9 +107,25 @@ test_that("v0.9.81: benchmark_redape preserves the Order accuracy bit-for-bit", 
   # v0.9.107: order accuracy 59.6% (56/94). v0.9.135: the fluvic-material proxy
   # fix (reversal-based texture stratification) lifts it to 63.8% (60/94) by no
   # longer mislabelling monotone-clay Argissolos as Neossolos Fluvicos.
+  # v0.9.189: the Redape loader now decodes the field soil-structure codes it
+  # previously discarded, lifting order accuracy to 67.0% (63/94). This is a
+  # benchmark-input change, not a key change (see NEWS 0.9.189).
+  # v0.9.230: the clay-film gate of the B latossolico reads "many", the term
+  # the Redape loader writes for its code of "abundante": four Argissolos of
+  # Rio Grande do Norte are no longer keyed Latossolos, 71.3% (67/94).
+  # v0.9.241: the B textural and the B latossolico are tested by the items of
+  # the book, and a diagnostic B is one with or without carater fluvico:
+  # 81.9% (77/94). Seventeen profiles change order, eleven of them to their
+  # reference.
+  # v0.9.255: item (a) of the B espodico finds two Espodossolos that were
+  # keyed Argissolos: 84.0% (79/94).
+  # v0.9.257: the activity of the clay and the base saturation are judged in
+  # the larger part of the first 100 cm of the B, and two Argissolos with one
+  # eutrophic layer of high activity are no longer keyed Luvissolos: 86.2%
+  # (81/94).
   # Pinned with a +/- tolerance to catch unintended drift.
-  expect_gt(res$accuracy, 0.60)
-  expect_lt(res$accuracy, 0.66)
+  expect_gt(res$accuracy, 0.82)
+  expect_lt(res$accuracy, 0.90)
   expect_equal(res$n_compared, 94L)
 })
 

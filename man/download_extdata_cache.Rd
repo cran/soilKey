@@ -6,7 +6,7 @@
 \usage{
 download_extdata_cache(
   which = "all",
-  release = .SOILKEY_LAZY_FETCH_RELEASE,
+  release = NULL,
   overwrite = FALSE,
   verbose = TRUE
 )
@@ -17,9 +17,12 @@ download_extdata_cache(
 names: \code{"afsp_sample"}, \code{"kssl_sample"},
 \code{"kssl_nasis_sample"}, \code{"wosis_stratified_sample"}.}
 
-\item{release}{GitHub Release tag to pull from (default
-\code{"v0.9.94-data"}). Override only if you maintain a
-local mirror.}
+\item{release}{Release tag to pull from. \code{NULL} (the default) means
+soilKey has nowhere to pull from: since v0.9.199 the package
+distributes no third-party soil observations, and this function
+refuses rather than serving a copy of somebody else's data. Supply a
+tag only if you maintain your own mirror, obtained from the providers
+under their terms.}
 
 \item{overwrite}{If \code{TRUE}, redownload even if the file is
 already present in the user cache (default \code{FALSE}).}

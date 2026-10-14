@@ -7,13 +7,12 @@
 wrb2022_canonical(prefer_pkg = TRUE)
 }
 \arguments{
-\item{prefer_pkg}{If \code{TRUE} (default), prefer the installed
-SoilTaxonomy package over the vendored copy. Set to
-\code{FALSE} to force the vendored copy (e.g. for
-reproducibility of a specific soilKey release).}
+\item{prefer_pkg}{Retained for compatibility and no longer used. Until
+v0.9.203 \code{FALSE} selected a copy bundled with soilKey; there is
+no bundled copy any more, so the data always come from SoilTaxonomy.}
 }
 \value{
-The canonical WRB 2022 reference data (a list / data.frame of RSG and qualifier criteria), as vendored or sourced from the \pkg{SoilTaxonomy} package.
+The canonical WRB 2022 reference data (a list / data.frame of RSG and qualifier criteria), read from the \pkg{SoilTaxonomy} package.
 }
 \description{
 Convenience wrapper for \code{canonical_reference("WRB_4th_2022")}.

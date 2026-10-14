@@ -21,7 +21,14 @@
     "ph_h2o", "ph_kcl", "oc_pct",
     "cec_cmol", "bs_pct", "al_sat_pct",
     "ca_cmol", "mg_cmol", "k_cmol", "na_cmol",
-    "bulk_density_g_cm3", "structure_grade", "boundary_distinctness")
+    "bulk_density_g_cm3", "structure_grade", "boundary_distinctness",
+    # v0.9.190: the anthropogenic attributes the Technosol key needs. Without
+    # these in the starter table a user building a profile from scratch could
+    # never specify a Technosol -- the criteria were only reachable by loading a
+    # fixture, which exposes the full schema (David Rossiter, pers. comm.).
+    # `geomembrane_present` is asked once at site level instead (see the
+    # Construction section) and written onto the horizons at build time.
+    "artefacts_pct", "technic_hardmaterial_pct")
 }
 
 .pedon_blank_template <- function() {
@@ -46,6 +53,128 @@
   sep = "\n"
 )
 
+# ---------------------------------------------------------------------------
+# Robust yes/no parsing for logical columns of the editable table (v0.9.190).
+#
+# DT::editData() coerces an edited cell to the column's storage type, so a
+# logical column receives as.logical(<typed text>). as.logical("no") is NA --
+# not FALSE -- so a user answering "no" to a yes/no attribute silently produced
+# a missing value and the key went on reporting "data needed" for that
+# criterion no matter how many times they answered it. We accept the ordinary
+# spellings in both app languages and return NULL when the text is genuinely
+# uninterpretable, so the caller can flag it instead of swallowing it.
+.sk_parse_logical <- function(x) {
+  if (is.logical(x)) return(x)
+  s <- tolower(trimws(as.character(x)))
+  if (!nzchar(s) || s %in% c("na", "null", "-", "?")) return(NA)
+  if (s %in% c("true", "t", "yes", "y", "1", "sim", "s", "verdadeiro", "v"))
+    return(TRUE)
+  if (s %in% c("false", "f", "no", "n", "0", "nao", "não", "falso"))
+    return(FALSE)
+  NULL                                  # uninterpretable -> caller warns
+}
+
+# Write the site-level technic (anthropogenic) answers onto the horizons (v0.9.190).
+#
+# WRB 2022 keys Technosols on three alternatives -- >=20 % artefacts by volume
+# in the upper 100 cm, a constructed geomembrane starting within 100 cm, or
+# technic hard material at the surface -- and the engine reads all three from
+# horizon columns. Two things made that unusable from the app:
+#
+#   * a geomembrane is a fact about how the site was built, not about each
+#     layer, so answering it layer-by-layer was tedious and error-prone; and
+#   * artefacts and technic hard material are *exceptional* features. A field
+#     description that does not mention them means they are absent, but leaving
+#     the cells empty made every ordinary profile report the Technosol criteria
+#     as "data needed" forever (David Rossiter, pers. comm.).
+#
+# The app therefore asks once, at site level, and materialises the answer:
+#   technic = "none"    -> artefacts 0 %, hard material 0 %, geomembrane FALSE.
+#                          Technosols are ruled out cleanly and the key stops
+#                          asking, which is what a normal field description means.
+#   technic = "present" -> the geomembrane answer below is applied and artefacts
+#                          / hard material are taken from the horizon table.
+#   technic = "unknown" -> nothing is written. NA is the honest state and the key
+#                          correctly reports the criteria as still needing data.
+# An explicit answer overrides whatever a loaded fixture carried, because the
+# user has just answered the question directly.
+.sk_apply_site_technic <- function(df, technic = "unknown",
+                                   geomembrane = "unknown",
+                                   depth_cm = NA_real_) {
+  if (is.null(df) || nrow(df) == 0L) return(df)
+  technic <- tolower(trimws(technic %||% "unknown"))
+
+  if (identical(technic, "none")) {
+    df$artefacts_pct            <- 0
+    df$technic_hardmaterial_pct <- 0
+    df$geomembrane_present      <- FALSE
+    return(df)
+  }
+  if (!identical(technic, "present")) return(df)   # "unknown" -> untouched
+
+  geomembrane <- tolower(trimws(geomembrane %||% "unknown"))
+  if (identical(geomembrane, "unknown")) return(df)
+  df$geomembrane_present <- FALSE
+  if (identical(geomembrane, "yes")) {
+    d   <- suppressWarnings(as.numeric(depth_cm))
+    top <- suppressWarnings(as.numeric(df$top_cm))
+    bot <- suppressWarnings(as.numeric(df$bottom_cm))
+    hit <- if (!is.na(d))
+             which(!is.na(top) & !is.na(bot) & top <= d & bot > d)
+           else integer(0)
+    if (!length(hit)) hit <- 1L        # no/non-matching depth -> topmost horizon
+    df$geomembrane_present[hit[1L]] <- TRUE
+  }
+  df
+}
+# The WoSIS picker holds no corpus.
+#
+# Until v0.9.199 this file cached a bundled snapshot of ISRIC's profiles in a
+# package environment. soilKey now distributes no soil observations at all
+# (inst/DATA-PROVENANCE.md), so the picker queries ISRIC live through
+# soilKey::read_wosis_profiles_graphql() and keeps the answer only in the
+# session reactive below, for as long as the user is looking at it.
+#
+# The licence filter is the part that matters: WoSIS is licensed PER PROFILE as
+# each provider specified, and about half of it is CC BY-NC. See the switch in
+# the UI and the status line that reports what was withheld and why.
+
+# Data sources to offer, in order. WoSIS is always among them now: the picker
+# queries ISRIC live, so it no longer depends on a bundled corpus being present.
+.sk_pedon_sources <- function() {
+  stats::setNames(
+    c("fixture", "wosis", "upload", "blank"),
+    c(i18n("pedon.source_fixture"), i18n("pedon.source_wosis"),
+      i18n("pedon.source_upload"),  i18n("pedon.source_blank")))
+}
+
+
+# Repopulate the site inputs from a pedon's own `$site` (v0.9.190).
+#
+# Loading a fixture used to bring in its horizons and silently drop its site
+# metadata, so the Site panel kept showing the previous profile's coordinates
+# (David Rossiter, pers. comm.). Only fields the source actually carries are
+# written -- nothing is invented.
+.sk_fill_site_inputs <- function(session, site) {
+  if (is.null(site)) return(invisible(NULL))
+  num_ok <- function(v) !is.null(v) && length(v) && !all(is.na(v))
+  if (!is.null(site$id))
+    shiny::updateTextInput(session, "site_id", value = as.character(site$id)[1])
+  if (num_ok(site$lat))
+    shiny::updateNumericInput(session, "lat",
+                              value = suppressWarnings(as.numeric(site$lat)[1]))
+  if (num_ok(site$lon))
+    shiny::updateNumericInput(session, "lon",
+                              value = suppressWarnings(as.numeric(site$lon)[1]))
+  if (!is.null(site$country))
+    shiny::updateTextInput(session, "country",
+                           value = as.character(site$country)[1])
+  if (!is.null(site$parent_material))
+    shiny::updateTextInput(session, "pm",
+                           value = as.character(site$parent_material)[1])
+  invisible(NULL)
+}
+
 pedon_ui <- function(id) {
   ns <- shiny::NS(id)
   bslib::layout_sidebar(
@@ -54,13 +183,15 @@ pedon_ui <- function(id) {
       sk_section(
         i18n("pedon.seed_profile"),
         icon = "layer-group",
-        desc = "Start from a reference profile, your own CSV, or a blank sheet.",
+        desc = i18n("pedon.desc_seed"),
         shinyWidgets::radioGroupButtons(
           ns("source"), NULL,
-          choices = stats::setNames(
-            c("fixture", "upload", "blank"),
-            c(i18n("pedon.source_fixture"), i18n("pedon.source_upload"),
-              i18n("pedon.source_blank"))),
+          # The WoSIS button is offered only when there are profiles behind it.
+          # soilKey stopped distributing WoSIS observations in v0.9.199 (see
+          # inst/DATA-PROVENANCE.md), so a deployment that has not mounted its own
+          # copy has none -- and an option that opens an empty table is worse
+          # than no option at all. Mount the data and the button returns.
+          choices = .sk_pedon_sources(),
           selected = "fixture", justified = TRUE, size = "sm"
         ),
         shiny::conditionalPanel(
@@ -68,17 +199,37 @@ pedon_ui <- function(id) {
           shinyWidgets::pickerInput(
             ns("fixture"),
             sk_label(i18n("pedon.canonical_profile"),
-                     "A curated, textbook profile you can load and edit as a starting point."),
+                     i18n("pedon.help_fixture")),
             choices  = pro_fixture_catalog(),
             selected = "make_ferralsol_canonical",
             options  = list(`live-search` = TRUE)
           )
         ),
+        # Browse real ISRIC WoSIS profiles, queried live. soilKey holds no copy.
+        shiny::conditionalPanel(
+          sprintf("input['%s'] == 'wosis'", ns("source")),
+          shiny::helpText(i18n("pedon.wosis_hint")),
+          shiny::textInput(ns("wosis_country"),
+                           sk_label(i18n("pedon.wosis_country"),
+                                    i18n("pedon.help_wosis_country")),
+                           value = "", placeholder = "Argentina"),
+          shinyWidgets::materialSwitch(
+            ns("wosis_permissive"),
+            sk_label(i18n("pedon.wosis_permissive"),
+                     i18n("pedon.help_wosis_permissive")),
+            value = TRUE, status = "primary"),
+          shiny::actionButton(ns("wosis_search"), i18n("pedon.wosis_search"),
+                              icon = shiny::icon("magnifying-glass"),
+                              class = "btn-outline-secondary btn-sm w-100 mb-2"),
+          shiny::uiOutput(ns("wosis_status")),
+          DT::DTOutput(ns("wosis_table")),
+          shiny::helpText(class = "small", i18n("pedon.wosis_layers_hint"))
+        ),
         shiny::conditionalPanel(
           sprintf("input['%s'] == 'upload'", ns("source")),
           shiny::fileInput(ns("csv"),
                            sk_label(i18n("pedon.horizons_csv_tsv"),
-                                    "One row per horizon, with depth and lab columns. Download the starter file to see the expected layout."),
+                                    i18n("pedon.help_csv")),
                            accept = c(".csv", ".tsv", ".txt")),
           shiny::downloadLink(ns("template"), i18n("pedon.download_starter_csv"))
         ),
@@ -86,51 +237,82 @@ pedon_ui <- function(id) {
           shiny::actionButton(ns("load"), i18n("pedon.load_horizons"),
                               icon = shiny::icon("upload"),
                               class = "btn-secondary w-100"),
-          "Load the chosen source into the editable horizon table below."
+          i18n("pedon.tip_load")
         )
       ),
       sk_section(
         i18n("pedon.site_metadata"),
         icon = "location-dot",
-        desc = "Where the profile sits and what it formed on — used for regional priors.",
+        desc = i18n("pedon.desc_site"),
         shiny::textInput(ns("site_id"),
                          sk_label(i18n("pedon.profile_id"),
-                                  "A short label for this profile. It names your downloads and appears in the results."),
+                                  i18n("pedon.help_site_id")),
                          "demo-pedon-01"),
         shiny::fluidRow(
           shiny::column(6, shiny::numericInput(
             ns("lat"),
             sk_label(i18n("pedon.latitude"),
-                     "Decimal degrees, from -90 to 90. Optional, but enables the SoilGrids and climate priors."),
+                     i18n("pedon.help_lat")),
             -22.5, step = 0.01)),
           shiny::column(6, shiny::numericInput(
             ns("lon"),
             sk_label(i18n("pedon.longitude"),
-                     "Decimal degrees, from -180 to 180. Negative is west. Optional but recommended."),
+                     i18n("pedon.help_lon")),
             -43.7, step = 0.01))
         ),
         shiny::fluidRow(
           shiny::column(6, shiny::textInput(
             ns("country"),
             sk_label(i18n("pedon.country_iso2"),
-                     "Two-letter ISO country code, e.g. BR for Brazil. Helps regional defaults."),
+                     i18n("pedon.help_country")),
             "BR")),
           shiny::column(6, shiny::textInput(
             ns("pm"),
             sk_label(i18n("pedon.parent_material"),
-                     "The rock or deposit the soil formed on, e.g. gneiss, basalt, alluvium."),
+                     i18n("pedon.help_pm")),
             "gneiss"))
+        ),
+        # v0.9.190: site-level technic (anthropogenic) attributes. These are
+        # facts about how the site was built, not per-layer lab values, so they
+        # are asked once here and written onto the horizons at build time.
+        shiny::selectInput(
+          ns("technic"),
+          sk_label(i18n("pedon.technic"),
+                   i18n("pedon.help_technic")),
+          choices  = stats::setNames(
+            c("unknown", "none", "present"),
+            c(i18n("pedon.technic_unknown"), i18n("pedon.technic_none"),
+              i18n("pedon.technic_present"))),
+          selected = "unknown"),
+        shiny::conditionalPanel(
+          condition = sprintf("input['%s'] == 'present'", ns("technic")),
+          shiny::fluidRow(
+            shiny::column(6, shiny::selectInput(
+              ns("geomembrane"),
+              sk_label(i18n("pedon.geomembrane"),
+                       i18n("pedon.help_geomembrane")),
+              choices  = stats::setNames(
+                c("unknown", "no", "yes"),
+                c(i18n("pedon.geo_unknown"), i18n("pedon.geo_no"), i18n("pedon.geo_yes"))),
+              selected = "unknown")),
+            shiny::column(6, shiny::numericInput(
+              ns("geomembrane_depth"),
+              sk_label(i18n("pedon.geomembrane_depth"),
+                       i18n("pedon.help_geomembrane_depth")),
+              value = NA, min = 0, step = 1))
+          ),
+          shiny::helpText(i18n("pedon.technic_hint"))
         )
       ),
       sk_section(
         i18n("pedon.build_update_pedon"),
         icon = "hammer",
-        desc = "Assemble the profile so the other tabs can classify it.",
+        desc = i18n("pedon.desc_build"),
         bslib::tooltip(
           shiny::actionButton(ns("build"), i18n("pedon.build_update_pedon"),
                               icon = shiny::icon("hammer"),
                               class = "btn-primary w-100"),
-          "Check the horizon geometry and coordinates, then build the pedon used by every other tab."
+          i18n("pedon.tip_build")
         ),
         shiny::uiOutput(ns("status"))
       ),
@@ -138,18 +320,17 @@ pedon_ui <- function(id) {
       sk_section(
         i18n("pedon.save_open_session"),
         icon = "floppy-disk",
-        desc = paste("Export the profile (site + horizons) to a JSON file, or",
-                     "reopen one to pick up exactly where you left off."),
+        desc = i18n("pedon.desc_session"),
         bslib::tooltip(
           shiny::downloadButton(
             ns("save_session"), i18n("pedon.save_session"),
             icon = shiny::icon("download"),
             class = "btn-outline-secondary w-100"),
-          "Save the current site details and horizon table as a portable .json file."),
+          i18n("pedon.tip_save_session")),
         shiny::fileInput(
           ns("session_file"),
           sk_label(i18n("pedon.open_session"),
-                   "Load a .json session saved earlier; it repopulates every field and rebuilds the pedon."),
+                   i18n("pedon.help_open_session")),
           accept = ".json")
       )
     ),
@@ -166,15 +347,19 @@ pedon_ui <- function(id) {
                          shiny::downloadButton(ns("download_hz"), i18n("pedon.csv"),
                                                icon = shiny::icon("download"),
                                                class = "btn-sm btn-outline-secondary"),
-                         "Save the current table as a CSV to edit offline or re-upload later."),
+                         i18n("pedon.tip_download_csv")),
                        bslib::tooltip(
                          shiny::actionButton(ns("add_row"), i18n("pedon.add_row"),
                                              icon = shiny::icon("plus"),
                                              class = "btn-sm btn-outline-secondary"),
-                         "Append a new horizon below, continuing from the deepest depth.")))
+                         i18n("pedon.tip_add_row"))))
         ),
         bslib::card_body(
-          shiny::helpText("Click any cell to edit it. Depths are in centimetres; leave a lab value blank if unmeasured."),
+          shiny::helpText(i18n("pedon.help_table")),
+          # Where the horizons came from, with the licence and the citation the
+          # provider asks for. Shown whenever WoSIS data is in the editor: the
+          # ISRIC data policy requires web services to reference the provider.
+          shiny::uiOutput(ns("data_source_note")),
           DT::DTOutput(ns("hz_table")),
           shiny::uiOutput(ns("geom_status")))
       ),
@@ -186,7 +371,7 @@ pedon_ui <- function(id) {
                        shiny::selectInput(ns("plot_attr"), NULL,
                                           choices = pro_numeric_attrs(),
                                           selected = "clay_pct", width = "180px"),
-                       "Choose which lab attribute to plot against depth."))
+                       i18n("pedon.tip_plot_attr")))
         ),
         bslib::card_body(plotly::plotlyOutput(ns("profile"), height = "320px"))
       )
@@ -259,7 +444,13 @@ pedon_server <- function(id, rv) {
             lat             = suppressWarnings(as.numeric(input$lat)),
             lon             = suppressWarnings(as.numeric(input$lon)),
             country         = input$country %||% NA_character_,
-            parent_material = input$pm %||% NA_character_
+            parent_material = input$pm %||% NA_character_,
+            # v0.9.190: site-level construction answers, so a reopened session
+            # restores them too. The pedon schema does not restrict additional
+            # site properties, so this stays valid for validate_pedon_json().
+            technic              = input$technic %||% "unknown",
+            geomembrane          = input$geomembrane %||% "unknown",
+            geomembrane_depth_cm = suppressWarnings(as.numeric(input$geomembrane_depth))
           ),
           horizons = horizon_rows
         )
@@ -284,7 +475,7 @@ pedon_server <- function(id, rv) {
       if (inherits(parsed, "error") || is.null(parsed$horizons) ||
           NROW(parsed$horizons) == 0L) {
         msg <- if (inherits(parsed, "error")) conditionMessage(parsed)
-               else "no horizons found in file"
+               else i18n("pedon.no_horizons_in_file")
         shiny::showNotification(i18n("pedon.session_load_failed", msg),
                                 type = "error", duration = 8)
         return(invisible())
@@ -307,13 +498,28 @@ pedon_server <- function(id, rv) {
       shiny::updateTextInput(session, "country", value = site$country %||% "")
       shiny::updateTextInput(session, "pm",
                              value = site$parent_material %||% "")
+      # v0.9.190: restore the site-level construction answers (absent in
+      # sessions saved by earlier versions -> fall back to "unknown").
+      shiny::updateSelectInput(session, "technic",
+                               selected = site$technic %||% "unknown")
+      shiny::updateSelectInput(session, "geomembrane",
+                               selected = site$geomembrane %||% "unknown")
+      if (!is.null(site$geomembrane_depth_cm))
+        shiny::updateNumericInput(
+          session, "geomembrane_depth",
+          value = suppressWarnings(as.numeric(site$geomembrane_depth_cm)))
       hz(hzdf)
       hz_reload(hz_reload() + 1L)
 
       # Try to rebuild the pedon immediately so every tab is usable on reopen;
       # if geometry is off, leave the editor populated and ask for a Build.
       built <- tryCatch({
-        h_dt <- soilKey::ensure_horizon_schema(data.table::as.data.table(hzdf))
+        # Apply the restored site-level construction answers, exactly as the
+        # Build button does, so a reopened session classifies identically.
+        hz_built <- .sk_apply_site_technic(
+          hzdf, site$technic %||% "unknown",
+          site$geomembrane %||% "unknown", site$geomembrane_depth_cm)
+        h_dt <- soilKey::ensure_horizon_schema(data.table::as.data.table(hz_built))
         soilKey::PedonRecord$new(
           site = list(
             id              = site$id %||% "pedon",
@@ -356,6 +562,10 @@ pedon_server <- function(id, rv) {
 
     # ---- load horizons from the chosen source -----------------------------
     shiny::observeEvent(input$load, {
+      # v0.9.190: carry the source profile's own site metadata across, instead
+      # of loading its horizons and leaving the Site panel showing the previous
+      # profile's coordinates (David Rossiter, pers. comm.).
+      loaded_site <- NULL
       df <- switch(
         input$source,
         fixture = {
@@ -366,6 +576,42 @@ pedon_server <- function(id, rv) {
                                     type = "error")
             return(invisible())
           }
+          loaded_site <- p$site
+          data_source(NULL)
+          as.data.frame(p$horizons)
+        },
+        wosis = {
+          sel <- input$wosis_table_rows_selected
+          if (!length(sel)) {
+            shiny::showNotification(i18n("pedon.wosis_select_first"),
+                                    type = "warning")
+            return(invisible())
+          }
+          h <- wosis_hits()
+          if (sel[1] > nrow(h)) return(invisible())
+          # The layers are read live, a page at a time, with a progress bar.
+          p <- shiny::withProgress(message = i18n("pedon.wosis_loading_layers"),
+                                   value = 0, {
+            soilKey::wosis_profile_to_pedon(
+              h[sel[1], , drop = FALSE],
+              progress = function(done, total)
+                shiny::setProgress(value = done / max(total, 1),
+                                   detail = sprintf("%d / %d", done, total)))
+          })
+          if (is.null(p$horizons) || !nrow(p$horizons)) {
+            shiny::showNotification(
+              sprintf(i18n("pedon.wosis_not_loaded"), p$site$wosis_error %||% ""),
+              type = "warning", duration = 15)
+            return(invisible())
+          }
+          # site carries licence + attribution, so they survive into any export
+          loaded_site <- p$site
+          data_source(c(
+            p$site[intersect(
+              c("source", "dataset", "licence", "licence_short", "accessed",
+                "citation", "attribution", "wosis_profile_id", "depth_note"),
+              names(p$site))],
+            list(wosis_profile_code = p$site$id)))
           as.data.frame(p$horizons)
         },
         upload = {
@@ -375,6 +621,7 @@ pedon_server <- function(id, rv) {
             return(invisible())
           }
           sep <- if (grepl("\\.tsv$", f$name, ignore.case = TRUE)) "\t" else ","
+          data_source(NULL)
           tryCatch(utils::read.csv(f$datapath, sep = sep,
                                    stringsAsFactors = FALSE),
                    error = function(e) {
@@ -384,7 +631,7 @@ pedon_server <- function(id, rv) {
                      NULL
                    })
         },
-        blank = .pedon_blank_template()
+        blank = { data_source(NULL); .pedon_blank_template() }
       )
       if (is.null(df)) return(invisible())
       # Keep only columns soilKey understands, in canonical order.
@@ -394,6 +641,7 @@ pedon_server <- function(id, rv) {
       df    <- df[, c(keep, extra), drop = FALSE]
       hz(df)
       hz_reload(hz_reload() + 1L)
+      .sk_fill_site_inputs(session, loaded_site)
       shiny::showNotification(
         i18n("pedon.loaded_n", nrow(df)), type = "message")
     })
@@ -413,12 +661,92 @@ pedon_server <- function(id, rv) {
       hz_reload(hz_reload() + 1L)
     })
 
+    # ---- WoSIS profile picker --------------------------------------------
+    # Where the horizons in the editor came from, when that is WoSIS: provider,
+    # dataset, licence, date read and citation. NULL for fixtures, uploads and
+    # blank sheets. It is shown above the table and written into the pedon's
+    # site, so the attribution travels into the classification and the report.
+    data_source <- shiny::reactiveVal(NULL)
+
+    # The live result, held in a reactive for as long as the user is looking at
+    # it and never written anywhere. Triggered by the button, not by typing, so
+    # ISRIC is not queried on every keystroke.
+    wosis_hits <- shiny::eventReactive(input$wosis_search, {
+      shiny::withProgress(message = i18n("pedon.wosis_querying"), value = 0.5, {
+        soilKey::read_wosis_profiles_graphql(
+          country = trimws(input$wosis_country %||% ""),
+          n_max   = 50L,
+          licence_filter = if (isTRUE(input$wosis_permissive)) "permissive" else "any")
+      })
+    }, ignoreNULL = FALSE)
+
+    output$wosis_status <- shiny::renderUI({
+      h <- wosis_hits()
+      err <- attr(h, "wosis_error")
+      if (!is.null(err))
+        return(shiny::div(class = "small text-danger",
+                          sprintf(i18n("pedon.wosis_unreachable"), err)))
+      n_ex <- attr(h, "wosis_excluded") %||% 0L
+      shiny::tagList(
+        shiny::div(class = "small text-muted",
+                   sprintf(i18n("pedon.wosis_found"), nrow(h))),
+        # Saying WHY nothing came back matters: a country whose data is all
+        # NonCommercial otherwise looks like a broken query.
+        if (n_ex > 0L) shiny::div(
+          class = "small text-muted",
+          sprintf(i18n("pedon.wosis_withheld"), n_ex,
+                  paste(attr(h, "wosis_excluded_licences"), collapse = ", "))),
+        if ((attr(h, "wosis_no_layers") %||% 0L) > 0L) shiny::div(
+          class = "small text-muted",
+          sprintf(i18n("pedon.wosis_no_layers_listed"), attr(h, "wosis_no_layers"))))
+    })
+
+    output$wosis_table <- sk_renderDT({
+      h <- wosis_hits()
+      shiny::validate(shiny::need(nrow(h) > 0L, i18n("pedon.wosis_unavailable")))
+      # licence and dataset are shown, not hidden: CC BY requires attribution,
+      # and the user should see what they are taking before they take it.
+      sk_datatable(
+        h[, c("profile_code", "country", "wrb_rsg", "usda_order",
+              "n_layers", "depth_cm", "dataset", "licence_short")],
+        colnames = c(i18n("pedon.wosis_col_profile"), i18n("pedon.wosis_col_country"),
+                     "WRB", "USDA", i18n("pedon.wosis_col_layers"),
+                     i18n("pedon.wosis_col_depth"), i18n("pedon.wosis_col_dataset"),
+                     i18n("pedon.wosis_col_licence")),
+        rownames = FALSE, selection = "single",
+        options = list(pageLength = 8, scrollX = TRUE, dom = "ftip")
+      )
+    })
+
+    output$data_source_note <- shiny::renderUI({
+      ds <- data_source()
+      if (is.null(ds)) return(NULL)
+      lic <- ds$licence %||% ""
+      url <- regmatches(lic, regexpr("https?://[^ ,;]+", lic))
+      lic_label <- ds$licence_short %||% lic
+      # Built from the fields rather than the one-line attribution string, so the
+      # licence appears once, as a link to its text.
+      shiny::div(
+        class = "sk-data-source small",
+        shiny::tags$strong(paste0(i18n("pedon.data_source_title"), ":")), " ",
+        sprintf("%s (%s), ISRIC WoSIS-latest, %s.",
+                ds$wosis_profile_code %||% "", ds$dataset %||% "", ds$accessed %||% ""),
+        " ", if (length(url))
+          shiny::tags$a(href = url, target = "_blank", rel = "noopener", lic_label)
+        else lic_label,
+        if (!isTRUE(soilKey:::.wosis_is_permissive(lic)))
+          shiny::div(class = "sk-data-source-nc", i18n("pedon.data_source_nc")),
+        shiny::div(shiny::tags$em(paste0(i18n("pedon.data_source_cite"), ":")), " ",
+                   ds$citation %||% ""),
+        if (!is.null(ds$depth_note)) shiny::div(ds$depth_note))
+    })
+
     # ---- editable table ---------------------------------------------------
-    output$hz_table <- DT::renderDT({
+    output$hz_table <- sk_renderDT({
       hz_reload()                          # re-render only on load / add
       df <- shiny::isolate(hz())
       if (is.null(df)) df <- .pedon_blank_template()[0, , drop = FALSE]
-      DT::datatable(
+      sk_datatable(
         df,
         editable  = list(target = "cell"),
         rownames  = FALSE,
@@ -427,10 +755,34 @@ pedon_server <- function(id, rv) {
       )
     })
 
+    # v0.9.190: parse yes/no text before DT coerces it. Logical columns used to
+    # swallow anything DT could not read as a literal TRUE/FALSE -- "no" became
+    # NA -- so an answered criterion stayed "data needed". Now the ordinary
+    # spellings are understood in both languages and an unreadable entry is
+    # reported instead of being silently discarded.
     shiny::observeEvent(input$hz_table_cell_edit, {
       df <- hz()
       if (is.null(df)) return(invisible())
-      hz(DT::editData(df, input$hz_table_cell_edit, rownames = FALSE))
+      info <- input$hz_table_cell_edit
+      bad  <- character(0)
+      for (k in seq_len(nrow(info))) {
+        j <- info$col[k] + 1L            # rownames = FALSE -> 0-based columns
+        if (is.na(j) || j < 1L || j > ncol(df)) next
+        cn <- names(df)[j]
+        if (!is.logical(df[[cn]])) next
+        parsed <- .sk_parse_logical(info$value[k])
+        if (is.null(parsed)) {
+          bad <- c(bad, cn)
+          info$value[k] <- NA
+        } else {
+          info$value[k] <- if (is.na(parsed)) NA else as.character(parsed)
+        }
+      }
+      hz(DT::editData(df, info, rownames = FALSE))
+      if (length(bad))
+        shiny::showNotification(
+          i18n("pedon.logical_not_understood", paste(unique(bad), collapse = ", ")),
+          type = "warning", duration = 8)
     })
 
     # ---- depth profile ----------------------------------------------------
@@ -446,7 +798,7 @@ pedon_server <- function(id, rv) {
       if (is.null(df) || nrow(df) == 0L) return(NULL)
       lines <- .pedon_geom_lines(validate_horizon_geometry(df))
       if (length(lines$errors) == 0L && length(lines$warnings) == 0L) {
-        return(shiny::div(class = "small mt-2", style = "color:#3f6024;",
+        return(shiny::div(class = "small mt-2 sk-ok",
                           shiny::icon("circle-check"), " ", i18n("pedon.geom_ok")))
       }
       shiny::tagList(
@@ -498,18 +850,26 @@ pedon_server <- function(id, rv) {
           i18n("pedon.longitude_range"), type = "error")
         return(invisible())
       }
+      # v0.9.190: write the site-level construction answers onto the horizons the
+      # key actually reads. This is what lets "no geomembrane" resolve the
+      # Technosol criterion instead of leaving it permanently "data needed".
+      # The editor table itself is left untouched, so nothing is rewritten
+      # behind the user's back.
+      df <- .sk_apply_site_technic(df, input$technic, input$geomembrane,
+                                   input$geomembrane_depth)
       built <- tryCatch({
         h_dt <- soilKey::ensure_horizon_schema(data.table::as.data.table(df))
-        soilKey::PedonRecord$new(
-          site = list(
-            id              = input$site_id %||% "pedon",
-            lat             = input$lat,
-            lon             = input$lon,
-            country         = input$country,
-            parent_material = input$pm
-          ),
-          horizons = h_dt
+        site <- list(
+          id              = input$site_id %||% "pedon",
+          lat             = input$lat,
+          lon             = input$lon,
+          country         = input$country,
+          parent_material = input$pm
         )
+        # WoSIS data keeps its provenance: source, licence, date and citation
+        # go into the pedon, and from there into the report.
+        if (!is.null(data_source())) site <- utils::modifyList(site, data_source())
+        soilKey::PedonRecord$new(site = site, horizons = h_dt)
       }, error = function(e) e)
 
       if (inherits(built, "error")) {

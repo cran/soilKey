@@ -46,6 +46,20 @@
 library(shiny)
 library(soilKey)
 
+# Background R workers for the slow handlers (classification with gap-fill,
+# uncertainty, the Map's SoilGrids prior and batch), so one user's long run no
+# longer freezes every other session in this process. Without mirai, or with
+# options(soilKey.app_workers = 0), the work runs in this process as before.
+# See R/utils_async.R.
+.sk_async_start()
+shiny::onStop(.sk_async_stop)
+
+# Groq calls (Assistant, Photo) fail fast at the free tier's per-minute limits.
+# ellmer otherwise waits out Retry-After, up to a minute, and tries again: a
+# synchronous call holds this process meanwhile, and the Assistant would rather
+# hand the question to the next model at once (R/mod_chat.R).
+options(ellmer_max_tries = 1L)
+
 # ----------------------------------------------------------------------------
 # UI -- a per-session function so i18n() picks up the current language.
 # ----------------------------------------------------------------------------
@@ -56,8 +70,8 @@ library(soilKey)
 sk_theme <- bslib::bs_theme(
   version = 5, bootswatch = "flatly",
   primary   = "#7A5230",   # topsoil brown (buttons, active nav)
-  secondary = "#B5652E",   # terracotta subsoil (accents)
-  success   = "#5E7B3B",   # vegetation moss (positive states)
+  secondary = "#9E5626",   # terracotta subsoil (accents); AA with white text
+  success   = "#557036",   # vegetation moss (positive states); AA on the washes
   info      = "#4E6E81",   # slate (data / measurement cues)
   warning   = "#C9962F",   # ochre
   danger    = "#A63D40",   # oxidised red
@@ -68,8 +82,18 @@ sk_theme <- bslib::bs_theme(
 )
 
 ui <- function(request) {
+  # the page is built in the language its URL asks for (?lang=pt), so one
+  # visitor's choice never changes another's
+  .sk_with_lang(.sk_lang_for(request$QUERY_STRING), sk_page())
+}
+
+sk_page <- function() {
   bslib::page_navbar(
-    title  = tags$span(class = "navbar-brand-inner",
+    # The brand is a link back to the first tab: people expect a logo to take
+    # them home, and this app had no way back other than the tab strip.
+    title  = tags$a(href = "#", id = "sk_brand_home",
+                    class = "navbar-brand-inner sk-brand-home",
+                    `aria-label` = i18n("app.brand_home"),
                        tags$img(src = "logo.png", class = "sk-logo",
                                 alt = "soilKey", height = "34"),
                        # one wordmark node built as a single HTML string so
@@ -93,6 +117,23 @@ ui <- function(request) {
         # Browser-tab icon (favicon): the soilKey logo.
         tags$link(rel = "icon", type = "image/png", href = "logo.png"),
         tags$link(rel = "apple-touch-icon", href = "logo.png"),
+        # Social share card (Open Graph + Twitter): a pasted link shows a rich
+        # preview with title, description and the branded og-preview.png. Absolute
+        # URLs are required -- scrapers do not resolve relative paths.
+        tags$meta(name = "description", content = "Automated soil-profile classification under WRB 2022, SiBCS 5 and USDA Soil Taxonomy with transparent, deterministic keys, a full key trace and a provenance-aware evidence grade."),
+        tags$meta(property = "og:type", content = "website"),
+        tags$meta(property = "og:site_name", content = "soilKey Pro"),
+        tags$meta(property = "og:title", content = "soilKey Pro -- transparent soil classification"),
+        tags$meta(property = "og:description", content = "Classify a soil profile under WRB 2022, SiBCS 5 and USDA Soil Taxonomy at once -- deterministic keys, a full decision trace, and an honest evidence grade. Never a black box."),
+        tags$meta(property = "og:url", content = "https://soilkeypro.com"),
+        tags$meta(property = "og:image", content = "https://soilkeypro.com/og-preview.png"),
+        tags$meta(property = "og:image:width", content = "1200"),
+        tags$meta(property = "og:image:height", content = "630"),
+        tags$meta(property = "og:image:alt", content = "soilKey Pro -- WRB 2022, SiBCS 5 and USDA Soil Taxonomy"),
+        tags$meta(name = "twitter:card", content = "summary_large_image"),
+        tags$meta(name = "twitter:title", content = "soilKey Pro -- transparent soil classification"),
+        tags$meta(name = "twitter:description", content = "WRB 2022 + SiBCS 5 + USDA Soil Taxonomy at once, with deterministic keys and a full decision trace."),
+        tags$meta(name = "twitter:image", content = "https://soilkeypro.com/og-preview.png"),
         # version query-string busts the browser cache when the CSS changes
         tags$link(rel = "stylesheet", type = "text/css",
                   href = paste0("soilkey.css?v=",
@@ -131,7 +172,12 @@ ui <- function(request) {
           "document.addEventListener('click',function(e){",
           "if(e.target.closest('#sk_assistant_fab')){open();}",
           "else if(e.target.closest('#sk_assistant_close')||e.target.closest('#sk_assistant_backdrop')){close();}});",
-          "document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});});")))
+          "document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});});",
+          # clicking the brand returns to the first tab (Pedon) and scrolls up
+          "document.addEventListener('click',function(e){",
+          "if(!e.target.closest('#sk_brand_home'))return;e.preventDefault();",
+          "var t=document.querySelector('.navbar .navbar-nav a.nav-link[data-bs-toggle]');",
+          "if(t)t.click();window.scrollTo({top:0,behavior:'smooth'});});")))
       ),
       uiOutput("pedon_ribbon"),
       # ---- the Assistant: a floating button + a right-side slide-out drawer,
@@ -145,23 +191,23 @@ ui <- function(request) {
       tags$aside(class = "sk-assistant-drawer", `aria-label` = i18n("chat.assistant"),
                  chat_ui("chat"))
     ),
-    bslib::nav_panel(i18n("nav.pedon"),    icon = icon("layer-group"),  pedon_ui("pedon")),
-    bslib::nav_panel(i18n("nav.classify"), icon = icon("sitemap"),      classify_ui("classify")),
-    bslib::nav_panel(i18n("nav.photo"),    icon = icon("camera"),       photo_ui("photo")),
-    bslib::nav_panel(i18n("nav.spectra"),  icon = icon("wave-square"),  spectra_ui("spectra")),
+    bslib::nav_panel(i18n("nav.pedon"),    icon = icon("layer-group"),  pedon_ui("pedon"),       value = "pedon"),
+    bslib::nav_panel(i18n("nav.classify"), icon = icon("sitemap"),      classify_ui("classify"), value = "classify"),
+    bslib::nav_panel(i18n("nav.photo"),    icon = icon("camera"),       photo_ui("photo"),       value = "photo"),
+    bslib::nav_panel(i18n("nav.spectra"),  icon = icon("wave-square"),  spectra_ui("spectra"),   value = "spectra"),
     # v0.9.174: the three former sub-tabs (Point prior / Batch / Grid) are now
     # ONE square map driven by a mode selector, all centred on the same point,
     # with a shared SoilGrids overlay -- so the point, its neighbours and the
     # SoilGrids prior are seen together instead of on three unsynced maps.
     bslib::nav_panel(
       i18n("nav.map"), icon = icon("map-location-dot"),
-      map_ui("map")
+      map_ui("map"), value = "map"
     ),
-    bslib::nav_panel(i18n("nav.uncertainty"), icon = icon("dice"),         uncertainty_ui("uncertainty")),
-    bslib::nav_panel(i18n("nav.report"),      icon = icon("file-arrow-down"), report_ui("report")),
-    bslib::nav_panel(i18n("nav.thanks"),      icon = icon("heart"),        acknowledgements_ui("thanks")),
+    bslib::nav_panel(i18n("nav.uncertainty"), icon = icon("dice"),         uncertainty_ui("uncertainty"), value = "uncertainty"),
+    bslib::nav_panel(i18n("nav.report"),      icon = icon("file-arrow-down"), report_ui("report"), value = "report"),
+    bslib::nav_panel(i18n("nav.thanks"),      icon = icon("heart"),        acknowledgements_ui("thanks"), value = "thanks"),
     bslib::nav_spacer(),
-    bslib::nav_panel(i18n("nav.settings"),    icon = icon("gear"),         settings_ui("settings")),
+    bslib::nav_panel(i18n("nav.settings"),    icon = icon("gear"),         settings_ui("settings"), value = "settings"),
     bslib::nav_item(
       htmltools::tagAppendAttributes(
         shinyWidgets::radioGroupButtons(
@@ -184,7 +230,7 @@ ui <- function(request) {
                  class = "nav-link")
     ),
     bslib::nav_item(
-      tags$a(icon("book"), i18n("nav.docs"),
+      tags$a(icon("book"), i18n("nav.docs"), class = "nav-link",
              href   = "https://hugomachadorodrigues.github.io/soilKey/",
              target = "_blank")
     ),
@@ -271,11 +317,16 @@ ui <- function(request) {
 
 server <- function(input, output, session) {
 
-  # ---- language selector: flip the option + reload so ui() rebuilds --------
+  # ---- this session's language: the one its URL asks for --------------------
+  session$userData$sk_lang <- .sk_lang_for(isolate(session$clientData$url_search))
+
+  # ---- language selector: put the choice in the URL and reload, so ui()
+  # rebuilds in it. The URL keeps it per visitor (and bookmarkable); changing
+  # the process-wide option here used to switch every other visitor too.
   observeEvent(input$app_lang_sel, {
     sel <- input$app_lang_sel
     if (!is.null(sel) && sel %in% c("en", "pt") && !identical(sel, .sk_app_lang())) {
-      options(soilKey.app_lang = sel)
+      updateQueryString(paste0("?lang=", sel), mode = "replace")
       session$reload()
     }
   }, ignoreInit = TRUE)
@@ -327,10 +378,12 @@ server <- function(input, output, session) {
                 tags$span(class = "sk-key", i18n("ribbon.site")), coord))
   })
 
+  # Tabs are selected by a fixed value, not their title: the title is
+  # translated, and nav_select("main_nav", "Pedon") did nothing in Portuguese.
   # ---- one-click example: ask the Pedon tab to load the demo profile ------
   load_example <- function() {
     rv$example_request <- rv$example_request + 1L
-    bslib::nav_select("main_nav", "Pedon")
+    bslib::nav_select("main_nav", "pedon")
   }
   observeEvent(input$ribbon_example, load_example())
 
@@ -363,7 +416,7 @@ server <- function(input, output, session) {
   observeEvent(input$about_example, {
     removeModal()
     rv$example_request <- rv$example_request + 1L
-    bslib::nav_select("main_nav", "Classify")
+    bslib::nav_select("main_nav", "classify")
   })
 
   # ---- welcome tour (first open + replay from Help) -----------------------
@@ -386,12 +439,12 @@ server <- function(input, output, session) {
   })
   observeEvent(input$welcome_skip, { removeModal(); mark_welcomed() })
   observeEvent(input$welcome_scratch, {
-    removeModal(); mark_welcomed(); bslib::nav_select("main_nav", "Pedon")
+    removeModal(); mark_welcomed(); bslib::nav_select("main_nav", "pedon")
   })
   observeEvent(input$welcome_example, {
     removeModal(); mark_welcomed()
     rv$example_request <- rv$example_request + 1L
-    bslib::nav_select("main_nav", "Classify")
+    bslib::nav_select("main_nav", "classify")
   })
 
   # ---- Support modal ------------------------------------------------------
@@ -417,15 +470,20 @@ server <- function(input, output, session) {
           href = "#",
           onclick = paste0(
             "var a=['rodrigues.h','ufl.edu'].join(String.fromCharCode(64));",
-            "var s=encodeURIComponent('soilKey Pro — support request');",
-            "var b=encodeURIComponent('Please describe your question or the ",
-            "problem and what you were doing when it happened:",
-            "\\n\\n\\n\\n--- soilKey Pro');",
+            "var s=encodeURIComponent(", jsonlite::toJSON(i18n("support.mail_subject"), auto_unbox = TRUE), ");",
+            "var b=encodeURIComponent(", jsonlite::toJSON(i18n("support.mail_body"), auto_unbox = TRUE),
+            "+'\\n\\n\\n\\n--- soilKey Pro');",
             "window.location.href='mailto:'+a+'?subject='+s+'&body='+b;",
             "return false;"))
       )
     ))
   })
 }
+
+# Register the page's scripts and styles in this process now, so any instance
+# can serve them, including one that has not rendered a page yet (Cloud Run
+# routes a page load's asset requests to more than one instance). See
+# sk_register_page_deps() in R/utils_ui.R.
+sk_register_page_deps(.sk_with_lang("en", sk_page()), sk_theme)
 
 shinyApp(ui = ui, server = server)

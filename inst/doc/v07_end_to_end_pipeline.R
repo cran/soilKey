@@ -37,7 +37,7 @@ library(soilKey)
 # )
 # 
 # res$classifications$wrb$name
-# #> [1] "Geric Ferric Rhodic Chromic Ferralsol (Clayic, Humic, Dystric, Ochric, Rubic)"
+# #> [1] "Geric Rhodic Ferralsol (Clayic, Dystric, Epic, Ferric, Humic)"
 # res$classifications$sibcs$name
 # #> [1] "Latossolos Vermelhos Distroficos tipicos, argilosa, moderado"
 # res$classifications$usda$name

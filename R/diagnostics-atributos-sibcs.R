@@ -25,24 +25,71 @@
 #' horizonte B (incl. BA, exc. BC) ou no horizonte C (incl. CA), quando
 #' nao existe B.
 #'
+#' Since v0.9.257 the activity is judged where the book judges it. The key
+#' and the definitions of the classes ask for it "na maior parte dos primeiros
+#' 100 cm do horizonte B (inclusive BA)" (Cap. 4, p. 113-114, and the classes
+#' of the lower levels), and Cap. 1 (p. 30) takes it "no horizonte B
+#' (inclusive BA e exclusive BC) ou no horizonte C (inclusive CA), quando nao
+#' existe B". In a profile with a B the attribute passes when the layers with
+#' high activity make more than half of the thickness of that section, among
+#' the layers where the activity can be told (\code{.sibcs_maior_parte()}).
+#' A layer of the textural classes areia and areia franca is left out, as the
+#' criterion "nao se aplica" to it; it is told by its sand, silt and clay, and
+#' no longer by a clay under 15\%, which also left out the franco-arenosa.
+#' Until v0.9.256 one layer of B or of C with high activity was enough: the C
+#' of a profile, with little clay and a high ratio, made a Luvissolo of an
+#' Argissolo, and kept a B nitico from being one.
+#' In a profile with no B the attribute is read as before, in its C layers.
+#'
 #' @param pedon A \code{\link{PedonRecord}}.
-#' @return Um \code{\link{DiagnosticResult}}; \code{passed = TRUE} sse
-#'   pelo menos um horizonte B ou C tem Ta. \code{layers} = horizontes
-#'   com atividade alta (Ta).
+#' @return Um \code{\link{DiagnosticResult}}; \code{passed = TRUE} sse a
+#'   atividade e alta na maior parte dos primeiros 100 cm do horizonte B, ou,
+#'   sem horizonte B, em pelo menos um horizonte C. \code{layers} =
+#'   horizontes com atividade alta (Ta).
 #' @references Embrapa (2018), SiBCS 5a ed., Cap 1, "Atividade da fracao
 #'   argila", p. 30.
 #' @param min_ta Numeric threshold or option (see Details).
 #' @noRd
 atividade_argila_alta <- function(pedon, min_ta = 27) {
   h <- pedon$horizons
+  ref <- "Embrapa (2018), SiBCS 5a ed., Cap 1, p. 30"
+  sec <- .sibcs_b_first_100(h)
+  if (!is.null(sec)) {
+    L <- sec$layers
+    cec <- h$cec_cmol[L]; clay <- h$clay_pct[L]
+    ta <- ifelse(!is.na(cec) & !is.na(clay) & clay > 0, cec * 100 / clay, NA_real_)
+    # "Este criterio nao se aplica a materiais de solo das classes texturais
+    # areia e areia franca"
+    applies <- .francoarenosa_or_finer(h$silt_pct[L], clay)
+    holds <- ifelse(!is.na(ta) & applies %in% TRUE, ta >= min_ta, NA)
+    mp <- .sibcs_maior_parte(sec, holds)
+    # one entry for each layer of the section that says, as the readers of
+    # the evidence expect them (the report, the assistant of the app)
+    details <- lapply(which(!is.na(holds)), function(k) list(
+      idx = L[k], cec_cmol = cec[k], clay_pct = clay[k],
+      ta_cmolc_per_kg_clay = ta[k], threshold = min_ta, passed = holds[k]))
+    names(details) <- as.character(L[!is.na(holds)])
+    return(DiagnosticResult$new(
+      name = "atividade_argila_alta",
+      passed = mp$passed, layers = L[which(holds)],
+      evidence = list(layers = details, section = sec,
+                      ta_cmolc_per_kg_clay = ta,
+                      sandy = L[which(applies %in% FALSE)],
+                      threshold = min_ta,
+                      thickness_high_cm = mp$holding_cm,
+                      thickness_known_cm = mp$known_cm),
+      missing = if (is.na(mp$passed)) c("cec_cmol", "clay_pct") else character(0),
+      reference = ref
+    ))
+  }
   layers_b_c <- which(!is.na(h$designation) &
-                        grepl("^(B|C)", h$designation, ignore.case = FALSE))
+                        grepl("^(B|C)", .desg_master(h$designation), ignore.case = FALSE))
   if (length(layers_b_c) == 0L) {
     return(DiagnosticResult$new(
       name = "atividade_argila_alta", passed = NA, layers = integer(0),
       evidence = list(reason = "no B or C horizons in profile"),
       missing = "designation",
-      reference = "Embrapa (2018), SiBCS 5a ed., Cap 1, p. 30"
+      reference = ref
     ))
   }
   details <- list(); passing <- integer(0); missing <- character(0)
@@ -75,8 +122,41 @@ atividade_argila_alta <- function(pedon, min_ta = 27) {
     passed = passed, layers = passing,
     evidence = list(layers = details),
     missing = unique(missing),
-    reference = "Embrapa (2018), SiBCS 5a ed., Cap 1, p. 30"
+    reference = ref
   )
+}
+
+
+#' The first 100 cm of the B horizon, the section in which SiBCS judges the
+#' activity of the clay, the base saturation and other attributes of a class:
+#' "na maior parte dos primeiros 100 cm do horizonte B (inclusive BA)". The B
+#' layers (BA with them, BC and B/C not) that begin within 100 cm of the top
+#' of the uppermost of them, each with the thickness it has inside that
+#' section. NULL when the profile has no B layer with its two depths.
+#' @noRd
+.sibcs_b_first_100 <- function(h, depth_cm = 100) {
+  dm <- .desg_master(h$designation)
+  b <- which(!is.na(dm) & grepl("^B", dm) & !grepl("^B/?C", dm) &
+               !is.na(h$top_cm) & !is.na(h$bottom_cm) & h$bottom_cm > h$top_cm)
+  if (length(b) == 0L) return(NULL)
+  top <- min(h$top_cm[b]); limit <- top + depth_cm
+  b <- b[h$top_cm[b] < limit]
+  b <- b[order(h$top_cm[b])]
+  list(layers = b, top_cm = top, limit_cm = limit,
+       thickness_cm = pmin(h$bottom_cm[b], limit) - h$top_cm[b])
+}
+
+#' Whether a condition holds "na maior parte" of a section: in more than half
+#' of the thickness of the layers where it can be told. \code{holds} has one
+#' value for each layer of the section, NA where the layer does not say.
+#' \code{passed} is NA when no layer says.
+#' @noRd
+.sibcs_maior_parte <- function(sec, holds) {
+  known <- !is.na(holds)
+  known_cm <- sum(sec$thickness_cm[known])
+  holding_cm <- sum(sec$thickness_cm[known & holds %in% TRUE])
+  list(passed = if (!any(known)) NA else holding_cm > known_cm / 2,
+       holding_cm = holding_cm, known_cm = known_cm)
 }
 
 
@@ -87,15 +167,46 @@ atividade_argila_alta <- function(pedon, min_ta = 27) {
 #' Returns TRUE se a saturacao por bases (V\%) >= 50\% no horizonte
 #' diagnostico subsuperficial (B ou C). 65\% para A chernozemico.
 #'
+#' Since v0.9.257, in a profile with a B horizon the base saturation is
+#' judged as the key and the definitions of the classes ask for it, "na maior
+#' parte dos primeiros 100 cm do horizonte B (inclusive BA)": it is high when
+#' the B layers with V of \code{min_v} or more make more than half of the
+#' thickness of that section, among the layers where V is recorded. The BC is
+#' not part of the section. Until v0.9.256 one layer of B or of C with a high
+#' V was enough. A profile with no B is read as before, in its C layers, or in
+#' all of its layers when it has no C either.
+#'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param min_v Numeric threshold or option (see Details).
 #' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 eutrofico <- function(pedon, min_v = 50) {
   h <- pedon$horizons
+  sec <- .sibcs_b_first_100(h)
+  if (!is.null(sec)) {
+    L <- sec$layers
+    holds <- ifelse(is.na(h$bs_pct[L]), NA, h$bs_pct[L] >= min_v)
+    mp <- .sibcs_maior_parte(sec, holds)
+    # one entry for each layer of the section that says, as the readers of
+    # the evidence expect them (the report, the assistant of the app)
+    details <- lapply(which(!is.na(holds)), function(k) list(
+      idx = L[k], bs_pct = h$bs_pct[L[k]], threshold = min_v,
+      passed = holds[k]))
+    names(details) <- as.character(L[!is.na(holds)])
+    return(DiagnosticResult$new(
+      name = "eutrofico",
+      passed = mp$passed, layers = L[which(holds)],
+      evidence = list(layers = details, section = sec,
+                      bs_pct = h$bs_pct[L], threshold = min_v,
+                      thickness_high_cm = mp$holding_cm,
+                      thickness_known_cm = mp$known_cm),
+      missing = if (is.na(mp$passed)) "bs_pct" else character(0),
+      reference = "Embrapa (2018), SiBCS 5a ed., Cap 1, p. 30"
+    ))
+  }
   # Procurar horizontes B (preferencial) ou C
   candidates <- which(!is.na(h$designation) &
-                        grepl("^B|^C", h$designation))
+                        grepl("^B|^C", .desg_master(h$designation)))
   if (length(candidates) == 0L) candidates <- seq_len(nrow(h))
   passing <- integer(0); missing <- character(0); details <- list()
   for (i in candidates) {
@@ -106,8 +217,12 @@ eutrofico <- function(pedon, min_v = 50) {
                                         passed = v >= min_v)
     if (v >= min_v) passing <- c(passing, i)
   }
+  # Nothing evaluated is "no data", not "not eutrophic": with no layer to read,
+  # FALSE here made distrofico() (its negation) pass, and an empty profile came
+  # out Distrofico.
+  if (length(details) == 0L && length(missing) == 0L) missing <- "bs_pct"
   passed <- if (length(passing) > 0L) TRUE
-            else if (length(details) == 0L && length(missing) > 0L) NA
+            else if (length(details) == 0L) NA
             else FALSE
   DiagnosticResult$new(
     name = "eutrofico",
@@ -154,7 +269,7 @@ distrofico <- function(pedon, max_v = 50) {
 carater_alitico <- function(pedon, min_al = 4, min_al_sat = 50, max_v = 50) {
   h <- pedon$horizons
   candidates <- which(!is.na(h$designation) &
-                        grepl("^B|^C", h$designation))
+                        grepl("^B|^C", .desg_master(h$designation)))
   if (length(candidates) == 0L) candidates <- seq_len(nrow(h))
   passing <- integer(0); missing <- character(0); details <- list()
   for (i in candidates) {
@@ -500,28 +615,104 @@ carater_salino <- function(pedon, min_ec = 4, max_ec = 7,
 
 #' Mudanca textural abrupta (SiBCS Cap 1, p 30-31)
 #'
-#' Aumento consideravel de argila em pequena distancia vertical
-#' (\\<= 7.5 cm) na transicao A/E -> B:
+#' "Consiste em um consideravel aumento no teor de argila em pequena distancia
+#' na zona de transicao entre o horizonte A ou E e o horizonte subjacente B":
 #' \itemize{
-#'   \item argila A < 200 g/kg: argila B \\>= 2x A; OR
-#'   \item argila A 200-400 g/kg: incremento absoluto \\>= 200 g/kg
-#'         (i.e. de 300 -> 500); OR
-#'   \item argila A \\>= 400 g/kg: incremento absoluto \\>= 220 g/kg
-#'         (i.e. de 420 -> 640).
+#'   \item A or E with less than 200 g/kg of clay: the B has at least twice
+#'         as much;
+#'   \item A or E with 200 g/kg or more: the B has 200 g/kg more or above
+#'         ("de 300 para no minimo 500, ou de 220 para no minimo 420"),
 #' }
-#' Reuso de \code{\link{abrupt_textural_difference}} (WRB Ch 3.2.1)
-#' que ja codifica criterios essencialmente equivalentes.
+#' "em uma distancia vertical <= 7,5 cm".
+#'
+#' Since v0.9.244 the test is that of the book: the first B horizon is
+#' compared with the horizon immediately above it, which has to be an A or
+#' an E; and the distance is read from the distinctness of the transition
+#' (\code{boundary_distinctness} of the horizon above: abrupt, under 2.5 cm,
+#' or clear, 2.5 to 7.5 cm). Where it is recorded as gradual or diffuse there
+#' is no abrupt change; where it is not recorded the two horizons are
+#' compared. The layer returned is the first B horizon. A BA is a B horizon
+#' here and a BC is not, as in item (h) of the B textural.
+#'
+#' Until v0.9.243 the function was the WRB
+#' \code{\link{abrupt_textural_difference}}, which compares every pair of
+#' adjoining layers, in the order of the rows: a jump of clay between two B
+#' horizons, or from a B to a C, was an abrupt change. A profile with no
+#' horizon designation at all is still tested that way.
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @return A \code{\link{DiagnosticResult}} recording whether the diagnostic is present, the qualifying layers, and the supporting evidence.
 #' @export
 mudanca_textural_abrupta <- function(pedon) {
-  res <- abrupt_textural_difference(pedon)
+  d <- pedon$horizons$designation
+  if (!any(!is.na(d) & nzchar(trimws(as.character(d))))) {
+    res <- abrupt_textural_difference(pedon)
+    return(DiagnosticResult$new(
+      name = "mudanca_textural_abrupta",
+      passed = res$passed, layers = res$layers,
+      evidence = list(abrupt = res), missing = res$missing,
+      reference = "Embrapa (2018), SiBCS 5a ed., Cap 1, p. 30-31"
+    ))
+  }
+  ab <- .mudanca_abrupta_a_b(pedon$horizons)
   DiagnosticResult$new(
     name = "mudanca_textural_abrupta",
-    passed = res$passed, layers = res$layers,
-    evidence = list(abrupt = res), missing = res$missing,
+    passed = ab$passed, layers = if (isTRUE(ab$passed)) ab$first_b else integer(0),
+    evidence = ab, missing = ab$missing,
     reference = "Embrapa (2018), SiBCS 5a ed., Cap 1, p. 30-31"
   )
+}
+
+
+#' The transition from the A or E to the first B horizon of a profile, as the
+#' mudanca textural abrupta and the B planico read it (SiBCS 2018, Cap 1,
+#' p. 30-31; Cap 2, p. 65).
+#'
+#' Returns a list: \code{first_b} and \code{above}, the layers compared
+#' (\code{above} is NA when the layer over the first B is no A or E);
+#' \code{jump}, whether the clay of the B is twice that of the layer above
+#' (under 20\%) or 20 percentage points more; \code{within_7_5_cm}, from the
+#' distinctness of the transition (NA when not recorded); \code{passed}, the
+#' abrupt change (the jump, within 7.5 cm where the distance is recorded);
+#' \code{abrupt_transition}, a transition recorded as abrupt; \code{ratio}
+#' and \code{ratio_limit}, the clay of the first B over that of the layer
+#' above and the limit of item (h) of the B textural for it.
+#' @noRd
+.mudanca_abrupta_a_b <- function(h) {
+  dm <- .desg_master(h$designation)
+  out <- list(passed = FALSE, first_b = NA_integer_, above = NA_integer_,
+              jump = NA, within_7_5_cm = NA, abrupt_transition = NA,
+              ratio = NA_real_, ratio_limit = NA_real_, missing = character(0))
+  # v0.9.246: the BC is no B sub-horizon here, as in item (h) of the
+  # B textural ("excluido o BC"), to which the B planico refers; a BC was
+  # taken for the first B when it came before any other.
+  b <- which(!is.na(dm) & grepl("^B", dm) & !grepl("^B/?C", dm) &
+               !is.na(h$top_cm))
+  if (length(b) == 0L) return(out)
+  b <- b[order(h$top_cm[b])]
+  out$first_b <- b[1]
+  ord <- order(h$top_cm)
+  pos <- match(b[1], ord)
+  up  <- if (!is.na(pos) && pos > 1L) ord[pos - 1L] else NA_integer_
+  if (is.na(up) || is.na(dm[up]) || !grepl("^[AE]", dm[up])) return(out)
+  out$above <- up
+  ca <- h$clay_pct[up]; cb <- h$clay_pct[b[1]]
+  if (is.na(ca) || is.na(cb)) {
+    out$passed <- NA
+    out$missing <- "clay_pct"
+    return(out)
+  }
+  # an increase: with no clay in the A or E, twice as much is any amount
+  out$jump <- cb > ca && (if (ca < 20) cb >= 2 * ca else cb - ca >= 20)
+  out$within_7_5_cm <- .boundary_within_7_5_cm(h$boundary_distinctness[up])
+  out$passed <- isTRUE(out$jump) && !isFALSE(out$within_7_5_cm)
+  bd <- .field_term(h$boundary_distinctness[up])
+  out$abrupt_transition <- if (is.na(bd) || !nzchar(bd)) NA
+    else grepl("abrupt", bd) && !grepl("clear|clara|gradual|difus|diffuse", bd)
+  if (ca > 0) {
+    out$ratio <- cb / ca
+    out$ratio_limit <- if (ca > 40) 1.5 else if (ca >= 15) 1.7 else 1.8
+  }
+  out
 }
 
 
@@ -561,7 +752,7 @@ contato_litico <- function(pedon, max_depth_cm = NULL) {
 #' @noRd
 contato_litico_fragmentario <- function(pedon, max_depth_cm = NULL) {
   h <- pedon$horizons
-  res <- test_pattern_match(h, "designation", "^Cr|^Crf|^R/Cr|fragm")
+  res <- test_pattern_match(.h_master(h), "designation", "^Cr|^Crf|^R/Cr|fragm")
   layers <- res$layers
   if (!is.null(max_depth_cm) && length(layers) > 0L) {
     in_depth <- !is.na(h$top_cm[layers]) & h$top_cm[layers] < max_depth_cm
@@ -663,7 +854,7 @@ contato_litico_fragmentario <- function(pedon, max_depth_cm = NULL) {
 
 .histic_layers <- function(h) {
   # Horizontes histicos canonicos: H (saturado) ou O (folico).
-  which(!is.na(h$designation) & grepl("^[HO]", h$designation))
+  which(!is.na(h$designation) & grepl("^[HO]", .desg_master(h$designation)))
 }
 
 
@@ -777,7 +968,7 @@ carater_acrico <- function(pedon,
                               max_ecec_clay = 1.5,
                               min_delta_ph  = 0) {
   h <- pedon$horizons
-  b_layers <- which(!is.na(h$designation) & grepl("^B", h$designation))
+  b_layers <- which(!is.na(h$designation) & grepl("^B", .desg_master(h$designation)))
   if (length(b_layers) == 0L) {
     return(DiagnosticResult$new(
       name = "carater_acrico", passed = FALSE, layers = integer(0),
@@ -849,7 +1040,7 @@ carater_ebanico <- function(pedon,
                                max_chroma = 2,
                                min_v      = 65) {
   h <- pedon$horizons
-  b_layers <- which(!is.na(h$designation) & grepl("^B", h$designation))
+  b_layers <- which(!is.na(h$designation) & grepl("^B", .desg_master(h$designation)))
   if (length(b_layers) == 0L) {
     return(DiagnosticResult$new(
       name = "carater_ebanico", passed = FALSE, layers = integer(0),
@@ -976,9 +1167,9 @@ carater_espodico <- function(pedon,
                                 min_oc_pct    = 0.5) {
   h <- pedon$horizons
   candidate <- which(!is.na(h$designation) &
-                       grepl("^Bh|^Bs|^Bsh|^Bhs", h$designation))
+                       grepl("^Bh|^Bs|^Bsh|^Bhs", .desg_master(h$designation)))
   if (length(candidate) == 0L) {
-    candidate <- which(!is.na(h$designation) & grepl("^B", h$designation))
+    candidate <- which(!is.na(h$designation) & grepl("^B", .desg_master(h$designation)))
   }
   if (length(candidate) == 0L) {
     return(DiagnosticResult$new(
@@ -1094,7 +1285,7 @@ compute_kr <- function(sio2_pct, al2o3_pct, fe2o3_pct) {
 #' @noRd
 latossolo_ki_kr <- function(pedon, max_ki = 2.2, max_kr = 1.7) {
   h <- pedon$horizons
-  b_layers <- which(!is.na(h$designation) & grepl("^B", h$designation))
+  b_layers <- which(!is.na(h$designation) & grepl("^B", .desg_master(h$designation)))
   if (length(b_layers) == 0L) {
     return(DiagnosticResult$new(
       name = "latossolo_ki_kr", passed = FALSE, layers = integer(0),
@@ -1207,7 +1398,7 @@ cerosidade <- function(pedon,
   }
 
   h <- pedon$horizons
-  b_layers <- which(!is.na(h$designation) & grepl("^B", h$designation))
+  b_layers <- which(!is.na(h$designation) & grepl("^B", .desg_master(h$designation)))
   if (length(b_layers) == 0L) {
     return(DiagnosticResult$new(
       name = "cerosidade", passed = FALSE, layers = integer(0),
@@ -1307,8 +1498,8 @@ carater_terrico <- function(pedon,
   # Mineral horizon designation pattern -- aceita A/Ap/An, Ag, Big/Bg, Cg/C/Cr.
   # Exclui horizontes histicos H/O.
   is_mineral <- !is.na(h$designation) &
-                  grepl("^(A|Ag|Big|Bg|C|Cg|Cr|Crf)", h$designation) &
-                  !grepl("^[HO]", h$designation)
+                  grepl("^(A|Ag|Big|Bg|C|Cg|Cr|Crf)", .desg_master(h$designation)) &
+                  !grepl("^[HO]", .desg_master(h$designation))
   if (!any(is_mineral)) {
     return(DiagnosticResult$new(
       name = "carater_terrico", passed = FALSE, layers = integer(0),
@@ -1389,7 +1580,7 @@ carater_perferrico <- function(pedon,
                                   min_fe2o3_pct = 36,
                                   max_depth_cm  = 100) {
   h <- pedon$horizons
-  b_layers <- which(!is.na(h$designation) & grepl("^B", h$designation))
+  b_layers <- which(!is.na(h$designation) & grepl("^B", .desg_master(h$designation)))
   if (length(b_layers) == 0L) {
     return(DiagnosticResult$new(
       name = "carater_perferrico", passed = FALSE, layers = integer(0),
@@ -1568,7 +1759,7 @@ carater_sombrico <- function(pedon,
                                 min_oc_pct   = 0.5,
                                 max_depth_cm = 150) {
   h <- pedon$horizons
-  b_layers <- which(!is.na(h$designation) & grepl("^B", h$designation))
+  b_layers <- which(!is.na(h$designation) & grepl("^B", .desg_master(h$designation)))
   if (!is.null(max_depth_cm)) {
     b_layers <- b_layers[!is.na(h$top_cm[b_layers]) &
                             h$top_cm[b_layers] < max_depth_cm]
@@ -1627,8 +1818,8 @@ carater_palico <- function(pedon, min_solum_cm = 80) {
   h <- pedon$horizons
   # Solum = A, AB, BA, B*, E (excluido BC e B/C, e qualquer C, R, Cr).
   solum_idx <- which(!is.na(h$designation) &
-                       grepl("^A|^B[twiogphsm]?[0-9]?$|^B$|^E", h$designation) &
-                       !grepl("^BC|^B/C|^C$|^Cr|^R", h$designation))
+                       grepl("^A|^B[twiogphsm]?[0-9]?$|^B$|^E", .desg_master(h$designation)) &
+                       !grepl("^BC|^B/C|^C$|^Cr|^R", .desg_master(h$designation)))
   if (length(solum_idx) == 0L) {
     return(DiagnosticResult$new(
       name = "carater_palico", passed = FALSE, layers = integer(0),
@@ -1690,7 +1881,7 @@ carater_palico <- function(pedon, min_solum_cm = 80) {
 #' @noRd
 carater_rubrico <- function(pedon, min_chroma = 4, max_depth_cm = 100) {
   h <- pedon$horizons
-  b_layers <- which(!is.na(h$designation) & grepl("^B", h$designation))
+  b_layers <- which(!is.na(h$designation) & grepl("^B", .desg_master(h$designation)))
   if (!is.null(max_depth_cm)) {
     b_layers <- b_layers[!is.na(h$top_cm[b_layers]) &
                             h$top_cm[b_layers] < max_depth_cm]
@@ -1921,7 +2112,7 @@ carater_hidromorfico <- function(pedon, max_depth_cm = 100) {
   rx <- carater_redoxico(pedon, max_top_cm = max_depth_cm)
   h <- pedon$horizons
   eg_layers <- which(!is.na(h$designation) &
-                       grepl("^Eg|Eg[0-9]?$", h$designation))
+                       grepl("^Eg|Eg[0-9]?$", .desg_master(h$designation)))
   if (length(eg_layers) > 0L) {
     eg_layers <- eg_layers[!is.na(h$top_cm[eg_layers]) &
                               h$top_cm[eg_layers] < max_depth_cm]
@@ -2022,8 +2213,8 @@ carater_cambissolico_arg <- function(pedon,
                                         max_depth_cm   = 150) {
   h <- pedon$horizons
   b_only <- which(!is.na(h$designation) &
-                     grepl("^B[twiog]?[0-9]?$|^B$", h$designation) &
-                     !grepl("^BC|^B/C", h$designation))
+                     grepl("^B[twiog]?[0-9]?$|^B$", .desg_master(h$designation)) &
+                     !grepl("^BC|^B/C", .desg_master(h$designation)))
   if (length(b_only) == 0L) {
     return(DiagnosticResult$new(
       name = "carater_cambissolico_arg", passed = FALSE,
@@ -2275,9 +2466,9 @@ carater_nitossolico <- function(pedon,
     ))
   }
   h <- pedon$horizons
-  a_layers <- which(!is.na(h$designation) & grepl("^A", h$designation) &
-                       !grepl("^B", h$designation))
-  b_layers <- which(!is.na(h$designation) & grepl("^B", h$designation))
+  a_layers <- which(!is.na(h$designation) & grepl("^A", .desg_master(h$designation)) &
+                       !grepl("^B", .desg_master(h$designation)))
+  b_layers <- which(!is.na(h$designation) & grepl("^B", .desg_master(h$designation)))
   if (!is.null(max_depth_cm) && length(b_layers) > 0L) {
     b_layers <- b_layers[!is.na(h$top_cm[b_layers]) &
                              h$top_cm[b_layers] < max_depth_cm]
@@ -2402,8 +2593,8 @@ carater_saprolitico <- function(pedon, max_depth_cm = 100) {
   # Detecta R (rocha continua, NAO Cr/Crf brando) explicitamente para
   # evitar falso positivo do helper continuous_rock que pode casar Cr.
   r_layers <- which(!is.na(h$designation) &
-                       grepl("^R$|^R[^/]|^R$", h$designation) &
-                       !grepl("^Cr", h$designation))
+                       grepl("^R$|^R[^/]|^R$", .desg_master(h$designation)) &
+                       !grepl("^Cr", .desg_master(h$designation)))
   if (length(r_layers) > 0L) {
     r_layers <- r_layers[!is.na(h$top_cm[r_layers]) &
                             h$top_cm[r_layers] < max_depth_cm]
@@ -2418,7 +2609,7 @@ carater_saprolitico <- function(pedon, max_depth_cm = 100) {
     }
   }
   cr_layers <- which(!is.na(h$designation) &
-                       grepl("^Cr|^Crf", h$designation))
+                       grepl("^Cr|^Crf", .desg_master(h$designation)))
   if (length(cr_layers) > 0L) {
     cr_layers <- cr_layers[!is.na(h$top_cm[cr_layers]) &
                               h$top_cm[cr_layers] < max_depth_cm]
@@ -2459,7 +2650,7 @@ carater_luvissolico <- function(pedon,
                                    min_s        = 5,
                                    max_depth_cm = 100) {
   h <- pedon$horizons
-  b_layers <- which(!is.na(h$designation) & grepl("^B", h$designation))
+  b_layers <- which(!is.na(h$designation) & grepl("^B", .desg_master(h$designation)))
   if (!is.null(max_depth_cm) && length(b_layers) > 0L) {
     b_layers <- b_layers[!is.na(h$top_cm[b_layers]) &
                              h$top_cm[b_layers] < max_depth_cm]
@@ -2709,10 +2900,15 @@ carater_durico <- function(pedon, max_depth_cm = 150) {
 #' latossolicos de Argissolos (Cap 5: PAC, PA, PV, PVA) -- transicao
 #' entre Argissolo e Latossolo dentro do mesmo perfil.
 #'
-#' Implementacao: requer (1) \code{B_textural()} passa, (2)
-#' \code{B_latossolico()} passa, e (3) ao menos uma camada com
-#' B latossolico tem \code{top_cm} maior que o \code{top_cm} maximo
-#' das camadas com B textural (i.e., latossolico ocorre abaixo).
+#' Implementacao: requer (1) \code{B_textural()} passa e (2) um
+#' B latossolico abaixo dele, dentro de \code{max_depth_cm}.
+#'
+#' v0.9.241: the B textural is tested by the items of the book, and its
+#' evidence lies in the upper sub-horizons of the B (the control section of
+#' the relacao textural, the layers with the cerosidade of item i). The
+#' B latossolico is looked for in the sub-horizons below those, with the
+#' requirements of \code{\link{B_latossolico}}: texture, cation exchange
+#' capacity, cerosidade at most few and weak, 50 cm of adjoining layers.
 #'
 #' @param pedon A \code{\link{PedonRecord}}.
 #' @param max_depth_cm Profundidade maxima do B latossolico (default 150).
@@ -2731,7 +2927,12 @@ carater_latossolico <- function(pedon, max_depth_cm = 150) {
       reference = "Embrapa (2018), SiBCS 5a ed., Cap 5"
     ))
   }
-  bl <- B_latossolico(pedon)
+  # the sub-horizons of the B textural that carry its evidence; all of its
+  # layers when the test gives no such list (a profile with no designation)
+  bt_upper <- bt$evidence$upper_layers %||% bt$layers
+  if (length(bt_upper) == 0L) bt_upper <- bt$layers
+  bl <- .b_latossolico_core(pedon, min_thickness = 50, max_cec_per_clay = 17,
+                             not_latossolic = bt_upper, B_textural = bt)
   if (!isTRUE(bl$passed)) {
     return(DiagnosticResult$new(
       name = "carater_latossolico", passed = FALSE, layers = integer(0),
@@ -2742,7 +2943,7 @@ carater_latossolico <- function(pedon, max_depth_cm = 150) {
     ))
   }
   h <- pedon$horizons
-  bt_tops <- h$top_cm[bt$layers]
+  bt_tops <- h$top_cm[bt_upper]
   if (all(is.na(bt_tops))) {
     return(DiagnosticResult$new(
       name = "carater_latossolico", passed = NA, layers = integer(0),
@@ -2944,7 +3145,7 @@ carater_ferrico <- function(pedon,
                               max_fe2o3_pct = 36,
                               max_depth_cm  = 100) {
   h <- pedon$horizons
-  b_layers <- which(!is.na(h$designation) & grepl("^B", h$designation))
+  b_layers <- which(!is.na(h$designation) & grepl("^B", .desg_master(h$designation)))
   if (length(b_layers) == 0L) {
     return(DiagnosticResult$new(
       name = "carater_ferrico", passed = FALSE, layers = integer(0),
@@ -3029,7 +3230,7 @@ carater_cambissolico <- function(pedon) {
   # Step 2: pelo menos um horizonte B incipiente esta ABAIXO de um H/O ou A
   bi_layers <- bi$layers
   hist_or_a_idx <- which(!is.na(h$designation) &
-                            grepl("^[HO]|^A", h$designation))
+                            grepl("^[HO]|^A", .desg_master(h$designation)))
   if (length(hist_or_a_idx) == 0L) {
     return(DiagnosticResult$new(
       name = "carater_cambissolico", passed = FALSE, layers = integer(0),

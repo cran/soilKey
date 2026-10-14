@@ -13,8 +13,10 @@ normalise_febr_sibcs(x, level = c("order", "subordem"))
 }
 \value{
 Character vector of normalised SiBCS names; \code{NA} for
-  labels that are out-of-scope for the comparison
-  (e.g.\ legacy \code{"Solos"} category).
+  labels that are out-of-scope for the comparison: any label that is not
+  an order of SiBCS 5 after the legacy maps (old names without an entry
+  there, "Solos ..." followed by none of them, names of other systems,
+  text that is not a class).
 }
 \description{
 FEBR ships SiBCS labels in mixed legacy/modern form
@@ -22,6 +24,36 @@ FEBR ships SiBCS labels in mixed legacy/modern form
 Portuguese accents). This helper folds them to the form produced by
 \code{run_sibcs_key()} so that benchmark accuracies can be computed
 without false negatives.
+}
+\details{
+A label is read by its first word, with any punctuation around it dropped
+(\code{"ESPODOSSOLO."} is Espodossolos). Since v0.9.225 the result must be
+one of the 13 orders of SiBCS 5 after the legacy map; otherwise it is
+\code{NA}. Until then the first word came out whatever it was, so
+\code{"CLASSIFICACAO ? CAMBISSOLO ..."} became the class "Classificacaos",
+\code{"ALISSOLO CROMICO"} "Alissolos" and \code{"LATOSOL AMARELO"}
+"Latosois": labels no prediction can equal, which the benchmarks counted
+as scored profiles and as errors (631 of the 7,694 labels of the national
+BDsolos export, in 79 forms).
+
+Since v0.9.226, when the first word gives no order the label is read once
+more as an old name: a leading "Solo" or "Solos" is set aside ("SOLO
+LITOLICO" is Neossolos, "SOLOS ORGANICOS" Organossolos), a hyphen separates
+words as a space does ("LATOSSOLO-VERMELHO", "SOLONETZ-SOLODIZADO"), and the
+names of \code{.SIBCS_LEGACY_TWO_WORD_MAP} ("TERRA ROXA ESTRUTURADA",
+"BRUNO NAO CALCICO") are looked up before those of
+\code{.SIBCS_LEGACY_ORDER_MAP}. A label the first word already places is
+read as before. At \code{level = "subordem"} an old name gives its order
+followed by the next word of the label, which is not a suborder of SiBCS 5
+in general: the old names are for comparisons at the order level.
+
+Since v0.9.229 the order of the name is not the last word when the label
+states attributes that SiBCS 5 places elsewhere: a Podzolico
+Vermelho-Amarelo or Vermelho-Escuro, or a label that begins with
+"Argissolo", that states "Eutrofico" and high-activity clay is Luvissolos,
+and a Cambissolo in the old form that states "Eutrofico", high-activity
+clay and "A chernozemico" is Chernossolos. See
+\code{.sibcs_stated_order()}.
 }
 \seealso{
 \code{\link{normalise_febr_wrb}}, \code{\link{normalise_febr_usda}}

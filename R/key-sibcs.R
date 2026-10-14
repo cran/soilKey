@@ -215,6 +215,7 @@ classify_sibcs <- function(pedon,
                              include_familia = FALSE,
                              gapfill    = FALSE) {
   on_missing <- match.arg(on_missing)
+  .classify_require_horizons(pedon, "classify_sibcs")
   rules      <- rules %||% load_rules("sibcs5")
 
   # Opt-in within-pedon gap-fill (default off => byte-identical). Deep copy,
@@ -315,10 +316,12 @@ classify_sibcs <- function(pedon,
   if (!is.null(color_fallback)) {
     missing_data <- unique(c(missing_data,
                               color_fallback$would_resolve_with))
-    if (grade %in% c("A", "B", NA_character_)) grade <- "C"
+    # v0.9.213: NA now means "no soil property at all" and stays NA.
+    if (!is.na(grade) && grade %in% c("A", "B")) grade <- "C"
   }
 
   warnings <- character(0)
+  if (is.na(grade)) warnings <- c(warnings, .NO_PROPERTIES_WARNING)
   if (length(missing_data) > 0L) {
     msg <- sprintf(
       "%d atributo(s) faltando ao longo do trace -- veja $missing_data",

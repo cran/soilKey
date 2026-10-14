@@ -71,7 +71,7 @@ test_that("grupamento textural: media quando 15<sand<70 e clay<35", {
     horizons = ensure_horizon_schema(hz)
   )
   fa <- familia_grupamento_textural(pr)
-  expect_equal(fa$value, "media")
+  expect_equal(fa$value, "média")
 })
 
 test_that("grupamento textural: siltosa quando clay<35 e sand<15", {
@@ -206,7 +206,7 @@ test_that("esqueletica: passa para coarse 35-90%", {
     horizons = ensure_horizon_schema(hz)
   )
   fa <- familia_constituicao_esqueletica(pr)
-  expect_equal(fa$value, "esqueletica")
+  expect_equal(fa$value, "esquelética")
 })
 
 # ------------------------------------------------------------------
@@ -293,6 +293,7 @@ test_that("familia_label vazio quando nenhum value definido", {
 # ------------------------------------------------------------------
 
 test_that("WRB / USDA inalterados apos Cap 18A add", {
+  skip_on_cran()
   pr_fr <- make_ferralsol_canonical()
   expect_equal(classify_wrb2022(pr_fr, on_missing = "silent")$rsg_or_order,
                  "Ferralsols")

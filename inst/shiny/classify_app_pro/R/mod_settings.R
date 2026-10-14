@@ -2,9 +2,11 @@
 # soilKey Pro -- Settings module (v0.9.97).
 #
 # Controls the diagnostic engine, the WRB Tier-3 strict-mode toggle, and the
-# missing-data policy. Engine and strict mode are pushed to package options
-# (soilKey.diagnostic_engine, soilKey.rsg_strict) so every classifier picks
-# them up; on_missing is returned as a reactive for the Classify module.
+# missing-data policy. Engine and strict mode belong to the session (v0.9.211):
+# they are kept in session$userData$sk_opts as soilKey.diagnostic_engine and
+# soilKey.rsg_strict and applied around each classification this session runs
+# (utils_async.R), never written with options(), which every session in the
+# process shares. on_missing is returned as a reactive for the Classify module.
 # =============================================================================
 
 settings_ui <- function(id) {
@@ -15,18 +17,17 @@ settings_ui <- function(id) {
       bslib::card_header(i18n("settings.diagnostic_engine")),
       bslib::card_body(
         shiny::helpText(
-          "These options set how every classifier reads horizon data. ",
-          "They apply globally to all tabs of this session."
+          i18n("settings.help_engine_card")
         ),
 
         sk_section(
           i18n("settings.threshold_engine"),
-          desc = "Which set of numeric thresholds decides whether a horizon meets each diagnostic criterion.",
+          desc = i18n("settings.desc_engine"),
           icon = "gear",
           shinyWidgets::radioGroupButtons(
             ns("engine"),
             sk_label(i18n("settings.threshold_engine"),
-                     "soilKey uses the package's built-in thresholds; aqp defers to the aqp package where it has a matching rule."),
+                     i18n("settings.help_engine")),
             choices = stats::setNames(
               c("soilkey", "aqp"),
               c(i18n("settings.engine_soilkey"),
@@ -41,12 +42,12 @@ settings_ui <- function(id) {
 
         sk_section(
           i18n("settings.strict_mode"),
-          desc = "How deep the classification goes below the reference group or order.",
+          desc = i18n("settings.desc_strict"),
           icon = "sliders",
           shinyWidgets::materialSwitch(
             ns("strict"),
             sk_label(i18n("settings.strict_mode"),
-                     "When on, a class is only assigned if every required diagnostic is met; borderline profiles stay unclassified rather than being forced."),
+                     i18n("settings.help_strict")),
             value = FALSE, status = "danger"
           ),
           shiny::helpText(
@@ -55,7 +56,7 @@ settings_ui <- function(id) {
           shinyWidgets::materialSwitch(
             ns("specifiers"),
             sk_label(i18n("settings.specifiers"),
-                     "Add WRB principal and supplementary qualifiers (the words before and after the reference group) to the result."),
+                     i18n("settings.help_specifiers")),
             value = FALSE, status = "primary"
           ),
           shiny::helpText(
@@ -68,18 +69,17 @@ settings_ui <- function(id) {
       bslib::card_header(i18n("settings.missing_data_policy")),
       bslib::card_body(
         shiny::helpText(
-          "Control how missing measurements are handled and how much taxonomic ",
-          "detail the classifiers report."
+          i18n("settings.help_missing_card")
         ),
 
         sk_section(
           i18n("settings.on_missing_label"),
-          desc = "What the classifier does when a horizon lacks a value a rule needs.",
+          desc = i18n("settings.desc_on_missing"),
           icon = "flask",
           shinyWidgets::radioGroupButtons(
             ns("on_missing"),
             sk_label(i18n("settings.on_missing_label"),
-                     "Warn keeps going but flags gaps; Silent skips the affected rules quietly; Error stops so nothing is guessed."),
+                     i18n("settings.help_on_missing")),
             choices = stats::setNames(
               c("warn", "silent", "error"),
               c(i18n("settings.on_missing_warn"),
@@ -95,18 +95,18 @@ settings_ui <- function(id) {
 
         sk_section(
           i18n("settings.include_familia"),
-          desc = "Whether to resolve the deepest, lowest-level categories in each taxonomy.",
+          desc = i18n("settings.desc_family"),
           icon = "layer-group",
           shiny::checkboxInput(
             ns("include_familia"),
             sk_label(i18n("settings.include_familia"),
-                     "Also derive the SiBCS 'família' level (texture, mineralogy and other family attributes) beneath the subgroup."),
+                     i18n("settings.help_familia")),
             value = TRUE
           ),
           shiny::checkboxInput(
             ns("include_family"),
             sk_label(i18n("settings.include_family"),
-                     "Also derive the USDA Soil Taxonomy family level (particle-size, mineralogy and temperature classes) beneath the subgroup."),
+                     i18n("settings.help_family")),
             value = FALSE
           ),
           shiny::helpText(
@@ -121,13 +121,22 @@ settings_ui <- function(id) {
 settings_server <- function(id, rv) {
   shiny::moduleServer(id, function(input, output, session) {
 
-    # Push engine + strict mode into package options whenever they change.
+    # Engine and strict mode are THIS session's: kept in session$userData and
+    # applied to its classifications (utils_async.R, .sk_session_opts()). They
+    # used to be written with options(), which every session in the process
+    # shares, so one visitor's switch changed every other visitor's results.
+    set_opt <- function(name, value) {
+      o <- session$userData$sk_opts
+      if (!is.list(o)) o <- list()
+      o[[name]] <- value
+      session$userData$sk_opts <- o
+    }
     shiny::observeEvent(input$engine, {
-      options(soilKey.diagnostic_engine = input$engine)
+      set_opt("soilKey.diagnostic_engine", input$engine)
     }, ignoreInit = FALSE)
 
     shiny::observeEvent(input$strict, {
-      options(soilKey.rsg_strict = isTRUE(input$strict))
+      set_opt("soilKey.rsg_strict", isTRUE(input$strict))
     }, ignoreInit = FALSE)
 
     # ---- two-way sync of the depth-level toggles with the shared rv ---------

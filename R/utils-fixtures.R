@@ -1474,7 +1474,13 @@ make_technosol_canonical <- function() {
     plinthite_pct              = c(0,    0,    0),
     redoximorphic_features_pct = c(0,    0,    0),
     slickensides               = c("absent","absent","absent"),
-    artefacts_pct              = c(30,   12,   3),
+    # v0.9.190: raised so the exemplar actually satisfies the WRB 2022
+    # Technosol criterion. The previous 30/12/3 gave a weighted average of only
+    # 16.5 % over the upper 100 cm -- below the required 20 % -- and passed only
+    # because soilKey then tested "any single layer >= 20 %". With the corrected
+    # weighted-average test the fill now averages 24.1 %, which is what an urban
+    # rubble fill of this description should carry.
+    artefacts_pct              = c(35,   25,   3),
     duripan_pct                = c(0,    0,    0),
     bulk_density_g_cm3         = c(1.55, 1.65, 1.70)
   )
@@ -1756,6 +1762,10 @@ make_nitisol_canonical <- function() {
     # threshold, which combined with high CTC clay activity made
     # B_nitico fail.
     fe_dcb_pct                 = c(7.0,  9.0, 10.0),
+    # v0.9.220: oxalate Fe, which the nitic horizon needs (WRB 2022 Ch 3.1.22,
+    # criterion 3: Fe-ox >= 0.2% and Fe-ox / Fe-dith >= 0.05); typical of
+    # Nitisols, whose "active" Fe sets them apart from Ferralsols.
+    fe_ox_pct                  = c(0.8,  0.9,  0.9),
     plinthite_pct              = c(0,    0,    0),
     redoximorphic_features_pct = c(0,    0,    0),
     slickensides               = c("absent","absent","absent"),

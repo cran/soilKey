@@ -106,9 +106,12 @@
 #'        \code{"all"} (default) downloads every lazy-fetch cache. Valid
 #'        names: \code{"afsp_sample"}, \code{"kssl_sample"},
 #'        \code{"kssl_nasis_sample"}, \code{"wosis_stratified_sample"}.
-#' @param release GitHub Release tag to pull from (default
-#'        \code{"v0.9.94-data"}). Override only if you maintain a
-#'        local mirror.
+#' @param release Release tag to pull from. \code{NULL} (the default) means
+#'        soilKey has nowhere to pull from: since v0.9.199 the package
+#'        distributes no third-party soil observations, and this function
+#'        refuses rather than serving a copy of somebody else's data. Supply a
+#'        tag only if you maintain your own mirror, obtained from the providers
+#'        under their terms.
 #' @param overwrite If \code{TRUE}, redownload even if the file is
 #'        already present in the user cache (default \code{FALSE}).
 #' @param verbose Print progress (default \code{TRUE}).
@@ -126,12 +129,29 @@
 #' }
 #' @export
 download_extdata_cache <- function(which     = "all",
-                                      release   = .SOILKEY_LAZY_FETCH_RELEASE,
+                                      release   = NULL,
                                       overwrite = FALSE,
                                       verbose   = TRUE) {
   which <- if (identical(which, "all")) .SOILKEY_LAZY_FETCH_CACHES
             else match.arg(which, .SOILKEY_LAZY_FETCH_CACHES,
                               several.ok = TRUE)
+  # soilKey does not host these caches. They are third-party soil observations
+  # -- ISRIC (WoSIS), USDA-NRCS NSSC (KSSL / NASIS), Africa Soil Profiles --
+  # and belong to their providers, who are the ones entitled to distribute
+  # them. The package ships the code that reads them, never the observations.
+  # `release` is kept so anyone who has mirrored the caches under their own
+  # agreement with the providers can still point this machinery at their copy.
+  if (is.null(release))
+    stop("soilKey does not distribute the benchmark caches.\n",
+         "They are third-party observations (ISRIC WoSIS; USDA-NRCS KSSL and ",
+         "NASIS; Africa Soil Profiles) and remain their providers' to ",
+         "distribute.\n",
+         "Obtain them from the provider under that provider's terms, then ",
+         "either place the .rds files in\n  ",
+         tools::R_user_dir("soilKey", "data"),
+         "\nor pass release = <your own mirror tag> to this function.",
+         call. = FALSE)
+
   cache_dir <- tools::R_user_dir("soilKey", which = "data")
   if (!dir.exists(cache_dir))
     dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
@@ -179,23 +199,22 @@ download_extdata_cache <- function(which     = "all",
   if (!is.null(path)) return(readRDS(path))
   if (!interactive()) {
     stop(sprintf(paste0(
-      "soilKey cache '%s' not found locally. v0.9.94+ moves the four ",
-      "large benchmark caches to lazy fetch from GitHub Release. ",
-      "Run soilKey::download_extdata_cache(\"%s\") in an interactive ",
-      "R session first."), name, name), call. = FALSE)
+      "soilKey benchmark cache '%s' is not present, and soilKey does not ",
+      "distribute it.\n",
+      "These caches are third-party soil observations. The data belongs to ",
+      "its providers -- ISRIC (WoSIS), the USDA-NRCS National Soil Survey ",
+      "Center (KSSL / NASIS) and the Africa Soil Profiles database -- and is ",
+      "theirs to distribute, so soilKey ships the code that reads them and ",
+      "never the observations themselves.\n",
+      "Obtain the data from the provider under their terms and place it at:\n",
+      "  %s"),
+      name, file.path(tools::R_user_dir("soilKey", "data"),
+                      paste0(name, ".rds"))), call. = FALSE)
   }
-  msg <- sprintf(paste0(
-    "soilKey: the '%s' cache is not present in your install.\n",
-    "It will be downloaded (~1 MB) from GitHub Release %s into\n",
-    "  %s\n",
-    "Proceed?"),
-    name, .SOILKEY_LAZY_FETCH_RELEASE,
-    tools::R_user_dir("soilKey", "data"))
-  ans <- tryCatch(utils::askYesNo(msg, default = TRUE),
-                   error = function(e) NA)
-  if (!isTRUE(ans))
-    stop(sprintf("Download declined; cannot load '%s'.", name),
-         call. = FALSE)
-  paths <- download_extdata_cache(name, verbose = FALSE)
-  readRDS(paths[name])
+  stop(sprintf(paste0(
+    "soilKey benchmark cache '%s' is not present, and soilKey does not ",
+    "distribute it (see ?download_extdata_cache). Obtain it from the ",
+    "provider under their terms and place it at:\n  %s"),
+    name, file.path(tools::R_user_dir("soilKey", "data"),
+                    paste0(name, ".rds"))), call. = FALSE)
 }

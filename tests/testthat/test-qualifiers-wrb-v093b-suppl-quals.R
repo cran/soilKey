@@ -94,18 +94,36 @@ test_that("Rubic accepts hue <= 5YR + chroma >= 4 (looser than Rhodic)", {
 
 # ---- Lamellic --------------------------------------------------------------
 
-test_that("Lamellic recognises common lamellae designation patterns", {
-  hz <- data.table::data.table(
+test_that("Lamellic reads lamellae from the layers (v0.9.220)", {
+  # WRB 2022 Ch 5: two or more lamellae, >= 0.5 and < 7.5 cm thick, with more
+  # clay than the layers directly above and below (argic 2.a) or clay films
+  # (2.b), >= 5 cm together within 50 cm. A lamella designation without the
+  # layer data is NA; until v0.9.219 it was enough.
+  mk <- function(hz) PedonRecord$new(
+    site = list(id = "L", lat = 0, lon = 0, country = "TEST",
+                parent_material = "aeolian sand"),
+    horizons = ensure_horizon_schema(hz))
+  described <- mk(data.table::data.table(
     top_cm = c(0, 5, 30), bottom_cm = c(5, 30, 100),
     designation = c("A", "E&Bt", "C"),
-    clay_pct = c(8, 12, 5), silt_pct = c(15, 20, 8), sand_pct = c(77, 68, 87)
-  )
-  pr <- PedonRecord$new(
-    site = list(id = "L", lat = 0, lon = 0, country = "TEST",
-                  parent_material = "aeolian sand"),
-    horizons = ensure_horizon_schema(hz)
-  )
-  expect_true(isTRUE(qual_lamellic(pr)$passed))
+    clay_pct = c(8, 12, 5), silt_pct = c(15, 20, 8), sand_pct = c(77, 68, 87)))
+  expect_true(is.na(qual_lamellic(described)$passed))
+  lamellae <- mk(data.table::data.table(
+    top_cm    = c(0, 20, 40, 43, 55, 59, 70),
+    bottom_cm = c(20, 40, 43, 55, 59, 70, 120),
+    designation = c("A", "E1", "Bt1", "E2", "Bt2", "E3", "C"),
+    clay_pct = c(6, 4, 12, 4, 13, 4, 3),
+    silt_pct = c(10, 8, 10, 8, 10, 8, 6), sand_pct = c(84, 88, 78, 88, 77, 88, 91)))
+  res <- qual_lamellic(lamellae)
+  expect_true(isTRUE(res$passed))
+  expect_equal(res$layers, c(3L, 5L))
+  thin <- mk(data.table::data.table(
+    top_cm    = c(0, 20, 40, 42, 55, 56, 70),
+    bottom_cm = c(20, 40, 42, 55, 56, 70, 120),
+    designation = c("A", "E1", "Bt1", "E2", "Bt2", "E3", "C"),
+    clay_pct = c(6, 4, 12, 4, 13, 4, 3),
+    silt_pct = c(10, 8, 10, 8, 10, 8, 6), sand_pct = c(84, 88, 78, 88, 77, 88, 91)))
+  expect_false(isTRUE(qual_lamellic(thin)$passed))   # 2 + 1 cm < 5 cm
 })
 
 
@@ -137,14 +155,15 @@ test_that("Cumulic fires on a fluvic / cumulic surface marker", {
 
 # ---- End-to-end canonical Ferralsol with parenthesised supplementary ------
 
-test_that("FR canonical name carries supplementary tags in WRB Ch 6 form", {
+test_that("FR canonical name carries supplementary tags in WRB Ch 2.2 form", {
+  skip_on_cran()
   # This variable-charge Ferralsol is the showcase of the WRB 2014->2022
   # base-status redefinition: base SATURATION is low (24%, against the pH7 CEC
   # of 8.0), but on the EFFECTIVE exchange (ECEC ~2.6) the bases (1.9) exceed
   # exchangeable Al (0.7). WRB 2022 keys base status on Al-vs-bases, so the
   # soil is Eutric -- not Dystric (the old base-saturation answer).
   cls <- classify_wrb2022(make_ferralsol_canonical(), on_missing = "silent")
-  expect_match(cls$name, "^Geric Ferric Rhodic Ferralsol \\(")
+  expect_match(cls$name, "^Geric Rhodic Ferralsol \\(")   # v0.9.217: Ch 4 / Ch 2.2
   expect_match(cls$name, "Clayic")
   expect_match(cls$name, "Humic")
   expect_match(cls$name, "Eutric")
@@ -156,6 +175,7 @@ test_that("FR canonical name carries supplementary tags in WRB Ch 6 form", {
 })
 
 test_that("AC / LX / LV / NT canonical names carry parenthesised supplementary", {
+  skip_on_cran()
   for (rsg in c("AC", "LX", "LV", "NT")) {
     fx <- switch(rsg,
       AC = make_acrisol_canonical(), LX = make_lixisol_canonical(),
@@ -174,6 +194,7 @@ test_that("AC / LX / LV / NT canonical names carry parenthesised supplementary",
 # ---- 31-fixture regression check ------------------------------------------
 
 test_that("v0.9.3.B supplementary additions do not regress 31 fixtures", {
+  skip_on_cran()
   expected <- c(
     HS = "Histosols", AT = "Anthrosols", TC = "Technosols", CR = "Cryosols",
     LP = "Leptosols", SN = "Solonetz",   VR = "Vertisols", SC = "Solonchaks",

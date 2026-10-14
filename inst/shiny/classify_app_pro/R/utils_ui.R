@@ -7,8 +7,8 @@
 # Catalogue of canonical fixtures, grouped for shinyWidgets::pickerInput.
 # Display label -> exported make_*_canonical() function name.
 pro_fixture_catalog <- function() {
-  list(
-    "WRB 2022 reference soil groups" = c(
+  cat <- list(
+    wrb = c(
       "Acrisol"                = "make_acrisol_canonical",
       "Alisol"                 = "make_alisol_canonical",
       "Andosol (volcanic ash)" = "make_andosol_canonical",
@@ -41,7 +41,7 @@ pro_fixture_catalog <- function() {
       "Umbrisol"               = "make_umbrisol_canonical",
       "Vertisol"               = "make_vertisol_canonical"
     ),
-    "SiBCS 5 ordens" = c(
+    sibcs = c(
       "Argissolo"   = "make_argissolo_canonical",
       "Cambissolo"  = "make_cambissolo_canonical",
       "Chernossolo" = "make_chernossolo_canonical",
@@ -57,6 +57,10 @@ pro_fixture_catalog <- function() {
       "Vertissolo"  = "make_vertissolo_canonical"
     )
   )
+  # the two descriptive labels, in the session's language
+  names(cat$wrb)[cat$wrb == "make_andosol_canonical"] <- i18n("fixture.andosol")
+  names(cat$wrb)[cat$wrb == "make_cryosol_canonical"] <- i18n("fixture.cryosol")
+  stats::setNames(cat, c(i18n("fixture.group_wrb"), i18n("fixture.group_sibcs")))
 }
 
 # Resolve a make_*_canonical() name to a PedonRecord. Works whether the
@@ -73,17 +77,19 @@ pro_numeric_attrs <- function() {
     "coarse_fragments_pct")
 }
 
-# A small coloured pill for an evidence grade (A best .. E weakest).
+# A small coloured pill for an evidence grade (A best .. E weakest). NA is a
+# profile with no soil property at all (v0.9.213): no grade to show.
 pro_grade_badge <- function(grade) {
   grade <- as.character(grade %||% NA)
-  pal <- c(A = "#198754", B = "#0d6efd", C = "#fd7e14",
+  pal <- c(A = "#198754", B = "#0d6efd", C = "#b35900",  # C: AA with white text
            D = "#dc3545", E = "#6c757d")
   col <- if (!is.na(grade) && grade %in% names(pal)) pal[[grade]] else "#6c757d"
-  lab <- if (is.na(grade)) i18n("ui.na") else grade
+  lab <- if (is.na(grade)) i18n("ui.no_measured_data")
+         else paste(i18n("ui.evidence"), grade)
   shiny::tags$span(
     class = "badge",
     style = sprintf("background-color:%s;font-size:0.85rem;", col),
-    paste(i18n("ui.evidence"), lab)
+    lab
   )
 }
 
@@ -111,6 +117,9 @@ pro_result_card <- function(res, system_label) {
     ),
     bslib::card_body(
       shiny::tags$h5(res$name %||% i18n("ui.unnamed")),
+      if (is.na(res$evidence_grade %||% NA))
+        shiny::div(class = "alert alert-warning small py-2 mb-2",
+                   i18n("ui.no_measured_data_note")),
       shiny::tags$dl(
         class = "row mb-0 small",
         shiny::tags$dt(class = "col-5", i18n("ui.rsg_order")),
@@ -305,4 +314,199 @@ sk_empty <- function(icon, title, body = NULL, ...) {
   n   <- max(1L, as.integer(n_horizons))
   idx <- ((seq_len(n) - 1L) %% nrow(m)) + 1L      # recycle rows to length n
   m[idx, , drop = FALSE]
+}
+
+
+# DT::datatable() in the session's language. DataTables draws its own controls
+# ("Search:", "Showing 1 to 10 of 25 entries", "Previous", "Next"); in English
+# they are left to DataTables' defaults, in Portuguese they come from the
+# catalogue.
+sk_datatable <- function(data, ..., options = list()) {
+  if (identical(.sk_app_lang(), "pt") && is.null(options$language))
+    options$language <- list(
+      search         = i18n("dt.search"),
+      lengthMenu     = i18n("dt.length_menu"),
+      info           = i18n("dt.info"),
+      infoEmpty      = i18n("dt.info_empty"),
+      infoFiltered   = i18n("dt.info_filtered"),
+      zeroRecords    = i18n("dt.zero_records"),
+      emptyTable     = i18n("dt.empty_table"),
+      loadingRecords = i18n("dt.loading"),
+      processing     = i18n("dt.processing"),
+      paginate       = list(first = i18n("dt.first"), previous = i18n("dt.previous"),
+                            `next` = i18n("dt.next"), last = i18n("dt.last")))
+  sk_drop_jquery(DT::datatable(data, ..., options = options))
+}
+
+# The jQuery that DT and leaflet widgets bring along, dropped (v0.9.218). The
+# page already loads Shiny's own jQuery, which the widgets use. Both widgets
+# also carry jquerylib's copy, and when the two are the same version (3.6.0,
+# with the Shiny 1.8 of the container image) they share the resource path
+# "jquery-3.6.0": rendering a widget re-points it to jquerylib's folder, which
+# has no jquery.min.js, so every page that instance served afterwards came up
+# without jQuery (HTTP 404). Local installs, on a newer Shiny, never collide.
+sk_drop_jquery <- function(widget) {
+  widget$dependencies <- Filter(function(d) !identical(d$name, "jquery"),
+                                widget$dependencies)
+  widget
+}
+
+# leaflet::leaflet() without its own jQuery (see sk_drop_jquery()).
+sk_leaflet <- function(...) sk_drop_jquery(leaflet::leaflet(...))
+
+# DT::renderDT() with the data sent in the table itself (server = FALSE), over
+# the session's websocket (v0.9.218). With server-side processing the browser
+# fetches the rows by HTTP from /session/<id>/dataobj/<table>, and Cloud Run
+# does not always route that request to the instance holding the session
+# (session affinity is best effort): the table stayed empty with a 404. The
+# app's tables are small (horizons, key traces, attribute lists).
+sk_renderDT <- function(expr, ...) {
+  DT::renderDT(substitute(expr), server = FALSE, quoted = TRUE,
+               env = parent.frame(), ...)
+}
+
+
+# Colours for the Map's class layers (SoilGrids overlay, predicted grid, batch
+# points). leaflet's "Set3" has 12 colours: over more classes leaflet
+# interpolated between them, so neighbouring classes got near-identical shades
+# (and RColorBrewer warned "n too large" in the log; the SoilGrids overlay of a
+# Brazilian state shows ~19 classes). Up to 12 classes keep Set3's colours;
+# beyond that each class gets its own colour from Polychrome 36, less its
+# near-white grey and pale cream (v0.9.214): on the map and in the legend's
+# white box those read as "no class".
+.SK_POLYCHROME <- setdiff(unname(grDevices::palette.colors(36, "Polychrome 36")),
+                          c("#E4E1E3", "#F7E1A0"))
+sk_class_pal <- function(domain, na.color = "transparent") {
+  n <- length(unique(domain[!is.na(domain)]))
+  cols <- if (n <= 12L) {
+    RColorBrewer::brewer.pal(max(3L, n), "Set3")[seq_len(max(1L, n))]
+  } else if (n <= length(.SK_POLYCHROME)) {
+    .SK_POLYCHROME[seq_len(n)]
+  } else {
+    grDevices::hcl.colors(n, "Dynamic")
+  }
+  leaflet::colorFactor(cols, domain = domain, na.color = na.color)
+}
+
+
+# Register the scripts and styles of `page` (jQuery, Bootstrap, bslib, Shiny's
+# own, the widgets) in this R process. Shiny registers a dependency only when it
+# renders the page, so an R process that had not rendered one answered 404 for
+# all of them. On Cloud Run, with more than one instance, the 40-odd requests of
+# one page load are not all routed to the instance that rendered the page
+# (session affinity is best effort): visitors got the page without its styles
+# or scripts, an unstyled list of links and no Shiny. app.R calls this at
+# start-up, so every instance can serve every asset.
+#
+# Outside a running app bslib builds its themed dependencies (selectize,
+# shiny-sass, bslib's component CSS) from its global theme, so that is set to
+# the app's theme while rendering; without it they come out unthemed, under
+# other file names. renderPage() is internal to shiny, hence the fallback to
+# the page's own dependencies if it ever changes.
+#
+# v0.9.218: the app's theme is also made every session's theme from the start.
+# Shiny records the current theme (the "bootstrapTheme" option) when it serves
+# a page while the app is running, and sessions copy the app's options when
+# they open. app.R is sourced before the app state exists (shiny::runApp()), so
+# this start-up render did not record it, and a session that Cloud Run opened
+# on an instance that had not yet served a page had no theme: DT tables fell
+# back to their default style, and selectize and bslib's component CSS were
+# rendered unthemed, re-pointing their resource paths to folders without the
+# themed files, so pages that instance served afterwards got 404s for them.
+# Set before the app state exists, the option is copied into it.
+sk_register_page_deps <- function(page, theme) {
+  shiny::shinyOptions(bootstrapTheme = theme)
+  old_bs <- bslib::bs_global_set(theme)
+  on.exit(bslib::bs_global_set(old_bs), add = TRUE)
+  ok <- tryCatch({ shiny:::renderPage(page); TRUE }, error = function(e) FALSE)
+  if (!ok)
+    for (d in htmltools::renderTags(page)$dependencies) shiny::createWebDependency(d)
+  sk_register_widget_deps()   # under the theme: DT takes its flavour from it
+  invisible(ok)
+}
+
+# The scripts that only a drawn widget brings, registered at start-up (v0.9.224).
+#
+# Not every script of the app is in its page. A widget adds some when it is
+# drawn: DT its DataTables core (in the theme's Bootstrap flavour), plotly its
+# plotly.js bundle, and a leaflet map with provider tiles the provider list and
+# its plugin. Rendering the page did not register those, and Shiny did only in
+# the R process that drew the widget. On Cloud Run, with a second instance up,
+# the browser's request for them could reach an instance that had drawn none:
+# HTTP 404. Seen on 2026-10-10 for the two provider scripts, in the request
+# log (page and websocket on one instance, the 404s on another): the Map tab
+# came up as a grey box, without tiles or overlay.
+#
+# One widget of each kind the app draws gives the list. Only prefixes that are
+# not registered yet are added, so nothing the page registered is re-pointed,
+# and a widget's own jQuery is left out, as in sk_drop_jquery().
+sk_register_widget_deps <- function() {
+  widgets <- list(
+    function() sk_datatable(data.frame(a = 1)),
+    function() plotly::plot_ly(x = 1, y = 1, type = "bar"),
+    function() sk_provider_tiles(sk_leaflet(), "CartoDB.Positron"))
+  added <- character(0)
+  for (w in widgets) {
+    deps <- tryCatch(htmltools::renderTags(w())$dependencies,
+                     error = function(e) list())
+    for (d in deps) {
+      prefix <- paste0(d$name, "-", d$version)
+      if (identical(d$name, "jquery") ||
+            prefix %in% names(shiny::resourcePaths())) next
+      shiny::createWebDependency(d)
+      added <- c(added, prefix)
+    }
+  }
+  invisible(added)
+}
+
+# leaflet::addProviderTiles(), for a map or a map proxy, with the provider
+# scripts taken from sk_provider_deps(), the list the start-up registration
+# uses, so both point to the same folders (v0.9.224).
+#
+# Shiny serves the folder a dependency is in, whole. leaflet takes the
+# provider list from the installed leaflet.providers package folder (so in the
+# container image, checked inside it), and has a fallback that writes the list
+# to the R session's temporary folder. sk_provider_deps() moves a dependency
+# found there to a folder that holds its scripts and nothing else, so the
+# temporary folder is never served.
+sk_provider_tiles <- function(map, provider, layerId = NULL, group = NULL,
+                              options = leaflet::providerTileOptions()) {
+  if (!provider %in% names(leaflet::providers))
+    stop("Unknown tile provider '", provider, "'", call. = FALSE)
+  map$dependencies <- c(map$dependencies, sk_provider_deps())
+  leaflet::invokeMethod(map, leaflet::getMapData(map), "addProviderTiles",
+                        provider, layerId, group, options)
+}
+
+.sk_widget_deps <- new.env(parent = emptyenv())
+
+# The dependencies leaflet::addProviderTiles() adds to a map: what a map with
+# provider tiles has and a plain one does not.
+sk_provider_deps <- function() {
+  if (is.null(.sk_widget_deps$providers)) {
+    plain <- vapply(sk_leaflet()$dependencies, function(d) d$name, character(1))
+    deps <- leaflet::addProviderTiles(sk_leaflet(),
+                                      "CartoDB.Positron")$dependencies
+    deps <- Filter(function(d) !(d$name %in% plain), deps)
+    .sk_widget_deps$providers <-
+      lapply(htmltools::resolveDependencies(deps), sk_own_dependency)
+  }
+  .sk_widget_deps$providers
+}
+
+# A dependency whose files are in the R session's temporary folder, moved to a
+# folder that holds those files only. Any other dependency is returned as is.
+sk_own_dependency <- function(dep) {
+  dir <- dep$src$file
+  if (is.null(dir) || !is.null(dep$package) ||
+        !identical(normalizePath(dir, mustWork = FALSE),
+                   normalizePath(tempdir(), mustWork = FALSE)))
+    return(dep)
+  files <- unlist(c(dep$script, dep$stylesheet), use.names = FALSE)
+  own <- file.path(tempdir(), "sk-deps", paste0(dep$name, "-", dep$version))
+  dir.create(own, recursive = TRUE, showWarnings = FALSE)
+  file.copy(file.path(dir, files), own, overwrite = TRUE)
+  dep$src$file <- own
+  dep
 }

@@ -94,9 +94,14 @@ pi_to_confidence <- function(pi95_low, pi95_high, value = NULL) {
 #' @param overwrite If \code{FALSE} (default), only fill cells whose
 #'        existing provenance is weaker than \code{predicted_spectra}.
 #' @param ossl_library Optional OSSL library object (see
-#'        \code{\link{predict_ossl_mbl}}).
+#'        \code{\link{predict_ossl_mbl}}). Defaults to
+#'        \code{getOption("soilKey.ossl_library")}, so a library set once
+#'        reaches every call, including gap-fill from
+#'        \code{\link{classify_all}(gapfill = list(method = "spectra"))}.
+#'        Without one the predictions are synthetic placeholders.
 #' @param ossl_models Optional named list of pretrained models (see
-#'        \code{\link{predict_ossl_pretrained}}).
+#'        \code{\link{predict_ossl_pretrained}}). Defaults to
+#'        \code{getOption("soilKey.ossl_models")}.
 #' @param verbose If \code{TRUE}, prints a cli summary.
 #' @return The mutated pedon, invisibly. Provenance entries with
 #'         \code{source = "predicted_spectra"} are added per
@@ -119,8 +124,8 @@ fill_from_spectra <- function(pedon,
                                 preprocess  = "snv+sg1",
                                 k_neighbors = 100L,
                                 overwrite   = FALSE,
-                                ossl_library = NULL,
-                                ossl_models  = NULL,
+                                ossl_library = getOption("soilKey.ossl_library"),
+                                ossl_models  = getOption("soilKey.ossl_models"),
                                 verbose     = TRUE) {
   if (!inherits(pedon, "PedonRecord")) {
     rlang::abort("fill_from_spectra(): 'pedon' must be a PedonRecord")
@@ -178,13 +183,18 @@ fill_from_spectra <- function(pedon,
       cli::cli_alert_info(c(
         "To enable the real path, supply either {.arg ossl_library = list(Xr, Yr)} ",
         "(MBL / PLSR-local) or {.arg ossl_models = list(prop1 = ..., ...)} ",
-        "(pretrained). See {.file inst/benchmarks/reports/audit_ossl_2026-04-30.md} ",
-        "and {.file vignettes/05-spatial-spectra-pipeline.Rmd}."
+        "(pretrained). See {.file vignettes/05-spatial-spectra-pipeline.Rmd}."
       ))
     }
   }
 
   # 3. Merge into pedon (pedon$add_measurement handles overwrite policy)
+  #
+  # The provenance note names the backend that actually produced the number.
+  # Up to v0.9.190 it read "OSSL/..." unconditionally, so a synthetic
+  # placeholder was recorded in the ledger as an OSSL prediction -- the one
+  # thing a provenance ledger must never do (v0.9.191).
+  backend_tag <- if (identical(backend, "synthetic")) "SYNTHETIC" else "OSSL"
   n_written <- 0L
   n_skipped <- 0L
   for (i in seq_len(nrow(preds))) {
@@ -195,8 +205,8 @@ fill_from_spectra <- function(pedon,
     }
     conf <- pi_to_confidence(r$pi95_low, r$pi95_high, r$value)
     notes <- sprintf(
-      "OSSL/%s/%s; PI95=[%.3g, %.3g]%s",
-      method, region, r$pi95_low, r$pi95_high,
+      "%s/%s/%s; PI95=[%.3g, %.3g]%s",
+      backend_tag, method, region, r$pi95_low, r$pi95_high,
       if (!is.na(r$n_neighbors)) sprintf("; k=%d", r$n_neighbors) else ""
     )
     before <- nrow(pedon$provenance)
@@ -218,6 +228,11 @@ fill_from_spectra <- function(pedon,
       "fill_from_spectra(): wrote {n_written} cell(s), skipped {n_skipped} (existing measurements / unknown columns)"
     ))
   }
+
+  # Record which backend ran so callers that suppress `verbose` -- notably the
+  # Shiny app -- can still tell the user they got placeholders, instead of
+  # reporting a plain success.
+  pedon$spectra$gapfill_backend <- backend
 
   invisible(pedon)
 }

@@ -108,6 +108,11 @@ test_that("map_server point mode renders the map and draws the overlay", {
 
   env        <- .mapu_source_modules()
   map_server <- get("map_server", envir = env)
+  # Pull the module-internal helper into a test-local: a bareword internal is
+  # not on the search path of an *installed* package (only under load_all), so
+  # referencing it inside testServer fails under R CMD check. As a test-local it
+  # resolves through the expr's lexical environment.
+  .map_src   <- get(".map_soilgrids_source", envir = env)
 
   pr <- soilKey::PedonRecord$new(
     site = list(id = "map-unified", lat = -22.5, lon = -43.7, crs = 4326))
@@ -116,20 +121,25 @@ test_that("map_server point mode renders the map and draws the overlay", {
 
   shiny::testServer(map_server, args = list(rv = rv, settings = settings), {
     session$setInputs(mode = "point", basemap = "OpenStreetMap",
-                      show_soilgrids = TRUE, source_url = "",
+                      show_soilgrids = TRUE, source_url = "", sg_source = "demo",
                       system = "wrb2022", buffer = 600, topn = 5)
     # coordinate comes straight from the pedon
     expect_equal(coords_r()$lat, -22.5)
     expect_equal(coords_r()$src, "pedon")
 
-    # the overlay raster helper resolves the bundled demo raster for this point
-    rr <- overlay_raster(coords_r(), .map_soilgrids_source(""))
-    expect_false(is.null(rr))
-    expect_true(all(c("id", "class") %in% names(rr$lut)))
-
-    # the base map renders without error (the initial view/points/overlay are
-    # baked into renderLeaflet, so this must not raise)
+    # the base map renders without error, and without reading SoilGrids
     expect_error(output$map, NA)
+
+    # v0.9.210: once leaflet reports its bounds (the map exists on the page),
+    # the overlay is read in the background and kept for redraws
+    session$setInputs(map_bounds = list(north = -20, south = -25,
+                                        east = -40, west = -46))
+    .settle(session)
+    hit <- overlay_cache()
+    expect_false(is.null(hit$rr))
+    expect_true(all(c("id", "class") %in% names(hit$rr$lut)))
+    expect_false(isTRUE(hit$fell_back))
+    expect_identical(hit$args$src, .map_src("", "demo"))
   })
 })
 
@@ -148,6 +158,7 @@ test_that("map_server batch mode classifies demo points with coordinates", {
     session$setInputs(mode = "batch", batch_source = "demo", n_demo = 3,
                       batch_system = "wrb", show_soilgrids = FALSE)
     session$setInputs(run_batch = 1)
+    .settle(session)
     res <- batch()
     expect_false(inherits(res, "error"))
     expect_true(all(c("id", "lat", "lon", "wrb_name") %in% names(res)))

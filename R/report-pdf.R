@@ -240,7 +240,7 @@ report_pdf <- function(x,
     "## ", res$system %||% "?", "\n\n",
     "**", res$name %||% "(unnamed)", "**\n\n",
     sprintf("* %s: `", .report_msg("report.rsg_or_order")), res$rsg_or_order %||% "?", "`\n",
-    sprintf("* %s: **", .report_msg("report.evidence_grade")), res$evidence_grade %||% "NA", "**\n",
+    sprintf("* %s: **", .report_msg("report.evidence_grade")), .grade_label(res$evidence_grade), "**\n",
     if (length(qual_principal) > 0)
       paste0(sprintf("* %s: ", .report_msg("report.principal_qualifiers")),
                paste(qual_principal, collapse = ", "), "\n"),
@@ -282,7 +282,7 @@ report_pdf <- function(x,
     sprintf("| %s | %s | %s |",
               r$system          %||% "?",
               r$name            %||% "(unnamed)",
-              r$evidence_grade  %||% "NA"),
+              .grade_label(r$evidence_grade)),
     character(1))
   paste0(
     sprintf("## %s\n\n", .report_msg("report.cross_system_summary")),
@@ -341,6 +341,9 @@ report_pdf <- function(x,
   if (!is.null(s$elevation_m))     bits[[.report_msg("report.elevation_m")]]     <- s$elevation_m
   if (!is.null(s$slope_pct))       bits[[.report_msg("report.slope_pct")]]       <- s$slope_pct
   if (!is.null(s$date))            bits[[.report_msg("report.date")]]            <- s$date
+  # Keep the provider attribution and citation (ISRIC data policy).
+  if (!is.null(s$attribution))     bits[[.report_msg("report.site_source")]]     <- s$attribution
+  if (!is.null(s$citation))        bits[[.report_msg("report.site_citation")]]   <- s$citation
   if (length(bits) == 0) return("")
   rows <- vapply(seq_along(bits), function(i)
     sprintf("| %s | %s |", names(bits)[i], bits[[i]]),

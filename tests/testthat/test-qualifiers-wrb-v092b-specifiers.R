@@ -75,6 +75,7 @@ test_that(".apply_specifier filters base qualifier layers by depth band", {
 # ---- resolve_wrb_qualifiers handles specifier-prefixed YAML names ---------
 
 test_that("resolve_wrb_qualifiers dispatches specifier-prefixed names", {
+  skip_on_cran()
   # Synthetic Chernozem-like profile with calcic at depth (60+ cm).
   hz <- data.table::data.table(
     top_cm = c(0, 30, 60, 100),
@@ -105,7 +106,10 @@ test_that("resolve_wrb_qualifiers dispatches specifier-prefixed names", {
                   drainage_class = "well drained"),
     horizons = ensure_horizon_schema(hz)
   )
-  res <- resolve_wrb_qualifiers(pr, "CH")
+  # v0.9.217: Endocalcic is in the Phaeozem list of WRB 2022 Chapter 4, not in
+  # the Chernozem one (protocalcic properties or a calcic horizon are part of
+  # the Chernozem definition), so it is resolved against PH.
+  res <- resolve_wrb_qualifiers(pr, "PH")
   # Endocalcic must appear in trace AND fire (Calcic passes on layer 3
   # at top 60 cm; the Endo- band 50-100 contains it).
   expect_true("Endocalcic" %in% names(res$trace))
@@ -129,6 +133,7 @@ test_that("Family suppression operates after specifier dispatch", {
 # ---- 31-fixture regression check ------------------------------------------
 
 test_that("v0.9.2.B specifier infrastructure does not regress 31 fixtures", {
+  skip_on_cran()
   expected <- c(
     HS = "Histosols", AT = "Anthrosols", TC = "Technosols", CR = "Cryosols",
     LP = "Leptosols", SN = "Solonetz",   VR = "Vertisols", SC = "Solonchaks",

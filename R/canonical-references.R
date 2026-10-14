@@ -1,47 +1,46 @@
 # =============================================================================
 # v0.9.62 -- Canonical reference data from NCSS-tech / Andrew Brown's work.
+# v0.9.204 -- read from the installed SoilTaxonomy package, never shipped.
 #
-# Vendored from the `SoilTaxonomy` R package
-# (https://github.com/ncss-tech/SoilTaxonomy):
+# The data come from the `SoilTaxonomy` R package
+# (https://github.com/ncss-tech/SoilTaxonomy, on CRAN), which is GPL-3:
 #
-#   inst/extdata/canonical/WRB_4th_2022.rda    (~8 KB)
-#       3-element list of parsed IUSS WRB 2022 criteria:
-#         $rsg : 118 obs (RSG name + criteria text per clause)
-#         $pq  : 661 obs (principal qualifiers per RSG)
-#         $sq  : 1167 obs (supplementary qualifiers per RSG)
+#   WRB_4th_2022       3-element list of parsed IUSS WRB 2022 criteria:
+#                        $rsg : 118 obs (RSG name + criteria text per clause)
+#                        $pq  : 661 obs (principal qualifiers per RSG)
+#                        $sq  : 1167 obs (supplementary qualifiers per RSG)
+#   ST_criteria_13th   3,153-element nested list of parsed Keys to Soil
+#                      Taxonomy 13th edition (USDA-NRCS, 2022)
+#   ST_features        84-row data.frame of USDA Soil Taxonomy diagnostic
+#                      features (group / name / chapter / page / criteria)
 #
-#   inst/extdata/canonical/ST_criteria_13th.rda  (~104 KB)
-#       3,153-element nested list of parsed Keys to Soil Taxonomy
-#       13th edition (USDA-NRCS, 2022). Each key is a (chapter, page,
-#       key, taxon, code, clause, logic) row of the Key text.
-#
-#   inst/extdata/canonical/ST_features.rda       (~29 KB)
-#       84-row data.frame of canonical USDA Soil Taxonomy diagnostic
-#       features (group / name / chapter / page / description / criteria).
-#
-# Why vendored: offline-first. soilKey works without SoilTaxonomy
-# installed; if the user has it, the helpers below can read directly
-# from the installed package for the freshest copy.
+# Why no copy is shipped: until v0.9.203 soilKey vendored all three under
+# inst/extdata/canonical/. soilKey is MIT, and redistributing GPL-3 material
+# inside an MIT package grants rights the GPL withholds. Using an installed GPL
+# package is not redistributing it, so soilKey now loads the data from
+# SoilTaxonomy (Suggests) and ships nothing of it. The vendored copies were
+# byte-identical to SoilTaxonomy 0.2.8 on CRAN, checked with identical() before
+# they were removed, so no result changes.
 # =============================================================================
 
 
-#' Load a canonical reference dataset from soilKey or SoilTaxonomy
+# Kept separate so tests can exercise the "not installed" path without
+# uninstalling anything.
+#' @noRd
+.has_soiltaxonomy <- function() requireNamespace("SoilTaxonomy", quietly = TRUE)
+
+
+#' Load a canonical reference dataset from the SoilTaxonomy package
 #'
-#' Resolution order:
-#' \enumerate{
-#'   \item If the \code{SoilTaxonomy} package is installed AND the
-#'         \code{prefer_pkg} argument is \code{TRUE} (default), load
-#'         the dataset from the installed package (always fresh).
-#'   \item Otherwise, load from the vendored copy at
-#'         \code{inst/extdata/canonical/<name>.rda}.
-#' }
+#' Reads one of the parsed WRB 2022 / Keys to Soil Taxonomy datasets from the
+#' installed \pkg{SoilTaxonomy} package (NCSS-tech, GPL-3). soilKey ships no
+#' copy of these data: install SoilTaxonomy from CRAN to use this function.
 #'
 #' @param name One of \code{"WRB_4th_2022"}, \code{"ST_criteria_13th"},
 #'        \code{"ST_features"}.
-#' @param prefer_pkg If \code{TRUE} (default), prefer the installed
-#'        SoilTaxonomy package over the vendored copy. Set to
-#'        \code{FALSE} to force the vendored copy (e.g. for
-#'        reproducibility of a specific soilKey release).
+#' @param prefer_pkg Retained for compatibility and no longer used. Until
+#'        v0.9.203 \code{FALSE} selected a copy bundled with soilKey; there is
+#'        no bundled copy any more, so the data always come from SoilTaxonomy.
 #' @return The dataset as the original R object (list or data.frame).
 #' @seealso \code{\link{wrb2022_canonical}}, \code{\link{kst13_canonical}},
 #'   \code{\link{st_features_canonical}}.
@@ -51,46 +50,24 @@ canonical_reference <- function(name = c("WRB_4th_2022",
                                             "ST_features"),
                                    prefer_pkg = TRUE) {
   name <- match.arg(name)
-  if (isTRUE(prefer_pkg) &&
-        requireNamespace("SoilTaxonomy", quietly = TRUE)) {
-    # v0.9.65 (Copilot review #4): wrap the SoilTaxonomy data() call
-    # in tryCatch and verify the dataset materialises in the env. If
-    # the installed SoilTaxonomy version drops or renames the dataset,
-    # we silently fall through to the vendored copy below instead of
-    # erroring out.
-    e <- new.env(parent = emptyenv())
-    pkg_loaded <- tryCatch({
-      utils::data(list = name, package = "SoilTaxonomy", envir = e)
-      exists(name, envir = e, inherits = FALSE)
-    }, error = function(err) {
-      warning(sprintf(
-        "canonical_reference(): SoilTaxonomy::%s lookup failed (%s); ",
-        name, conditionMessage(err)),
-        "falling back to vendored copy.", call. = FALSE)
-      FALSE
-    })
-    if (isTRUE(pkg_loaded)) return(get(name, envir = e))
-  }
-  rda_path <- system.file("extdata", "canonical",
-                            paste0(name, ".rda"),
-                            package = "soilKey")
-  if (!nzchar(rda_path) || !file.exists(rda_path)) {
-    # During devtools/pkgload usage the system.file() path may not
-    # resolve. Fall back to the project tree.
-    cand <- file.path("inst", "extdata", "canonical",
-                       paste0(name, ".rda"))
-    if (file.exists(cand)) rda_path <- cand
-  }
-  if (!nzchar(rda_path) || !file.exists(rda_path)) {
-    stop(sprintf("canonical_reference(): cannot locate %s.rda. ",
-                 name),
-         "Install SoilTaxonomy (install.packages('SoilTaxonomy', ",
-         "repos = c(NCSS = 'https://ncss-tech.r-universe.dev'))) ",
-         "or check the soilKey installation.",
+  if (!.has_soiltaxonomy()) {
+    stop(sprintf("canonical_reference(\"%s\") needs the SoilTaxonomy package. ", name),
+         "soilKey does not ship a copy of its data (GPL-3, NCSS-tech). ",
+         "Install it with install.packages(\"SoilTaxonomy\").",
          call. = FALSE)
   }
   e <- new.env(parent = emptyenv())
-  load(rda_path, envir = e)
+  ok <- tryCatch({
+    utils::data(list = name, package = "SoilTaxonomy", envir = e)
+    exists(name, envir = e, inherits = FALSE)
+  }, error = function(err) FALSE, warning = function(w) FALSE)
+  if (!isTRUE(ok)) {
+    stop(sprintf("canonical_reference(): the installed SoilTaxonomy (%s) ",
+                 as.character(utils::packageVersion("SoilTaxonomy"))),
+         sprintf("does not provide the dataset %s. ", name),
+         "soilKey was validated against SoilTaxonomy 0.2.8.",
+         call. = FALSE)
+  }
   get(name, envir = e)
 }
 
@@ -110,7 +87,7 @@ canonical_reference <- function(name = c("WRB_4th_2022",
 #' Resources}, 4th edition.
 #'
 #' @inheritParams canonical_reference
-#' @return The canonical WRB 2022 reference data (a list / data.frame of RSG and qualifier criteria), as vendored or sourced from the \pkg{SoilTaxonomy} package.
+#' @return The canonical WRB 2022 reference data (a list / data.frame of RSG and qualifier criteria), read from the \pkg{SoilTaxonomy} package.
 #' @export
 wrb2022_canonical <- function(prefer_pkg = TRUE) {
   canonical_reference("WRB_4th_2022", prefer_pkg = prefer_pkg)

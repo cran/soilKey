@@ -6,8 +6,8 @@
 #   2. pedon_to_spc() roundtrip from soilKey schema -> aqp SPC
 #   3. argic_aqp() / cambic_aqp() return DiagnosticResult and agree
 #      with aqp's bare functions
-#   4. canonical_reference() loads vendored RDA + falls back to
-#      installed SoilTaxonomy
+#   4. canonical_reference() reads from the installed SoilTaxonomy
+#      (soilKey ships no copy since v0.9.204)
 # =============================================================================
 
 
@@ -219,6 +219,7 @@ test_that("compare_engines returns paired results for argic and cambic", {
 
 
 test_that("canonical_reference loads WRB_4th_2022 with both backends", {
+  skip_if_no_soiltaxonomy()
   skip_on_cran()
   # Default: prefer SoilTaxonomy if installed
   if (requireNamespace("SoilTaxonomy", quietly = TRUE)) {
@@ -226,7 +227,7 @@ test_that("canonical_reference loads WRB_4th_2022 with both backends", {
     expect_named(out, c("rsg", "pq", "sq"))
     expect_equal(nrow(out$rsg), 118L)
   }
-  # Force vendored
+  # prefer_pkg is retained for compatibility and no longer changes the source
   out2 <- canonical_reference("WRB_4th_2022", prefer_pkg = FALSE)
   expect_named(out2, c("rsg", "pq", "sq"))
   expect_equal(nrow(out2$rsg), 118L)
@@ -234,6 +235,7 @@ test_that("canonical_reference loads WRB_4th_2022 with both backends", {
 
 
 test_that("kst13_canonical and st_features_canonical return expected shapes", {
+  skip_if_no_soiltaxonomy()
   skip_on_cran()
   kst <- kst13_canonical(prefer_pkg = FALSE)
   expect_type(kst, "list")

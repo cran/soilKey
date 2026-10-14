@@ -107,6 +107,50 @@ predict_lab_from_spectra <- function(spectra, wavelengths) {
 }
 
 
+# Continuous Munsell notation ("4.3R 5.2/14", "N 6/") from HVC.
+#
+# Delegated to munsellinterpol::MunsellNameFromHVC() where available. soilKey
+# spelled this out by hand until v0.9.197 because that function could not
+# reproduce it: `digits` was a single value applied to the hue AND the value AND
+# the chroma (6 widened the hue to 4.33793R, 2 truncated value and chroma -- no
+# setting matched), and the achromatic test was a strict 0 < C with no
+# tolerance, which would have re-introduced the "10RP on a grey" leak that
+# v0.9.184 fixed. G. Davis addressed both in munsellinterpol 3.5-0
+# (per-component `digits`, plus `ctol`), and 3.5-1 reached CRAN on 2026-07-29.
+#
+# Verified against the CRAN build before adopting: byte-identical on 28
+# fixtures, including HVC(0, 6, 1e-15) -> "N 6/", and across a sweep of the
+# achromatic boundary (C = 0, 1e-15, 5e-5, 9.99e-5, 1e-4, 1.01e-4, 2e-4) --
+# `ctol` compares strictly, exactly as the `C < 1e-4` test beside it does, so
+# the two agree even at the threshold itself.
+#
+# munsellinterpol is a Suggests, so the hand-rolled spelling stays as the
+# fallback for an older or absent install; the two are equivalent, and
+# test-v09197 asserts that on every release where the newer one is present.
+#
+# @param H,V,C  numeric vectors of hue number, value, chroma. C is RAW, not
+#        zeroed on the neutral axis: a negative must reach munsellinterpol so
+#        that 3.6-0 and later can warn about it.
+# @param hs     the hue strings the caller derived, "N" on the neutral axis.
+# @param neutral logical, which entries are on the neutral axis.
+.munsell_notation <- function(H, V, C, hs, neutral) {
+  if (requireNamespace("munsellinterpol", quietly = TRUE) &&
+      utils::packageVersion("munsellinterpol") >= "3.5.1") {
+    out <- tryCatch(
+      munsellinterpol::MunsellNameFromHVC(cbind(H, V, C),
+                                          digits = c(2, 6, 6), ctol = 1e-4),
+      error = function(e) NULL)
+    # Only accept a well-formed, complete answer; anything else falls through
+    # to the spelling below rather than putting a partial result in the pedon.
+    if (!is.null(out) && length(out) == length(H))
+      return(ifelse(is.na(hs), NA_character_, as.character(out)))
+  }
+  ifelse(is.na(hs), NA_character_,
+         ifelse(neutral, sprintf("N %g/", V),
+                sprintf("%s %g/%g", hs, V, C)))
+}
+
+
 # CIE 1976 L*a*b* from XYZ under a given white point (default D65, Y=100).
 # Vectorised over X/Y/Z. Verified identical to spacesXYZ::LabfromXYZ to
 # ~1e-14, so it is reused for the Munsell adaptation chain without adding
@@ -188,9 +232,9 @@ predict_munsell_from_spectra <- function(spectra, wavelengths,
   # by the *same* table's D65 SPD that predict_xyz_from_spectra() integrates
   # against, scaled to Y = 100. Using this rather than the textbook
   # c(95.047, 100, 108.883) makes a constant-reflectance spectrum map to an exact
-  # neutral (Chroma 0), because the Lab reference white then matches the white
-  # the XYZ are implicitly relative to. (Suggested by G. Davis; his sketch
-  # omitted the D65 weighting, which would instead give the equal-energy white.)
+  # neutral (Chroma 0) at Value exactly 10, because the Lab reference white then
+  # matches the white the XYZ are implicitly relative to. (Suggested by
+  # G. Davis, munsellinterpol author.)
   cie <- .cie_d65_5nm
   white_D65 <- colSums(cbind(cie$xbar, cie$ybar, cie$zbar) * cie$D65)
   white_D65 <- 100 * white_D65 / white_D65[2L]
@@ -258,12 +302,26 @@ predict_munsell_from_spectra <- function(spectra, wavelengths,
           # chroma-0 sample.
           neutral <- is.finite(Ck) & Ck < 1e-4
           hs[neutral] <- "N"
+          # Name from the RAW chroma, before the neutral axis is zeroed below.
+          # munsellinterpol >= 3.6-0 warns when a Chroma is negative: a condition
+          # distinct from the tiny positive residual `ctol` exists for, and one
+          # that means the spectral integration or the chromatic adaptation went
+          # wrong upstream. Zeroing first hid exactly that -- the diagnostic was
+          # requested of G. Davis for this reason and could never fire from
+          # here. The round_chip path above already hands roundHVC() the raw
+          # value, so this also makes the two paths report the same thing. The
+          # spelling is unchanged: every negative is < 1e-4, so it is neutral
+          # either way.
+          ms[idx]     <- .munsell_notation(Hk, Vk, Ck, hs, neutral)
+          # Report an exact 0 on the neutral axis instead of the raw residual (a
+          # dark flat grey can key out at C ~ 7e-15). The hue already says "N",
+          # so a non-zero chroma beside it is internally inconsistent -- and it
+          # is the wedge a larger BLAS residual would use to leak a chromatic
+          # hue back in. (G. Davis.)
+          Ck[neutral] <- 0
           hue[idx]    <- hs
           value[idx]  <- Vk
           chroma[idx] <- Ck
-          ms[idx]     <- ifelse(is.na(hs), NA_character_,
-                                ifelse(neutral, sprintf("N %g/", Vk),
-                                       sprintf("%s %g/%g", hs, Vk, Ck)))
         }
       }
     }

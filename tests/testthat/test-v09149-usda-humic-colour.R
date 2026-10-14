@@ -37,6 +37,7 @@ test_that("humic_colour_usda is conservative: missing dry value cannot confirm",
 })
 
 test_that("v0.9.149: the 11 Humic colour subgroups are registered (coverage 2049)", {
+  skip_if_no_kst13()
   cov <- coverage_report("usda_subgroup")
   expect_equal(cov$overall$covered_n, 2049L)        # 2038 (v0.9.147) + 11
   reg <- soilKey:::.coverage_registered_usda_subgroups()

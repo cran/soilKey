@@ -3,6 +3,7 @@
 # 1 Leptic Haplogypsids via gypsic_horizon_usda within 18 cm).
 
 test_that("the v0.9.123 intergrade subgroups remain registered (count now 2049)", {
+  skip_if_no_kst13()
   cov <- coverage_report("usda_subgroup")
   expect_equal(cov$overall$covered_n, 2049L)  # 2003 (v0.9.123) +35 (v0.9.147) +11 (v0.9.149)
   reg <- .coverage_registered_usda_subgroups()
@@ -32,6 +33,7 @@ test_that("gypsic_horizon_usda honours the 18 cm Leptic depth window", {
 })
 
 test_that("canonical Gypsisol fixture refines Typic -> Leptic Haplogypsids", {
+  skip_on_cran()
   # Validated refinement (great group invariant): its gypsic horizon (caso4 8%,
   # 35 cm thick) begins at 15 cm, within the 18 cm Leptic window.
   res <- classify_usda(make_gypsisol_canonical())
